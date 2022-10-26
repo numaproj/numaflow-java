@@ -1,12 +1,12 @@
 package io.numaproj.numaflow.sink;
 
-import io.numaproj.numaflow.sink.v1.Udsink;
-import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.sink.v1.Udsink;
+import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

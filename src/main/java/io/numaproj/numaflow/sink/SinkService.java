@@ -1,9 +1,9 @@
 package io.numaproj.numaflow.sink;
 
-import io.numaproj.numaflow.sink.v1.Udsink;
-import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.sink.v1.Udsink;
+import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 

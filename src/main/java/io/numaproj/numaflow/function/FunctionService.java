@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.function;
 
-import io.numaproj.numaflow.function.v1.Udfunction;
-import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 

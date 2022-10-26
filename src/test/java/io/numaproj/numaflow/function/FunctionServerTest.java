@@ -1,7 +1,5 @@
 package io.numaproj.numaflow.function;
 
-import io.numaproj.numaflow.function.v1.Udfunction;
-import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
@@ -9,6 +7,8 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.MetadataUtils;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
