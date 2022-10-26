@@ -28,7 +28,7 @@ public class FunctionServer {
   /**
    * GRPC server constructor
    *
-   * @param socketPath A path that will be removed and used for unix domain socket (i.e. /var/run/numaflow/udf.sock)
+   * @param socketPath A path that will be removed and used for unix domain socket (i.e. /var/run/numaflow/function.sock)
    */
   public FunctionServer(String socketPath) {
     this(socketPath, new EpollEventLoopGroup());

@@ -29,7 +29,7 @@ public class SinkServer {
   /**
    * GRPC server constructor
    *
-   * @param socketPath A path that will be removed and used for unix domain socket (i.e. /var/run/numaflow/udf.sock)
+   * @param socketPath A path that will be removed and used for unix domain socket (i.e. /var/run/numaflow/udsink.sock)
    */
   public SinkServer(String socketPath) {
     this(socketPath, new EpollEventLoopGroup());
