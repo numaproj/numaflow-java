@@ -7,6 +7,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.MetadataUtils;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import org.junit.After;
@@ -35,7 +36,7 @@ public class FunctionServerTest {
   @Before
   public void setUp() throws Exception {
     String serverName = InProcessServerBuilder.generateName();
-    server = new FunctionServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig());
+    server = new FunctionServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
     server.registerMapper(new MapFunc(testMapFn)).start();
     inProcessChannel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
   }

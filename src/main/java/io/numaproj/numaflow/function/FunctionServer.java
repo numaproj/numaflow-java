@@ -5,6 +5,7 @@ import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.numaproj.numaflow.common.GrpcServerConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +23,7 @@ public class FunctionServer {
   private MapHandler mapHandler;
 
   public FunctionServer() {
-    this(new GrpcServerConfig());
+    this(new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
   }
 
   /**

@@ -6,6 +6,7 @@ import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.numaproj.numaflow.common.GrpcServerConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,34 +18,35 @@ import java.util.logging.Logger;
 public class SinkServer {
   private static final Logger logger = Logger.getLogger(SinkServer.class.getName());
 
-  private final String socketPath;
+  private final GrpcServerConfig grpcServerConfig;
   private final ServerBuilder<?> serverBuilder;
   private Server server;
   private SinkHandler sinkHandler;
 
   public SinkServer() {
-    this(Sink.SOCKET_PATH);
+    this(new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
   }
 
   /**
    * GRPC server constructor
    *
-   * @param socketPath A path that will be removed and used for unix domain socket (i.e. /var/run/numaflow/udsink.sock)
+   * @param grpcServerConfig to configure the socket path and max message size for grpc
    */
-  public SinkServer(String socketPath) {
-    this(socketPath, new EpollEventLoopGroup());
+  public SinkServer(GrpcServerConfig grpcServerConfig) {
+    this(grpcServerConfig, new EpollEventLoopGroup());
   }
 
-  public SinkServer(String socketPath, EpollEventLoopGroup group) {
+  public SinkServer(GrpcServerConfig grpcServerConfig, EpollEventLoopGroup group) {
     this(NettyServerBuilder
-        .forAddress(new DomainSocketAddress(socketPath))
-        .channelType(EpollServerDomainSocketChannel.class)
-        .workerEventLoopGroup(group)
-        .bossEventLoopGroup(group), socketPath);
+            .forAddress(new DomainSocketAddress(grpcServerConfig.getSocketPath()))
+            .channelType(EpollServerDomainSocketChannel.class)
+            .maxInboundMessageSize(grpcServerConfig.getMaxMessageSize())
+            .workerEventLoopGroup(group)
+            .bossEventLoopGroup(group), grpcServerConfig);
   }
 
-  public SinkServer(ServerBuilder<?> serverBuilder, String socketPath) {
-    this.socketPath = socketPath;
+  public SinkServer(ServerBuilder<?> serverBuilder, GrpcServerConfig grpcServerConfig) {
+    this.grpcServerConfig = grpcServerConfig;
     this.serverBuilder = serverBuilder;
   }
 
@@ -58,11 +60,11 @@ public class SinkServer {
    */
   public void start() throws IOException {
     // cleanup socket path if it exists (unit test builder doesn't use one)
-    if (socketPath != null) {
-      Path path = Paths.get(socketPath);
+    if (grpcServerConfig.getSocketPath() != null) {
+      Path path = Paths.get(grpcServerConfig.getSocketPath());
       Files.deleteIfExists(path);
       if (Files.exists(path)) {
-        logger.severe("Failed to clean up socket path \"" + socketPath + "\". Exiting");
+        logger.severe("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath() + "\". Exiting");
       }
     }
 
@@ -73,7 +75,7 @@ public class SinkServer {
 
     // start server
     server.start();
-    logger.info("Server started, listening on socket path: " + socketPath);
+    logger.info("Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
 
     // register shutdown hook
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
