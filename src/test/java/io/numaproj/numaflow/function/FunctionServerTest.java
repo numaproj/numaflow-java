@@ -35,7 +35,7 @@ public class FunctionServerTest {
   @Before
   public void setUp() throws Exception {
     String serverName = InProcessServerBuilder.generateName();
-    server = new FunctionServer(InProcessServerBuilder.forName(serverName).directExecutor(), null);
+    server = new FunctionServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig());
     server.registerMapper(new MapFunc(testMapFn)).start();
     inProcessChannel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
   }

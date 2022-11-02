@@ -16,34 +16,35 @@ import java.util.logging.Logger;
 public class FunctionServer {
   private static final Logger logger = Logger.getLogger(FunctionServer.class.getName());
 
-  private final String socketPath;
+  private final GrpcServerConfig grpcServerConfig;
   private final ServerBuilder<?> serverBuilder;
   private Server server;
   private MapHandler mapHandler;
 
   public FunctionServer() {
-    this(Function.SOCKET_PATH);
+    this(new GrpcServerConfig());
   }
 
   /**
    * GRPC server constructor
    *
-   * @param socketPath A path that will be removed and used for unix domain socket (i.e. /var/run/numaflow/function.sock)
+   * @param grpcServerConfig to configure the socket path and max message size for grpc
    */
-  public FunctionServer(String socketPath) {
-    this(socketPath, new EpollEventLoopGroup());
+  public FunctionServer(GrpcServerConfig grpcServerConfig) {
+    this(grpcServerConfig, new EpollEventLoopGroup());
   }
 
-  public FunctionServer(String socketPath, EpollEventLoopGroup group) {
+  public FunctionServer(GrpcServerConfig grpcServerConfig, EpollEventLoopGroup group) {
     this(NettyServerBuilder
-        .forAddress(new DomainSocketAddress(socketPath))
-        .channelType(EpollServerDomainSocketChannel.class)
-        .workerEventLoopGroup(group)
-        .bossEventLoopGroup(group), socketPath);
+            .forAddress(new DomainSocketAddress(grpcServerConfig.getSocketPath()))
+            .channelType(EpollServerDomainSocketChannel.class)
+            .maxInboundMessageSize(grpcServerConfig.getMaxMessageSize())
+            .workerEventLoopGroup(group)
+            .bossEventLoopGroup(group), grpcServerConfig);
   }
 
-  public FunctionServer(ServerBuilder<?> serverBuilder, String socketPath) {
-    this.socketPath = socketPath;
+  public FunctionServer(ServerBuilder<?> serverBuilder, GrpcServerConfig grpcServerConfig) {
+    this.grpcServerConfig = grpcServerConfig;
     this.serverBuilder = serverBuilder;
   }
 
@@ -57,11 +58,11 @@ public class FunctionServer {
    */
   public void start() throws IOException {
     // cleanup socket path if it exists (unit test builder doesn't use one)
-    if (socketPath != null) {
-      Path path = Paths.get(socketPath);
+    if (grpcServerConfig.getSocketPath() != null) {
+      Path path = Paths.get(grpcServerConfig.getSocketPath());
       Files.deleteIfExists(path);
       if (Files.exists(path)) {
-        logger.severe("Failed to clean up socket path \"" + socketPath + "\". Exiting");
+        logger.severe("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath() + "\". Exiting");
       }
     }
 
@@ -85,7 +86,7 @@ public class FunctionServer {
 
     // start server
     server.start();
-    logger.info("Server started, listening on socket path: " + socketPath);
+    logger.info("Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
 
     // register shutdown hook
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
