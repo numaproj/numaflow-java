@@ -22,8 +22,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.BiFunction;
 
 import static io.numaproj.numaflow.function.Function.*;

@@ -21,9 +21,8 @@ public class FunctionServer {
 
     private final GrpcServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
-    private Server server;
-
     private final FunctionService functionService = new FunctionService();
+    private Server server;
 
     public FunctionServer() {
         this(new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));

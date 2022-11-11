@@ -4,5 +4,6 @@ import java.time.Instant;
 
 public interface IntervalWindow {
     Instant GetStartTime();
+
     Instant GetEndTime();
 }

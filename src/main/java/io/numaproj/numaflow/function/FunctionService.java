@@ -14,7 +14,10 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 
 import java.time.Instant;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +32,8 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     private StreamObserver<Udfunction.Datum> streamObserver;
 
-    public FunctionService() {}
+    public FunctionService() {
+    }
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;

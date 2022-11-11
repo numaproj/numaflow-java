@@ -2,7 +2,7 @@ package io.numaproj.numaflow.function.metadata;
 
 import java.time.Instant;
 
-public class IntervalWindowImpl implements IntervalWindow{
+public class IntervalWindowImpl implements IntervalWindow {
 
     private final Instant startTime;
     private final Instant endTime;
