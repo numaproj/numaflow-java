@@ -71,6 +71,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         responseObserver.onCompleted();
     }
 
+    /**
+     * Streams input data to reduceFn and returns the result.
+     */
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
         if (this.reduceHandler == null) {
@@ -118,6 +121,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
             @Override
             public void onError(Throwable throwable) {
                 logger.log(Level.WARNING, "Encountered error in reduceFn", throwable);
+                responseObserver.onError(throwable);
             }
 
             @Override

@@ -8,8 +8,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 /**
  * Implementation of ReduceDatumStream, exposes two methods
  * read and write, it is an unbounded queue, which blocks
- * the reads if queue is empty and block the writes if queue
- * is full
+ * the reads if the queue is empty and blocks the writes if
+ * the queue is full
  */
 public class ReduceDatumStreamImpl implements ReduceDatumStream {
 

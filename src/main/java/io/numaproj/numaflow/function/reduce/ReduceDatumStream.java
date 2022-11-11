@@ -3,11 +3,11 @@ package io.numaproj.numaflow.function.reduce;
 import io.numaproj.numaflow.function.v1.Udfunction;
 
 /**
- * Interface for reduce datum stream which is passed
- * to reduce handler, udf owners can read the message
- * using ReadMessage function, and it returns null if
- * there are no more messages to consume.
+ * ReduceDatumStream is an interface which will be passed to
+ * reduce handlers to read input messages.
  */
 public interface ReduceDatumStream {
-    public Udfunction.Datum ReadMessage();
+    /* ReadMessage can be used to read message from the stream
+    * returns null if there are no more messages to consume.*/
+    Udfunction.Datum ReadMessage();
 }

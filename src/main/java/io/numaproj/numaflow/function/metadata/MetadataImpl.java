@@ -1,5 +1,8 @@
 package io.numaproj.numaflow.function.metadata;
 
+/**
+ * MetadataImpl implements Metadata interface which will be passed to reduce handlers
+ */
 public class MetadataImpl implements Metadata {
     private final IntervalWindow intervalWindow;
 
