@@ -31,7 +31,7 @@ import static org.junit.Assert.assertEquals;
 public class FunctionServerTest {
     private final static String processedKeySuffix = "-key-processed";
 
-    private final static String reduceProcessedKeySuffix = "processed-sum";
+    private final static String reduceProcessedKeySuffix = "-processed-sum";
     private final static String processedValueSuffix = "-value-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
@@ -95,10 +95,11 @@ public class FunctionServerTest {
 
     @Test
     public void reducer() throws InterruptedException {
-        Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.newBuilder().setKey("reduce-key");
+        String reduceKey = "reduce-key";
+        Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.newBuilder().setKey(reduceKey);
 
         Metadata metadata = new Metadata();
-        metadata.put(Metadata.Key.of(DATUM_KEY, Metadata.ASCII_STRING_MARSHALLER), "reduce-key");
+        metadata.put(Metadata.Key.of(DATUM_KEY, Metadata.ASCII_STRING_MARSHALLER), reduceKey);
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
         metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
 
@@ -118,7 +119,16 @@ public class FunctionServerTest {
         }
 
         inputStreamObserver.onCompleted();
-        System.out.println(outputStreamObserver.getResultDatum());
+
+        String expectedKey = reduceKey + reduceProcessedKeySuffix;
+        // sum of first 10 numbers 1 to 10 -> 55
+        ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
+
+        Udfunction.DatumList result = outputStreamObserver.getResultDatum();
+        assertEquals(1, result.getElementsCount());
+        assertEquals(expectedKey, result.getElements(0).getKey());
+        assertEquals(expectedValue, result.getElements(0).getValue());
+
     }
 
 }
