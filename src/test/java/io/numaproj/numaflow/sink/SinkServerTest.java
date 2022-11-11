@@ -22,46 +22,46 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnit4.class)
 public class SinkServerTest {
-  private final static String processedIdSuffix = "-id-processed";
-  @Rule
-  public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-  private final Function<Udsink.Datum[], Response[]> testSinkFn =
-      (datumList) -> new Response[]{new Response(datumList[0].getId() + processedIdSuffix, true, "")};
-  private SinkServer server;
-  private ManagedChannel inProcessChannel;
+    private final static String processedIdSuffix = "-id-processed";
+    @Rule
+    public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
+    private final Function<Udsink.Datum[], Response[]> testSinkFn =
+            (datumList) -> new Response[]{new Response(datumList[0].getId() + processedIdSuffix, true, "")};
+    private SinkServer server;
+    private ManagedChannel inProcessChannel;
 
-  @Before
-  public void setUp() throws Exception {
-    String serverName = InProcessServerBuilder.generateName();
-    server = new SinkServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
-    server.registerSinker(new SinkFunc(testSinkFn)).start();
-    inProcessChannel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
-  }
+    @Before
+    public void setUp() throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        server = new SinkServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+        server.registerSinker(new SinkFunc(testSinkFn)).start();
+        inProcessChannel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
+    }
 
-  @After
-  public void tearDown() throws Exception {
-    server.stop();
-  }
+    @After
+    public void tearDown() throws Exception {
+        server.stop();
+    }
 
-  @Test
-  public void sinker() {
-    ByteString inValue = ByteString.copyFromUtf8("invalue");
-    Udsink.DatumList inDatumList = Udsink.DatumList.newBuilder()
-        .addElements(Udsink.Datum.newBuilder().setId("inid").setValue(inValue).build())
-        .build();
+    @Test
+    public void sinker() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        Udsink.DatumList inDatumList = Udsink.DatumList.newBuilder()
+                .addElements(Udsink.Datum.newBuilder().setId("inid").setValue(inValue).build())
+                .build();
 
-    String expectedId = "inid" + processedIdSuffix;
-    // for now just hardcoding these and the function returned values
-    boolean expectedSuccess = true;
-    String expectedErr = "";
+        String expectedId = "inid" + processedIdSuffix;
+        // for now just hardcoding these and the function returned values
+        boolean expectedSuccess = true;
+        String expectedErr = "";
 
-    var stub = UserDefinedSinkGrpc.newBlockingStub(inProcessChannel);
-    var actualDatumList = stub.sinkFn(inDatumList);
+        var stub = UserDefinedSinkGrpc.newBlockingStub(inProcessChannel);
+        var actualDatumList = stub.sinkFn(inDatumList);
 
-    var actualResponses = actualDatumList.getResponsesList();
-    assertEquals(1, actualResponses.size());
-    assertEquals(expectedId, actualResponses.get(0).getId());
-    assertTrue(actualResponses.get(0).getSuccess());
-    assertEquals(expectedErr, actualResponses.get(0).getErrMsg());
-  }
+        var actualResponses = actualDatumList.getResponsesList();
+        assertEquals(1, actualResponses.size());
+        assertEquals(expectedId, actualResponses.get(0).getId());
+        assertTrue(actualResponses.get(0).getSuccess());
+        assertEquals(expectedErr, actualResponses.get(0).getErrMsg());
+    }
 }

@@ -1,8 +1,8 @@
 package io.numaproj.numaflow.examples.function.forward;
 
-import io.numaproj.numaflow.function.MapFunc;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.map.MapFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;
 
 import java.io.IOException;
