@@ -91,7 +91,8 @@ public class FunctionServer {
                     ServerCallHandler<ReqT, RespT> next) {
 
                 final var context =
-                        Context.current().withValues(Function.DATUM_CONTEXT_KEY,
+                        Context.current().withValues(
+                                Function.DATUM_CONTEXT_KEY,
                                 headers.get(Function.DATUM_METADATA_KEY),
                                 Function.WINDOW_START_TIME,
                                 headers.get(Function.DATUM_METADATA_WIN_START),
@@ -114,12 +115,9 @@ public class FunctionServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
-            try {
-                FunctionServer.this.stop();
-            } catch (InterruptedException e) {
-                e.printStackTrace(System.err);
-            }
+            FunctionServer.this.stop();
             System.err.println("*** server shut down");
+            this.functionService.shutDown();
         }));
     }
 
@@ -127,9 +125,13 @@ public class FunctionServer {
      * Stop serving requests and shutdown resources.
      * Await termination on the main thread since the grpc library uses daemon threads.
      */
-    public void stop() throws InterruptedException {
+    public void stop() {
         if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            try {
+                server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace(System.err);
+            }
         }
     }
 }

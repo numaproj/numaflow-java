@@ -14,10 +14,12 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,8 +29,12 @@ import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduce
 class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
+    // it will never be smaller than one
     private final ExecutorService reduceTaskExecutor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
+    private final long SHUTDOWN_TIME = 30;
+
     private MapHandler mapHandler;
     private ReduceHandler reduceHandler;
     private StreamObserver<Udfunction.Datum> streamObserver;
@@ -161,6 +167,23 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     public void isReady(Empty request, StreamObserver<Udfunction.ReadyResponse> responseObserver) {
         responseObserver.onNext(Udfunction.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
+    }
+
+    // shuts down the executor service which is used for reduce
+    public void shutDown() {
+        this.reduceTaskExecutor.shutdown();
+        try {
+            if (!reduceTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
+                System.err.println("Reduce executor did not terminate in the specified time.");
+                List<Runnable> droppedTasks = reduceTaskExecutor.shutdownNow();
+                System.err.println("Reduce executor was abruptly shut down. " + droppedTasks.size()
+                        + " tasks will not be executed.");
+            } else {
+                System.err.println("Reduce executor was terminated.");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public Udfunction.DatumList buildDatumList(Message[] messages) {
