@@ -26,16 +26,24 @@ public class SinkServerTest {
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private final Function<Udsink.Datum[], Response[]> testSinkFn =
-            (datumList) -> new Response[]{new Response(datumList[0].getId() + processedIdSuffix, true, "")};
+            (datumList) -> new Response[]{new Response(
+                    datumList[0].getId() + processedIdSuffix,
+                    true,
+                    "")};
     private SinkServer server;
     private ManagedChannel inProcessChannel;
 
     @Before
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
-        server = new SinkServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+        server = new SinkServer(
+                InProcessServerBuilder.forName(serverName).directExecutor(),
+                new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
         server.registerSinker(new SinkFunc(testSinkFn)).start();
-        inProcessChannel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
+        inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build());
     }
 
     @After

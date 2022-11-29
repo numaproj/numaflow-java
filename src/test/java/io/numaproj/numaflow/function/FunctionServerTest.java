@@ -23,12 +23,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.function.BiFunction;
+import java.util.logging.Logger;
 
-import static io.numaproj.numaflow.function.Function.*;
+import static io.numaproj.numaflow.function.Function.DATUM_KEY;
+import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
+import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnit4.class)
 public class FunctionServerTest {
+    private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
     private final static String processedKeySuffix = "-key-processed";
 
     private final static String reduceProcessedKeySuffix = "-processed-sum";
@@ -36,7 +40,10 @@ public class FunctionServerTest {
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private final BiFunction<String, Udfunction.Datum, Message[]> testMapFn =
-            (key, datum) -> new Message[]{new Message(key + processedKeySuffix, (new String(datum.getValue().toByteArray()) + processedValueSuffix).getBytes())};
+            (key, datum) -> new Message[]{new Message(
+                    key + processedKeySuffix,
+                    (new String(datum.getValue().toByteArray())
+                            + processedValueSuffix).getBytes())};
 
     private final TriFunction<String, ReduceDatumStream, io.numaproj.numaflow.function.metadata.Metadata, Message[]> testReduceFn =
             ((key, reduceChannel, md) -> {
@@ -50,10 +57,12 @@ public class FunctionServerTest {
                     try {
                         sum += Integer.parseInt(new String(datum.getValue().toByteArray()));
                     } catch (NumberFormatException e) {
-                        System.out.println("unable to convert the value to int, " + e.getMessage());
+                        logger.severe("unable to convert the value to int, " + e.getMessage());
                     }
                 }
-                return new Message[]{Message.to(key + reduceProcessedKeySuffix, String.valueOf(sum).getBytes())};
+                return new Message[]{Message.to(
+                        key + reduceProcessedKeySuffix,
+                        String.valueOf(sum).getBytes())};
             });
 
     private FunctionServer server;
@@ -62,9 +71,17 @@ public class FunctionServerTest {
     @Before
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
-        server = new FunctionServer(InProcessServerBuilder.forName(serverName).directExecutor(), new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
-        server.registerMapper(new MapFunc(testMapFn)).registerReducer(new ReduceFunc(testReduceFn)).start();
-        inProcessChannel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
+        server = new FunctionServer(
+                InProcessServerBuilder.forName(serverName).directExecutor(),
+                new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+        server
+                .registerMapper(new MapFunc(testMapFn))
+                .registerReducer(new ReduceFunc(testReduceFn))
+                .start();
+        inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build());
     }
 
     @After
@@ -75,7 +92,11 @@ public class FunctionServerTest {
     @Test
     public void mapper() {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Udfunction.Datum inDatum = Udfunction.Datum.newBuilder().setKey("not-my-key").setValue(inValue).build();
+        Udfunction.Datum inDatum = Udfunction.Datum
+                .newBuilder()
+                .setKey("not-my-key")
+                .setValue(inValue)
+                .build();
 
         String expectedKey = "inkey" + processedKeySuffix;
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + processedValueSuffix);

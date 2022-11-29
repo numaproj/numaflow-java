@@ -1,6 +1,7 @@
 # Java SDK for Numaflow
 
-This SDK provides the interface for writing [UDFs](https://numaproj.github.io/numaflow/user-defined-functions/)
+This SDK provides the interface for
+writing [UDFs](https://numaproj.github.io/numaflow/user-defined-functions/)
 and [UDSinks](https://numaproj.github.io/numaflow/sinks/user-defined-sinks/) in Java.
 
 ## Usage
@@ -23,9 +24,11 @@ shouldn't (https://github.com/grpc/grpc-java/blob/47ddfa4f205d4672e035c37349dfd3
 * `java` 11+
 * `x86_64 linux`
 
-OS other than `x86_64 linux` can be supported with minor changes, ref: https://netty.io/wiki/native-transports.html.
+OS other than `x86_64 linux` can be supported with minor changes,
+ref: https://netty.io/wiki/native-transports.html.
 Consider building for multiple OS if needed.
-Once grpc-netty depends on netty 5+, consider requiring newer java (ref: https://github.com/netty/netty/issues/10991).
+Once grpc-netty depends on netty 5+, consider requiring newer java (
+ref: https://github.com/netty/netty/issues/10991).
 
 ## Build Requirements
 
@@ -42,7 +45,8 @@ mvn clean install
 
 To keep up-to-date, do the following before building:
 
-* copy the `*.proto` files from [numaflow-go](https://github.com/numaproj/numaflow-go/tree/main/pkg/apis/proto)
+* copy the `*.proto` files
+  from [numaflow-go](https://github.com/numaproj/numaflow-go/tree/main/pkg/apis/proto)
   into `/src/main/proto`
 * replace the `go_package` lines with the following `java_package`:
 

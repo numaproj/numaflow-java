@@ -17,9 +17,13 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
     /**
      * Applies a function to each datum element.
      */
-    public void sinkFn(Udsink.DatumList request, StreamObserver<Udsink.ResponseList> responseObserver) {
+    public void sinkFn(
+            Udsink.DatumList request,
+            StreamObserver<Udsink.ResponseList> responseObserver) {
         if (this.sinkHandler == null) {
-            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getMapFnMethod(), responseObserver);
+            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+                    getMapFnMethod(),
+                    responseObserver);
             return;
         }
 

@@ -8,6 +8,6 @@ import io.numaproj.numaflow.function.v1.Udfunction;
  */
 public interface ReduceDatumStream {
     /* ReadMessage can be used to read message from the stream
-    * returns null if there are no more messages to consume.*/
+     * returns null if there are no more messages to consume.*/
     Udfunction.Datum ReadMessage();
 }

@@ -13,7 +13,10 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 public class ReduceDatumStreamImpl implements ReduceDatumStream {
 
-    public static final Udfunction.Datum DONE = Udfunction.Datum.newBuilder().setKey("DONE").build();
+    public static final Udfunction.Datum DONE = Udfunction.Datum
+            .newBuilder()
+            .setKey("DONE")
+            .build();
     private final BlockingQueue<Udfunction.Datum> blockingQueue = new LinkedBlockingDeque<>();
 
     // blocking call, returns null if there are no messages to be read

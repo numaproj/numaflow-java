@@ -1,6 +1,13 @@
 package io.numaproj.numaflow.function;
 
-import io.grpc.*;
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.Metadata;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
@@ -70,7 +77,8 @@ public class FunctionServer {
             Path path = Paths.get(grpcServerConfig.getSocketPath());
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
-                logger.severe("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath() + "\". Exiting");
+                logger.severe("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
+                        + "\". Exiting");
             }
         }
 
@@ -83,9 +91,12 @@ public class FunctionServer {
                     ServerCallHandler<ReqT, RespT> next) {
 
                 final var context =
-                        Context.current().withValues(Function.DATUM_CONTEXT_KEY, headers.get(Function.DATUM_METADATA_KEY),
-                                Function.WINDOW_START_TIME, headers.get(Function.DATUM_METADATA_WIN_START),
-                                Function.WINDOW_END_TIME, headers.get(Function.DATUM_METADATA_WIN_END));
+                        Context.current().withValues(Function.DATUM_CONTEXT_KEY,
+                                headers.get(Function.DATUM_METADATA_KEY),
+                                Function.WINDOW_START_TIME,
+                                headers.get(Function.DATUM_METADATA_WIN_START),
+                                Function.WINDOW_END_TIME,
+                                headers.get(Function.DATUM_METADATA_WIN_END));
                 return Contexts.interceptCall(context, call, headers, next);
             }
         };
@@ -96,7 +107,8 @@ public class FunctionServer {
 
         // start server
         server.start();
-        logger.info("Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
+        logger.info(
+                "Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

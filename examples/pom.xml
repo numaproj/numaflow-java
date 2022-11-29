@@ -35,7 +35,9 @@
                         </goals>
                         <configuration>
                             <container>
-                                <mainClass>io.numaproj.numaflow.examples.function.forward.ForwardFunction</mainClass>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.function.forward.ForwardFunction
+                                </mainClass>
                             </container>
                             <to>
                                 <image>numaflow-java-examples/forward-function</image>
@@ -50,7 +52,8 @@
                         </goals>
                         <configuration>
                             <container>
-                                <mainClass>io.numaproj.numaflow.examples.sink.simple.SimpleSink</mainClass>
+                                <mainClass>io.numaproj.numaflow.examples.sink.simple.SimpleSink
+                                </mainClass>
                             </container>
                             <to>
                                 <image>numaflow-java-examples/simple-sink</image>

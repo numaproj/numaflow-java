@@ -27,9 +27,10 @@ import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduce
 class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
+    private final ExecutorService reduceTaskExecutor = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
     private MapHandler mapHandler;
     private ReduceHandler reduceHandler;
-
     private StreamObserver<Udfunction.Datum> streamObserver;
 
     public FunctionService() {
@@ -47,9 +48,13 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
      * Applies a function to each datum element.
      */
     @Override
-    public void mapFn(Udfunction.Datum request, StreamObserver<Udfunction.DatumList> responseObserver) {
+    public void mapFn(
+            Udfunction.Datum request,
+            StreamObserver<Udfunction.DatumList> responseObserver) {
         if (this.mapHandler == null) {
-            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getMapFnMethod(), responseObserver);
+            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+                    getMapFnMethod(),
+                    responseObserver);
             return;
         }
 
@@ -77,7 +82,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
         if (this.reduceHandler == null) {
-            return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getReduceFnMethod(), responseObserver);
+            return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
+                    getReduceFnMethod(),
+                    responseObserver);
         }
 
         ReduceDatumStreamImpl reduceDatumStreamImpl = new ReduceDatumStreamImpl();
@@ -98,8 +105,10 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         Metadata md = new MetadataImpl(iw);
 
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<Message[]> result = executor.submit(() -> reduceHandler.HandleDo(key, reduceDatumStreamImpl, md));
+        Future<Message[]> result = reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
+                key,
+                reduceDatumStreamImpl,
+                md));
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
@@ -126,7 +135,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
             @Override
             public void onCompleted() {
-                Udfunction.DatumList response = Udfunction.DatumList.newBuilder().getDefaultInstanceForType();
+                Udfunction.DatumList response = Udfunction.DatumList
+                        .newBuilder()
+                        .getDefaultInstanceForType();
                 try {
                     reduceDatumStreamImpl.WriteMessage(ReduceDatumStreamImpl.DONE);
                     // wait until the reduce handler returns, result.get() is a blocking call

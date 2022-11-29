@@ -9,8 +9,11 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.logging.Logger;
 
 public class SumFunction {
+    private static final Logger logger = Logger.getLogger(SumFunction.class.getName());
+
     private static Message[] process(String key, ReduceDatumStream reduceDatumStream, Metadata md) {
         int sum = 0;
 
@@ -27,7 +30,7 @@ public class SumFunction {
             try {
                 sum += Integer.parseInt(new String(datum.getValue().toByteArray()));
             } catch (NumberFormatException e) {
-                System.out.println("unable to convert the value to int, " + e.getMessage());
+                logger.severe("unable to convert the value to int, " + e.getMessage());
             }
         }
         return new Message[]{Message.toAll(String.valueOf(sum).getBytes())};
