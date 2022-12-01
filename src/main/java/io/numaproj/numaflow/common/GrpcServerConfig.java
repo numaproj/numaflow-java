@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.common;
 
-import io.numaproj.numaflow.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 

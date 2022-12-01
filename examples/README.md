@@ -1,7 +1,9 @@
 ## Build
 
-The sdk artifacts aren't deployed anywhere, so ensure you have run `mvn clean install` on the sdk first to ensure
-artifacts are in your local `~/.m2/repository`. Alternatively publish them to a repository that maven can access.
+The sdk artifacts aren't deployed anywhere, so ensure you have run `mvn clean install` on the sdk
+first to ensure
+artifacts are in your local `~/.m2/repository`. Alternatively publish them to a repository that
+maven can access.
 
 The build assumes a local docker daemon is running as it uses and loads images to it
 named `numaflow-java-examples/<example-name>:latest` by default.
