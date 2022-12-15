@@ -1,25 +1,25 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.sink;
 
-import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.sink.v1.Udsink;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
 
 /**
- * Implementation of ReduceDatumStream, exposes two methods
+ * Implementation of SinkDatumStream, exposes two methods
  * read and write, it is an unbounded queue, which blocks
  * the reads if the queue is empty and blocks the writes if
  * the queue is full
  */
-public class ReduceDatumStreamImpl implements ReduceDatumStream {
-    private static final Logger logger = Logger.getLogger(ReduceDatumStreamImpl.class.getName());
-    private final BlockingQueue<Udfunction.Datum> blockingQueue = new LinkedBlockingDeque<>();
+public class SinkDatumStreamImpl implements SinkDatumStream {
+    private static final Logger logger = Logger.getLogger(SinkDatumStreamImpl.class.getName());
+    private final BlockingQueue<Udsink.Datum> blockingQueue = new LinkedBlockingDeque<>();
 
     // blocking call, returns EOF if there are no messages to be read
     @Override
-    public Udfunction.Datum ReadMessage() {
-        Udfunction.Datum readMessage = null;
+    public Udsink.Datum ReadMessage() {
+        Udsink.Datum readMessage = null;
         try {
             readMessage = blockingQueue.take();
         } catch (InterruptedException e) {
@@ -30,7 +30,7 @@ public class ReduceDatumStreamImpl implements ReduceDatumStream {
     }
 
     // blocking call, waits until the write operation is successful
-    public void WriteMessage(Udfunction.Datum datum) throws InterruptedException {
+    public void WriteMessage(Udsink.Datum datum) throws InterruptedException {
         blockingQueue.put(datum);
     }
 }

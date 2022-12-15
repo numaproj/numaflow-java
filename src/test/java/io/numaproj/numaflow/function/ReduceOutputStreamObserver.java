@@ -3,7 +3,7 @@ package io.numaproj.numaflow.function;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.v1.Udfunction;
 
-public class OutputStreamObserver implements StreamObserver<Udfunction.DatumList> {
+public class ReduceOutputStreamObserver implements StreamObserver<Udfunction.DatumList> {
     private Udfunction.DatumList resultDatum;
 
     public Udfunction.DatumList getResultDatum() {

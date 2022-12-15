@@ -4,8 +4,11 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GrpcServerConfig;
+import io.numaproj.numaflow.function.FunctionServerTest;
+import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import org.junit.After;
@@ -15,21 +18,37 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnit4.class)
 public class SinkServerTest {
+    private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
     private final static String processedIdSuffix = "-id-processed";
+
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private final Function<Udsink.Datum[], Response[]> testSinkFn =
-            (datumList) -> new Response[]{new Response(
-                    datumList[0].getId() + processedIdSuffix,
-                    true,
-                    "")};
+
+    private final Function<SinkDatumStream, List<Response>> testSinkFn =
+            ((datumStream) -> {
+                List<Response> responses = new ArrayList<>();
+                while (true) {
+                    Udsink.Datum datum = datumStream.ReadMessage();
+                    // null indicates the end of the input
+                    if (datum == SinkDatumStream.EOF) {
+                        break;
+                    }
+
+                    logger.info(datum.getValue().toStringUtf8());
+                    responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
+                }
+                return responses;
+            });
+
     private SinkServer server;
     private ManagedChannel inProcessChannel;
 
@@ -53,23 +72,31 @@ public class SinkServerTest {
 
     @Test
     public void sinker() {
-        ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Udsink.DatumList inDatumList = Udsink.DatumList.newBuilder()
-                .addElements(Udsink.Datum.newBuilder().setId("inid").setValue(inValue).build())
-                .build();
+        //create an output stream observer
+        SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
-        String expectedId = "inid" + processedIdSuffix;
-        // for now just hardcoding these and the function returned values
-        boolean expectedSuccess = true;
-        String expectedErr = "";
+        StreamObserver<Udsink.Datum> inputStreamObserver = UserDefinedSinkGrpc
+                .newStub(inProcessChannel)
+                .sinkFn(outputStreamObserver);
 
-        var stub = UserDefinedSinkGrpc.newBlockingStub(inProcessChannel);
-        var actualDatumList = stub.sinkFn(inDatumList);
+        Udsink.Datum.Builder inDatumBuilder = Udsink.Datum.newBuilder().setKey("sink");
+        String actualId = "sink_test_id";
+        String expectedId = actualId + processedIdSuffix;
 
-        var actualResponses = actualDatumList.getResponsesList();
-        assertEquals(1, actualResponses.size());
-        assertEquals(expectedId, actualResponses.get(0).getId());
-        assertTrue(actualResponses.get(0).getSuccess());
-        assertEquals(expectedErr, actualResponses.get(0).getErrMsg());
+        for (int i = 1; i <= 10; i++) {
+            Udsink.Datum inputDatum = inDatumBuilder
+                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                    .setId(actualId)
+                    .build();
+            inputStreamObserver.onNext(inputDatum);
+        }
+
+        inputStreamObserver.onCompleted();
+
+
+        Udsink.ResponseList responseList = outputStreamObserver.getResultDatum();
+        assertEquals(10, responseList.getResponsesCount());
+        responseList.getResponsesList()
+                .forEach(response -> assertEquals(response.getId(), expectedId));
     }
 }

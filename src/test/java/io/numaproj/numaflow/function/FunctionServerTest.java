@@ -51,7 +51,7 @@ public class FunctionServerTest {
                 while (true) {
                     Udfunction.Datum datum = reduceChannel.ReadMessage();
                     // null indicates the end of the input
-                    if (datum == null) {
+                    if (datum == ReduceDatumStream.EOF) {
                         break;
                     }
                     try {
@@ -124,8 +124,8 @@ public class FunctionServerTest {
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
         metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
 
-        //create a output stream observer
-        OutputStreamObserver outputStreamObserver = new OutputStreamObserver();
+        //create an output stream observer
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         StreamObserver<Udfunction.Datum> inputStreamObserver = UserDefinedFunctionGrpc
                 .newStub(inProcessChannel)

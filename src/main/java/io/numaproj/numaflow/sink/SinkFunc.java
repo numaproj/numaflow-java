@@ -1,21 +1,20 @@
 package io.numaproj.numaflow.sink;
 
-import io.numaproj.numaflow.sink.v1.Udsink;
-
+import java.util.List;
 import java.util.function.Function;
 
 /**
  * Implementation of SinkHandler instantiated from a function
  */
 public class SinkFunc implements SinkHandler {
-    private final Function<Udsink.Datum[], Response[]> sinkFn;
+    private final Function<SinkDatumStream, List<Response>> sinkFn;
 
-    public SinkFunc(Function<Udsink.Datum[], Response[]> sinkFn) {
+    public SinkFunc(Function<SinkDatumStream, List<Response>> sinkFn) {
         this.sinkFn = sinkFn;
     }
 
     @Override
-    public Response[] HandleDo(Udsink.Datum[] datumList) {
-        return sinkFn.apply(datumList);
+    public List<Response> HandleDo(SinkDatumStream datumStream) {
+        return sinkFn.apply(datumStream);
     }
 }

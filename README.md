@@ -1,6 +1,7 @@
 # Java SDK for Numaflow
 
-This SDK provides the interface for writing [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/)
+This SDK provides the interface for
+writing [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/)
 and [UDSinks](https://numaflow.numaproj.io/user-guide/sinks/user-defined-sinks/) in Java.
 
 ## Usage

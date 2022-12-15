@@ -20,8 +20,8 @@ public class SinkServer {
 
     private final GrpcServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
+    private final SinkService sinkService = new SinkService();
     private Server server;
-    private SinkHandler sinkHandler;
 
     public SinkServer() {
         this(new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
@@ -51,7 +51,7 @@ public class SinkServer {
     }
 
     public SinkServer registerSinker(SinkHandler sinkHandler) {
-        this.sinkHandler = sinkHandler;
+        this.sinkService.setSinkHandler(sinkHandler);
         return this;
     }
 
@@ -71,7 +71,7 @@ public class SinkServer {
 
         // build server
         server = serverBuilder
-                .addService(new SinkService(sinkHandler))
+                .addService(this.sinkService)
                 .build();
 
         // start server
@@ -86,9 +86,11 @@ public class SinkServer {
             try {
                 SinkServer.this.stop();
             } catch (InterruptedException e) {
+                Thread.interrupted();
                 e.printStackTrace(System.err);
             }
             System.err.println("*** server shut down");
+            this.sinkService.shutDown();
         }));
     }
 
