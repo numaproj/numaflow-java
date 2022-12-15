@@ -10,4 +10,6 @@ public interface ReduceDatumStream {
     /* ReadMessage can be used to read message from the stream
      * returns null if there are no more messages to consume.*/
     Udfunction.Datum ReadMessage();
+    // EOF indicates the end of input
+    Udfunction.Datum EOF = Udfunction.Datum.newBuilder().setKey("EOF").build();
 }

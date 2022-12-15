@@ -2,6 +2,7 @@ package io.numaproj.numaflow.examples.sink.simple;
 
 import io.numaproj.numaflow.sink.Response;
 import io.numaproj.numaflow.sink.SinkDatumStream;
+import io.numaproj.numaflow.sink.SinkDatumStreamImpl;
 import io.numaproj.numaflow.sink.SinkFunc;
 import io.numaproj.numaflow.sink.SinkServer;
 import io.numaproj.numaflow.sink.v1.Udsink;
@@ -19,8 +20,8 @@ public class SimpleSink {
 
         while (true) {
             Udsink.Datum datum = datumStream.ReadMessage();
-            // null indicates the end of the input
-            if (datum == null) {
+            // DONE indicates the end of the input
+            if (datum == SinkDatumStream.EOF) {
                 break;
             }
             logger.info(datum.getValue().toStringUtf8());

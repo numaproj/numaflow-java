@@ -86,6 +86,7 @@ public class SinkServer {
             try {
                 SinkServer.this.stop();
             } catch (InterruptedException e) {
+                Thread.interrupted();
                 e.printStackTrace(System.err);
             }
             System.err.println("*** server shut down");

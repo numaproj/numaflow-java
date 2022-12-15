@@ -130,6 +130,7 @@ public class FunctionServer {
             try {
                 server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                Thread.interrupted();
                 e.printStackTrace(System.err);
             }
         }

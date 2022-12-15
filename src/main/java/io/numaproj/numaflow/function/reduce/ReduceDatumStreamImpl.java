@@ -4,6 +4,7 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Logger;
 
 /**
  * Implementation of ReduceDatumStream, exposes two methods
@@ -12,25 +13,18 @@ import java.util.concurrent.LinkedBlockingDeque;
  * the queue is full
  */
 public class ReduceDatumStreamImpl implements ReduceDatumStream {
-
-    public static final Udfunction.Datum DONE = Udfunction.Datum
-            .newBuilder()
-            .setKey("DONE")
-            .build();
+    private static final Logger logger = Logger.getLogger(ReduceDatumStreamImpl.class.getName());
     private final BlockingQueue<Udfunction.Datum> blockingQueue = new LinkedBlockingDeque<>();
 
-    // blocking call, returns null if there are no messages to be read
+    // blocking call, returns EOF if there are no messages to be read
     @Override
     public Udfunction.Datum ReadMessage() {
-        Udfunction.Datum readMessage;
+        Udfunction.Datum readMessage = null;
         try {
             readMessage = blockingQueue.take();
-            // to indicate close of book to the reader
-            if (readMessage == DONE) {
-                return null;
-            }
         } catch (InterruptedException e) {
-            return null;
+            logger.severe("Error occurred while reading message from datum stream" + e.getMessage());
+            Thread.interrupted();
         }
         return readMessage;
     }

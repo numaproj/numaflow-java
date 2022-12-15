@@ -8,6 +8,7 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.FunctionServerTest;
+import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import org.junit.After;
@@ -38,7 +39,7 @@ public class SinkServerTest {
                 while (true) {
                     Udsink.Datum datum = datumStream.ReadMessage();
                     // null indicates the end of the input
-                    if (datum == null) {
+                    if (datum == SinkDatumStream.EOF) {
                         break;
                     }
 

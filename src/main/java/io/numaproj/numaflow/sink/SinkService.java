@@ -60,6 +60,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
                 try {
                     sinkDatumStream.WriteMessage(handlerDatum);
                 } catch (InterruptedException e) {
+                    Thread.interrupted();
                     onError(e);
                 }
             }
@@ -76,7 +77,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
                         .newBuilder()
                         .getDefaultInstanceForType();
                 try {
-                    sinkDatumStream.WriteMessage(SinkDatumStreamImpl.DONE);
+                    sinkDatumStream.WriteMessage(SinkDatumStream.EOF);
                     // wait until the sink handler returns, result.get() is a blocking call
                     List<Response> responses = result.get();
                     // construct responseList from responses
@@ -104,6 +105,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
                 System.err.println("Sink executor was terminated.");
             }
         } catch (InterruptedException e) {
+            Thread.interrupted();
             e.printStackTrace();
         }
     }

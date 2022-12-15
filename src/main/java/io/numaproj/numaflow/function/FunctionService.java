@@ -8,6 +8,7 @@ import io.numaproj.numaflow.function.metadata.IntervalWindow;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
+import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.v1.Udfunction;
@@ -129,6 +130,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                 try {
                     reduceDatumStreamImpl.WriteMessage(handlerDatum);
                 } catch (InterruptedException e) {
+                    Thread.interrupted();
                     onError(e);
                 }
             }
@@ -145,13 +147,14 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                         .newBuilder()
                         .getDefaultInstanceForType();
                 try {
-                    reduceDatumStreamImpl.WriteMessage(ReduceDatumStreamImpl.DONE);
+                    reduceDatumStreamImpl.WriteMessage(ReduceDatumStream.EOF);
                     // wait until the reduce handler returns, result.get() is a blocking call
                     Message[] resultMessages = result.get();
                     // construct datumList from resultMessages
                     response = buildDatumList(resultMessages);
 
                 } catch (InterruptedException | ExecutionException e) {
+                    Thread.interrupted();
                     onError(e);
                 }
                 responseObserver.onNext(response);
@@ -182,6 +185,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                 System.err.println("Reduce executor was terminated.");
             }
         } catch (InterruptedException e) {
+            Thread.interrupted();
             e.printStackTrace();
         }
     }
