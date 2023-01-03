@@ -6,7 +6,8 @@
 
     <groupId>io.numaproj.numaflow</groupId>
     <artifactId>numaflow-java</artifactId>
-    <version>0.0.0-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <name>numaflow-java</name>
 
@@ -16,6 +17,14 @@
         <grpc.version>1.50.2</grpc.version>
         <netty.version>4.1.79.Final</netty.version> <!-- match version grpc-netty depends on -->
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>Numaflow Java SDK</name>
+            <url>https://maven.pkg.github.com/numaproj/numaflow-java</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
