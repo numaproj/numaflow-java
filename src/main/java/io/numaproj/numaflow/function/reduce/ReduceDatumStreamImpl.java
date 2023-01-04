@@ -23,7 +23,8 @@ public class ReduceDatumStreamImpl implements ReduceDatumStream {
         try {
             readMessage = blockingQueue.take();
         } catch (InterruptedException e) {
-            logger.severe("Error occurred while reading message from datum stream" + e.getMessage());
+            logger.severe(
+                    "Error occurred while reading message from datum stream" + e.getMessage());
             Thread.interrupted();
         }
         return readMessage;
