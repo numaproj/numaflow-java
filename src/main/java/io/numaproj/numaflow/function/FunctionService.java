@@ -15,7 +15,10 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,13 +35,13 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
     // it will never be smaller than one
     private final ExecutorService reduceTaskExecutor = Executors
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+            .newCachedThreadPool();
 
     private final long SHUTDOWN_TIME = 30;
 
     private MapHandler mapHandler;
     private ReduceHandler reduceHandler;
-    private StreamObserver<Udfunction.Datum> streamObserver;
+    private ConcurrentHashMap<String, ReduceDatumStreamImpl> streamMap = new ConcurrentHashMap();
 
     public FunctionService() {
     }
@@ -79,7 +82,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         Message[] messages = mapHandler.HandleDo(key, handlerDatum);
 
         // set response
-        responseObserver.onNext(buildDatumList(messages));
+        responseObserver.onNext(buildDatumListResponse(messages));
         responseObserver.onCompleted();
     }
 
@@ -93,8 +96,6 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                     getReduceFnMethod(),
                     responseObserver);
         }
-
-        ReduceDatumStreamImpl reduceDatumStreamImpl = new ReduceDatumStreamImpl();
 
         // get key from gPRC metadata
         String key = Function.DATUM_CONTEXT_KEY.get();
@@ -111,24 +112,29 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
         Metadata md = new MetadataImpl(iw);
 
-
-        Future<Message[]> result = reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
-                key,
-                reduceDatumStreamImpl,
-                md));
+        List<Future<Message[]>> results = new ArrayList<>();
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
             public void onNext(Udfunction.Datum datum) {
                 // get Datum from request
                 Udfunction.Datum handlerDatum = Udfunction.Datum.newBuilder()
+                        .setKey(datum.getKey())
                         .setValue(datum.getValue())
                         .setEventTime(datum.getEventTime())
                         .setWatermark(datum.getWatermark())
                         .build();
 
                 try {
-                    reduceDatumStreamImpl.WriteMessage(handlerDatum);
+                    if (!streamMap.containsKey(datum.getKey())) {
+                        ReduceDatumStreamImpl reduceDatumStream = new ReduceDatumStreamImpl();
+                        results.add(reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
+                                key,
+                                reduceDatumStream,
+                                md)));
+                        streamMap.put(datum.getKey(), reduceDatumStream);
+                    }
+                    streamMap.get(datum.getKey()).WriteMessage(handlerDatum);
                 } catch (InterruptedException e) {
                     Thread.interrupted();
                     onError(e);
@@ -147,12 +153,10 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                         .newBuilder()
                         .getDefaultInstanceForType();
                 try {
-                    reduceDatumStreamImpl.WriteMessage(ReduceDatumStream.EOF);
-                    // wait until the reduce handler returns, result.get() is a blocking call
-                    Message[] resultMessages = result.get();
-                    // construct datumList from resultMessages
-                    response = buildDatumList(resultMessages);
-
+                    for (Map.Entry<String, ReduceDatumStreamImpl> entry : streamMap.entrySet()) {
+                        entry.getValue().WriteMessage(ReduceDatumStream.EOF);
+                    }
+                    response = buildDatumListResponse(results);
                 } catch (InterruptedException | ExecutionException e) {
                     Thread.interrupted();
                     onError(e);
@@ -190,9 +194,27 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         }
     }
 
-    public Udfunction.DatumList buildDatumList(Message[] messages) {
+    private Udfunction.DatumList buildDatumListResponse(List<Future<Message[]>> results) throws ExecutionException, InterruptedException {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        for (Message message : messages) {
+        // wait for all the handlers to return
+        for (Future<Message[]> result: results) {
+            // result.get() is a blocking call
+            Message[] resultMessages = result.get();
+            for (Message message: resultMessages) {
+                Udfunction.Datum d = Udfunction.Datum.newBuilder()
+                        .setKey(message.getKey())
+                        .setValue(ByteString.copyFrom(message.getValue()))
+                        .build();
+
+                datumListBuilder.addElements(d);
+            }
+        }
+        return datumListBuilder.build();
+    }
+
+    private Udfunction.DatumList buildDatumListResponse(Message[] messages) {
+        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
+        for (Message message: messages) {
             Udfunction.Datum d = Udfunction.Datum.newBuilder()
                     .setKey(message.getKey())
                     .setValue(ByteString.copyFrom(message.getValue()))
