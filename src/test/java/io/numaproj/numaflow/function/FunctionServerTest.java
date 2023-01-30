@@ -39,23 +39,23 @@ public class FunctionServerTest {
     private final static String processedValueSuffix = "-value-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private final BiFunction<String, Udfunction.Datum, Message[]> testMapFn =
+    private final BiFunction<String, Datum, Message[]> testMapFn =
             (key, datum) -> new Message[]{new Message(
                     key + processedKeySuffix,
-                    (new String(datum.getValue().toByteArray())
+                    (new String(datum.getValue())
                             + processedValueSuffix).getBytes())};
 
     private final TriFunction<String, ReduceDatumStream, io.numaproj.numaflow.function.metadata.Metadata, Message[]> testReduceFn =
             ((key, reduceChannel, md) -> {
                 int sum = 0;
                 while (true) {
-                    Udfunction.Datum datum = reduceChannel.ReadMessage();
+                    Datum datum = reduceChannel.ReadMessage();
                     // null indicates the end of the input
                     if (datum == ReduceDatumStream.EOF) {
                         break;
                     }
                     try {
-                        sum += Integer.parseInt(new String(datum.getValue().toByteArray()));
+                        sum += Integer.parseInt(new String(datum.getValue()));
                     } catch (NumberFormatException e) {
                         logger.severe("unable to convert the value to int, " + e.getMessage());
                     }

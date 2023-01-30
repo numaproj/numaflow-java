@@ -1,0 +1,31 @@
+package io.numaproj.numaflow.function;
+
+
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+
+@AllArgsConstructor
+@NoArgsConstructor
+public class HandlerDatum implements Datum {
+
+    private byte[] value;
+    private Instant watermark;
+    private Instant eventTime;
+
+    @Override
+    public Instant getWatermark() {
+        return this.watermark;
+    }
+
+    @Override
+    public byte[] getValue() {
+        return this.value;
+    }
+
+    @Override
+    public Instant getEventTime() {
+        return this.eventTime;
+    }
+}

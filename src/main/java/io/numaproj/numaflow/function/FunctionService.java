@@ -41,7 +41,6 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     private MapHandler mapHandler;
     private ReduceHandler reduceHandler;
-    private ConcurrentHashMap<String, ReduceDatumStreamImpl> streamMap = new ConcurrentHashMap();
 
     public FunctionService() {
     }
@@ -72,11 +71,14 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         String key = Function.DATUM_CONTEXT_KEY.get();
 
         // get Datum from request
-        Udfunction.Datum handlerDatum = Udfunction.Datum.newBuilder()
-                .setValue(request.getValue())
-                .setEventTime(request.getEventTime())
-                .setWatermark(request.getWatermark())
-                .build();
+        HandlerDatum handlerDatum = new HandlerDatum(
+                request.getValue().toByteArray(),
+                Instant.ofEpochSecond(
+                        request.getWatermark().getWatermark().getSeconds(),
+                        request.getWatermark().getWatermark().getNanos()),
+                Instant.ofEpochSecond(
+                        request.getEventTime().getEventTime().getSeconds(),
+                        request.getEventTime().getEventTime().getNanos()));
 
         // process Datum
         Message[] messages = mapHandler.HandleDo(key, handlerDatum);
@@ -91,14 +93,13 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
      */
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
+        ConcurrentHashMap<String, ReduceDatumStreamImpl> streamMap = new ConcurrentHashMap();
+
         if (this.reduceHandler == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
                     responseObserver);
         }
-
-        // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
 
         // get window start and end time from gPRC metadata
         String winSt = Function.WINDOW_START_TIME.get();
@@ -118,18 +119,19 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
             @Override
             public void onNext(Udfunction.Datum datum) {
                 // get Datum from request
-                Udfunction.Datum handlerDatum = Udfunction.Datum.newBuilder()
-                        .setKey(datum.getKey())
-                        .setValue(datum.getValue())
-                        .setEventTime(datum.getEventTime())
-                        .setWatermark(datum.getWatermark())
-                        .build();
-
+                HandlerDatum handlerDatum = new HandlerDatum(
+                        datum.getValue().toByteArray(),
+                        Instant.ofEpochSecond(
+                                datum.getWatermark().getWatermark().getSeconds(),
+                                datum.getWatermark().getWatermark().getNanos()),
+                        Instant.ofEpochSecond(
+                                datum.getEventTime().getEventTime().getSeconds(),
+                                datum.getEventTime().getEventTime().getNanos()));
                 try {
                     if (!streamMap.containsKey(datum.getKey())) {
                         ReduceDatumStreamImpl reduceDatumStream = new ReduceDatumStreamImpl();
                         results.add(reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
-                                key,
+                                datum.getKey(),
                                 reduceDatumStream,
                                 md)));
                         streamMap.put(datum.getKey(), reduceDatumStream);
@@ -197,10 +199,10 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     private Udfunction.DatumList buildDatumListResponse(List<Future<Message[]>> results) throws ExecutionException, InterruptedException {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
         // wait for all the handlers to return
-        for (Future<Message[]> result: results) {
+        for (Future<Message[]> result : results) {
             // result.get() is a blocking call
             Message[] resultMessages = result.get();
-            for (Message message: resultMessages) {
+            for (Message message : resultMessages) {
                 Udfunction.Datum d = Udfunction.Datum.newBuilder()
                         .setKey(message.getKey())
                         .setValue(ByteString.copyFrom(message.getValue()))
@@ -214,7 +216,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     private Udfunction.DatumList buildDatumListResponse(Message[] messages) {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        for (Message message: messages) {
+        for (Message message : messages) {
             Udfunction.Datum d = Udfunction.Datum.newBuilder()
                     .setKey(message.getKey())
                     .setValue(ByteString.copyFrom(message.getValue()))

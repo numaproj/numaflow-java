@@ -5,6 +5,7 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -50,12 +51,15 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
             @Override
             public void onNext(Udsink.Datum d) {
                 // get Datum from request
-                Udsink.Datum handlerDatum = Udsink.Datum.newBuilder()
-                        .setId(d.getId())
-                        .setValue(d.getValue())
-                        .setEventTime(d.getEventTime())
-                        .setWatermark(d.getWatermark())
-                        .build();
+                HandlerDatum handlerDatum = new HandlerDatum(
+                        d.getValue().toByteArray(),
+                        Instant.ofEpochSecond(
+                                d.getWatermark().getWatermark().getSeconds(),
+                                d.getWatermark().getWatermark().getNanos()),
+                        Instant.ofEpochSecond(
+                                d.getEventTime().getEventTime().getSeconds(),
+                                d.getEventTime().getEventTime().getNanos()),
+                        d.getId());
 
                 try {
                     sinkDatumStream.WriteMessage(handlerDatum);

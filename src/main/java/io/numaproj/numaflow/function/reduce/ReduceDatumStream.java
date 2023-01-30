@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.function.reduce;
 
-import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.function.Datum;
+import io.numaproj.numaflow.function.HandlerDatum;
 
 /**
  * ReduceDatumStream is an interface which will be passed to
@@ -8,9 +9,9 @@ import io.numaproj.numaflow.function.v1.Udfunction;
  */
 public interface ReduceDatumStream {
     // EOF indicates the end of input
-    Udfunction.Datum EOF = Udfunction.Datum.newBuilder().setKey("EOF").build();
+    HandlerDatum EOF = new HandlerDatum();
 
     /* ReadMessage can be used to read message from the stream
      * returns null if there are no more messages to consume.*/
-    Udfunction.Datum ReadMessage();
+    Datum ReadMessage();
 }
