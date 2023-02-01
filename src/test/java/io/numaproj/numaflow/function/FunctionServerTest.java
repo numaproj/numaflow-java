@@ -1,5 +1,10 @@
 package io.numaproj.numaflow.function;
 
+import static io.numaproj.numaflow.function.Function.DATUM_KEY;
+import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
+import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
+import static org.junit.Assert.assertEquals;
+
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
@@ -15,6 +20,8 @@ import io.numaproj.numaflow.function.reduce.ReduceFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import io.numaproj.numaflow.utils.TriFunction;
+import java.util.function.BiFunction;
+import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,16 +29,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.function.BiFunction;
-import java.util.logging.Logger;
-
-import static io.numaproj.numaflow.function.Function.DATUM_KEY;
-import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
-import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
-import static org.junit.Assert.assertEquals;
-
 @RunWith(JUnit4.class)
 public class FunctionServerTest {
+
     private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
     private final static String processedKeySuffix = "-key-processed";
 
@@ -149,7 +149,6 @@ public class FunctionServerTest {
         assertEquals(1, result.getElementsCount());
         assertEquals(expectedKey, result.getElements(0).getKey());
         assertEquals(expectedValue, result.getElements(0).getValue());
-
     }
 
 }

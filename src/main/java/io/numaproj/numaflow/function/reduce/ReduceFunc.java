@@ -4,7 +4,6 @@ import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.utils.TriFunction;
 
-
 /**
  * Implementation of ReduceHandler instantiated from a function
  */

@@ -7,7 +7,6 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class SinkServer {
+
     private static final Logger logger = Logger.getLogger(SinkServer.class.getName());
 
     private final GrpcServerConfig grpcServerConfig;
@@ -95,8 +95,8 @@ public class SinkServer {
     }
 
     /**
-     * Stop serving requests and shutdown resources.
-     * Await termination on the main thread since the grpc library uses daemon threads.
+     * Stop serving requests and shutdown resources. Await termination on the main thread since the
+     * grpc library uses daemon threads.
      */
     public void stop() throws InterruptedException {
         if (server != null) {

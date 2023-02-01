@@ -4,10 +4,11 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 
 public class Function {
+
     public static final String SOCKET_PATH = "/var/run/numaflow/function.sock";
 
     public static final int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 4;
-
+    
     public static final String DATUM_KEY = "x-numaflow-datum-key";
 
     public static final String WIN_START_KEY = "x-numaflow-win-start-time";

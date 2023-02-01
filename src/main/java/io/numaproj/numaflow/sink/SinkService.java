@@ -1,10 +1,11 @@
 package io.numaproj.numaflow.sink;
 
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
+
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
-
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -14,9 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
-
 class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
+
     private static final Logger logger = Logger.getLogger(SinkService.class.getName());
     // it will never be smaller than one
     private final ExecutorService sinkTaskExecutor = Executors
@@ -121,15 +121,13 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
 
     public Udsink.ResponseList buildResponseList(List<Response> responses) {
         var responseListBuilder = Udsink.ResponseList.newBuilder();
-        for (Response response : responses) {
-            Udsink.Response r = Udsink.Response.newBuilder()
+        responses.stream().forEach(response -> {
+            responseListBuilder.addResponses(Udsink.Response.newBuilder()
                     .setId(response.getId())
                     .setSuccess(response.getSuccess())
                     .setErrMsg(response.getErr())
-                    .build();
-
-            responseListBuilder.addResponses(r);
-        }
+                    .build());
+        });
         return responseListBuilder.build();
     }
 }

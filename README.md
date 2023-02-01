@@ -57,3 +57,6 @@ option java_package = "io.numaproj.numaflow.function.v1";
 ```protobuf
 option java_package = "io.numaproj.numaflow.sink.v1";
 ```
+
+## Code Style
+If you use IntelliJ as Java IDE, use [google style guide](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml). 

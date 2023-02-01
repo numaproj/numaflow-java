@@ -1,5 +1,7 @@
 package io.numaproj.numaflow.sink;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -10,6 +12,10 @@ import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.FunctionServerTest;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -17,15 +23,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.logging.Logger;
-
-import static org.junit.Assert.assertEquals;
-
 @RunWith(JUnit4.class)
 public class SinkServerTest {
+
     private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
     private final static String processedIdSuffix = "-id-processed";
 
@@ -91,7 +91,6 @@ public class SinkServerTest {
         }
 
         inputStreamObserver.onCompleted();
-
 
         Udsink.ResponseList responseList = outputStreamObserver.getResultDatum();
         assertEquals(10, responseList.getResponsesCount());

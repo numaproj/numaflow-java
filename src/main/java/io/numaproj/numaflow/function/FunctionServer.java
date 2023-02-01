@@ -15,7 +15,6 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class FunctionServer {
+
     private static final Logger logger = Logger.getLogger(FunctionServer.class.getName());
 
     private final GrpcServerConfig grpcServerConfig;
@@ -122,8 +122,8 @@ public class FunctionServer {
     }
 
     /**
-     * Stop serving requests and shutdown resources.
-     * Await termination on the main thread since the grpc library uses daemon threads.
+     * Stop serving requests and shutdown resources. Await termination on the main thread since the
+     * grpc library uses daemon threads.
      */
     public void stop() {
         if (server != null) {

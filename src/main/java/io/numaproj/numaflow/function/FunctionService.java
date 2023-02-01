@@ -1,5 +1,8 @@
 package io.numaproj.numaflow.function;
 
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -13,8 +16,8 @@ import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
-
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -23,9 +26,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
-import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
 class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
@@ -111,7 +111,6 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
         Metadata md = new MetadataImpl(iw);
 
-
         Future<Message[]> result = reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
                 key,
                 reduceDatumStreamImpl,
@@ -172,7 +171,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         responseObserver.onCompleted();
     }
 
-    // shuts down the executor service which is used for reduce
+    /**
+     * shuts down the executor service which is used for reduce.
+     */
     public void shutDown() {
         this.reduceTaskExecutor.shutdown();
         try {
@@ -192,14 +193,12 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     public Udfunction.DatumList buildDatumList(Message[] messages) {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        for (Message message : messages) {
-            Udfunction.Datum d = Udfunction.Datum.newBuilder()
+        Arrays.stream(messages).forEach(message -> {
+            datumListBuilder.addElements(Udfunction.Datum.newBuilder()
                     .setKey(message.getKey())
                     .setValue(ByteString.copyFrom(message.getValue()))
-                    .build();
-
-            datumListBuilder.addElements(d);
-        }
+                    .build());
+        });
         return datumListBuilder.build();
     }
 }

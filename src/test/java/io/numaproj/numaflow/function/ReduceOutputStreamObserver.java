@@ -4,6 +4,7 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.v1.Udfunction;
 
 public class ReduceOutputStreamObserver implements StreamObserver<Udfunction.DatumList> {
+
     private Udfunction.DatumList resultDatum;
 
     public Udfunction.DatumList getResultDatum() {
