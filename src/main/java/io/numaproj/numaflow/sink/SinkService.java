@@ -59,7 +59,8 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
                         Instant.ofEpochSecond(
                                 d.getEventTime().getEventTime().getSeconds(),
                                 d.getEventTime().getEventTime().getNanos()),
-                        d.getId());
+                        d.getId(),
+                        false);
 
                 try {
                     sinkDatumStream.WriteMessage(handlerDatum);
