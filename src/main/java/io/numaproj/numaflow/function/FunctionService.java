@@ -1,5 +1,10 @@
 package io.numaproj.numaflow.function;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.dispatch.Futures;
+import akka.dispatch.OnComplete;
+import akka.pattern.Patterns;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -11,19 +16,16 @@ import io.numaproj.numaflow.function.metadata.MetadataImpl;
 import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
+import io.numaproj.numaflow.function.reduce.SimpleActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
+import scala.concurrent.Future;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,11 +35,8 @@ import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduce
 class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
-    // it will never be smaller than one
-    private final ExecutorService reduceTaskExecutor = Executors
-            .newCachedThreadPool();
+    private static final ActorSystem actorSystem = ActorSystem.create("test-system");
 
-    private final long SHUTDOWN_TIME = 30;
 
     private MapHandler mapHandler;
     private ReduceHandler reduceHandler;
@@ -94,7 +93,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
         ConcurrentHashMap<String, ReduceDatumStreamImpl> streamMap = new ConcurrentHashMap();
-
+        List<ActorRef> actorList = new ArrayList<>();
         if (this.reduceHandler == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
@@ -113,7 +112,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
         Metadata md = new MetadataImpl(iw);
 
-        List<Future<Message[]>> results = new ArrayList<>();
+        List<scala.concurrent.Future<Object>> results = new ArrayList<>();
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
@@ -129,12 +128,18 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                                 datum.getEventTime().getEventTime().getNanos()));
                 try {
                     if (!streamMap.containsKey(datum.getKey())) {
+
                         ReduceDatumStreamImpl reduceDatumStream = new ReduceDatumStreamImpl();
-                        results.add(reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
+                        String workerId = datum.getKey() + datum.getEventTime();
+
+                        ActorRef actorRef = actorSystem.actorOf(SimpleActor.props(
                                 datum.getKey(),
-                                reduceDatumStream,
-                                md)));
+                                md,
+                                reduceHandler));
+
+                        results.add(Patterns.ask(actorRef, reduceDatumStream, Integer.MAX_VALUE));
                         streamMap.put(datum.getKey(), reduceDatumStream);
+                        actorList.add(actorRef);
                     }
                     streamMap.get(datum.getKey()).WriteMessage(handlerDatum);
                 } catch (InterruptedException e) {
@@ -147,24 +152,53 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
             public void onError(Throwable throwable) {
                 logger.log(Level.WARNING, "Encountered error in reduceFn", throwable);
                 responseObserver.onError(throwable);
+                responseObserver.onCompleted();
             }
 
             @Override
             public void onCompleted() {
-                Udfunction.DatumList response = Udfunction.DatumList
-                        .newBuilder()
-                        .getDefaultInstanceForType();
+                Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
                 try {
                     for (Map.Entry<String, ReduceDatumStreamImpl> entry : streamMap.entrySet()) {
                         entry.getValue().WriteMessage(ReduceDatumStream.EOF);
                     }
-                    response = buildDatumListResponse(results);
-                } catch (InterruptedException | ExecutionException e) {
+                    Future<Iterable<Object>> finalFuture = buildDatumListResponse(
+                            results,
+                            actorSystem);
+
+                    finalFuture.onComplete(new OnComplete<>() {
+                        @Override
+                        public void onComplete(
+                                Throwable failure,
+                                Iterable<Object> success) {
+
+                            if (failure == null) {
+                                success.forEach(ele -> {
+                                    Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
+                                    responseBuilder.addAllElements(list.getElementsList());
+                                });
+                                Udfunction.DatumList response = responseBuilder.build();
+                                responseObserver.onNext(response);
+                            } else {
+                                logger.severe("error while getting output from actors - "
+                                        + failure.getMessage());
+                                responseObserver.onError(failure);
+                            }
+                            responseObserver.onCompleted();
+
+                            // terminate all the actors
+                            for (ActorRef actorRef: actorList) {
+                                actorSystem.stop(actorRef);
+                            }
+
+                            logger.info("actors are terminated");
+                        }
+                    }, actorSystem.dispatcher());
+                } catch (InterruptedException e) {
                     Thread.interrupted();
                     onError(e);
                 }
-                responseObserver.onNext(response);
-                responseObserver.onCompleted();
+                logger.info("Actor system was terminated");
             }
         };
     }
@@ -178,40 +212,31 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         responseObserver.onCompleted();
     }
 
-    // shuts down the executor service which is used for reduce
-    public void shutDown() {
-        this.reduceTaskExecutor.shutdown();
-        try {
-            if (!reduceTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-                System.err.println("Reduce executor did not terminate in the specified time.");
-                List<Runnable> droppedTasks = reduceTaskExecutor.shutdownNow();
-                System.err.println("Reduce executor was abruptly shut down. " + droppedTasks.size()
-                        + " tasks will not be executed.");
-            } else {
-                System.err.println("Reduce executor was terminated.");
-            }
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-            e.printStackTrace();
-        }
-    }
+//    // shuts down the executor service which is used for reduce
+//    public void shutDown() {
+//        this.reduceTaskExecutor.shutdown();
+//        try {
+//            if (!reduceTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
+//                System.err.println("Reduce executor did not terminate in the specified time.");
+//                List<Runnable> droppedTasks = reduceTaskExecutor.shutdownNow();
+//                System.err.println("Reduce executor was abruptly shut down. " + droppedTasks.size()
+//                        + " tasks will not be executed.");
+//            } else {
+//                System.err.println("Reduce executor was terminated.");
+//            }
+//        } catch (InterruptedException e) {
+//            Thread.interrupted();
+//            e.printStackTrace();
+//        }
+//    }
 
-    private Udfunction.DatumList buildDatumListResponse(List<Future<Message[]>> results) throws ExecutionException, InterruptedException {
-        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
+    private Future<Iterable<Object>> buildDatumListResponse(
+            List<Future<Object>> results,
+            ActorSystem actorSystem) {
         // wait for all the handlers to return
-        for (Future<Message[]> result : results) {
-            // result.get() is a blocking call
-            Message[] resultMessages = result.get();
-            for (Message message : resultMessages) {
-                Udfunction.Datum d = Udfunction.Datum.newBuilder()
-                        .setKey(message.getKey())
-                        .setValue(ByteString.copyFrom(message.getValue()))
-                        .build();
+        Future<Iterable<Object>> finalFuture = Futures.sequence(results, actorSystem.dispatcher());
+        return finalFuture;
 
-                datumListBuilder.addElements(d);
-            }
-        }
-        return datumListBuilder.build();
     }
 
     private Udfunction.DatumList buildDatumListResponse(Message[] messages) {

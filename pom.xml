@@ -16,6 +16,7 @@
         <protobuf.version>3.21.8</protobuf.version>
         <grpc.version>1.50.2</grpc.version>
         <netty.version>4.1.79.Final</netty.version> <!-- match version grpc-netty depends on -->
+        <akka.version>2.7.0</akka.version>
     </properties>
 
     <distributionManagement>
@@ -68,18 +69,27 @@
             <artifactId>grpc-testing</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor-typed_2.13</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>
@@ -97,6 +107,26 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>

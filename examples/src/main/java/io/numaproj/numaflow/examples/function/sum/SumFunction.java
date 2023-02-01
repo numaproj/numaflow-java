@@ -20,15 +20,16 @@ public class SumFunction {
         // window information can be accessed using metadata
         Instant windowStartTime = md.GetIntervalWindow().GetStartTime();
         Instant windowEndTime = md.GetIntervalWindow().GetEndTime();
+        logger.info("key - " + key);
 
         while (true) {
             Datum datum = reduceDatumStream.ReadMessage();
-            // null indicates the end of the input
+            // EOF indicates the end of the input
             if (datum == ReduceDatumStream.EOF) {
                 break;
             }
             try {
-                sum += Integer.parseInt(new String(datum.getValue()));
+                sum += 1;
             } catch (NumberFormatException e) {
                 logger.severe("unable to convert the value to int, " + e.getMessage());
             }
@@ -37,6 +38,7 @@ public class SumFunction {
     }
 
     public static void main(String[] args) throws IOException {
+        logger.info("counter udf was invoked");
         new FunctionServer().registerReducer(new ReduceFunc(SumFunction::process)).start();
     }
 }

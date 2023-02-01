@@ -117,7 +117,7 @@ public class FunctionServer {
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
             FunctionServer.this.stop();
             System.err.println("*** server shut down");
-            this.functionService.shutDown();
+//            this.functionService.shutDown();
         }));
     }
 
