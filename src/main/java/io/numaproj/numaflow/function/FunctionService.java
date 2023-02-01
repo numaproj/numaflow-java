@@ -78,7 +78,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos()));
+                        request.getEventTime().getEventTime().getNanos()), false);
 
         // process Datum
         Message[] messages = mapHandler.HandleDo(key, handlerDatum);
@@ -126,7 +126,8 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                                 datum.getWatermark().getWatermark().getNanos()),
                         Instant.ofEpochSecond(
                                 datum.getEventTime().getEventTime().getSeconds(),
-                                datum.getEventTime().getEventTime().getNanos()));
+                                datum.getEventTime().getEventTime().getNanos()),
+                        false);
                 try {
                     if (!streamMap.containsKey(datum.getKey())) {
                         ReduceDatumStreamImpl reduceDatumStream = new ReduceDatumStreamImpl();

@@ -189,8 +189,10 @@ public class FunctionServerTest {
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
         Udfunction.DatumList result = outputStreamObserver.getResultDatum();
-        assertEquals(100, result.getElementsCount());
-        assertEquals(expectedValue, result.getElements(0).getValue());
+        assertEquals(keyCount, result.getElementsCount());
+        for (int i = 0; i < keyCount; i++) {
+            assertEquals(expectedValue, result.getElements(0).getValue());
+        }
     }
 
 }

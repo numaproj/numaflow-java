@@ -12,7 +12,13 @@ public class Forward {
     private static final Logger logger = Logger.getLogger(Forward.class.getName());
 
     private static Message[] process(String key, Datum data) {
-        int value = Integer.parseInt(new String(data.getValue()));
+        int value = 0;
+        try {
+            value = Integer.parseInt(new String(data.getValue()));
+        } catch (NumberFormatException e) {
+            logger.severe("Error occurred while parsing int");
+            return new Message[]{Message.toDrop()};
+        }
         if (value % 2 == 0) {
             return new Message[]{Message.to("even", data.getValue())};
         }

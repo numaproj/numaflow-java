@@ -2,17 +2,20 @@ package io.numaproj.numaflow.function;
 
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @AllArgsConstructor
-@NoArgsConstructor
 public class HandlerDatum implements Datum {
 
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
+    private Boolean eof;
+
+    public HandlerDatum(boolean eof) {
+        this(null, null, null, eof);
+    }
 
     @Override
     public Instant getWatermark() {
@@ -27,5 +30,9 @@ public class HandlerDatum implements Datum {
     @Override
     public Instant getEventTime() {
         return this.eventTime;
+    }
+
+    public void setEof() {
+        this.eof = true;
     }
 }
