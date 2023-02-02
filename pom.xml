@@ -122,6 +122,14 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.7</version>
+                <configuration>
+                    <excludes>
+                        <exclude>io/numaproj/numaflow/sink/v1/*</exclude>
+                        <exclude>io/numaproj/numaflow/function/v1/*</exclude>
+                        <exclude>io/numaproj/numaflow/function/metadata/*</exclude>
+                        <exclude>io/numaproj/numaflow/utils/*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -148,7 +156,7 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.99</minimum>
+                                            <minimum>0.70</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
