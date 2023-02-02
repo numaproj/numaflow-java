@@ -9,7 +9,7 @@ import io.numaproj.numaflow.function.HandlerDatum;
  */
 public interface ReduceDatumStream {
     // EOF indicates the end of input
-    HandlerDatum EOF = new HandlerDatum(true);
+    HandlerDatum EOF = HandlerDatum.EOF();
 
     /* ReadMessage can be used to read message from the stream
      * returns null if there are no more messages to consume.*/

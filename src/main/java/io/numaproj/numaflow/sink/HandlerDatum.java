@@ -13,8 +13,9 @@ public class HandlerDatum implements Datum {
     private String id;
     private Boolean eof;
 
-    public HandlerDatum(Boolean eof) {
-        this(null, null, null, null, true);
+    // poison packet for reduce stream, to indicate EOF
+    public static HandlerDatum EOF() {
+        return new HandlerDatum(null, null, null , null, true);
     }
 
     @Override

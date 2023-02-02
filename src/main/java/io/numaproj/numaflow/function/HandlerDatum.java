@@ -13,8 +13,9 @@ public class HandlerDatum implements Datum {
     private Instant eventTime;
     private Boolean eof;
 
-    public HandlerDatum(boolean eof) {
-        this(null, null, null, eof);
+    // poison packet for reduce stream, to indicate EOF
+    public static HandlerDatum EOF() {
+        return new HandlerDatum(null, null, null, true);
     }
 
     @Override
