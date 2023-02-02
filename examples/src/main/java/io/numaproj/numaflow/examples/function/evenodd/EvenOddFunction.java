@@ -26,7 +26,6 @@ public class EvenOddFunction {
     }
 
     public static void main(String[] args) throws IOException {
-        logger.info("Forward invoked");
         new FunctionServer().registerMapper(new MapFunc(EvenOddFunction::process)).start();
     }
 }

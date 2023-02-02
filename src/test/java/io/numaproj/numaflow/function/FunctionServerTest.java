@@ -10,9 +10,11 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapFunc;
+import io.numaproj.numaflow.function.mapt.MapTFunc;
 import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.function.reduce.ReduceFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import io.numaproj.numaflow.utils.TriFunction;
 import org.junit.After;
@@ -22,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.time.Instant;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
@@ -33,17 +36,25 @@ import static org.junit.Assert.assertEquals;
 @RunWith(JUnit4.class)
 public class FunctionServerTest {
     private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
-    private final static String processedKeySuffix = "-key-processed";
+    private final static String PROCESSED_KEY_SUFFIX = "-key-processed";
+    private final static String REDUCE_PROCESSED_KEY_SUFFIX = "-processed-sum";
+    private final static String PROCESSED_VALUE_SUFFIX = "-value-processed";
+    private final static Instant TEST_EVENT_TIME = Instant.MIN;
 
-    private final static String reduceProcessedKeySuffix = "-processed-sum";
-    private final static String processedValueSuffix = "-value-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private final BiFunction<String, Datum, Message[]> testMapFn =
             (key, datum) -> new Message[]{new Message(
-                    key + processedKeySuffix,
+                    key + PROCESSED_KEY_SUFFIX,
                     (new String(datum.getValue())
-                            + processedValueSuffix).getBytes())};
+                            + PROCESSED_VALUE_SUFFIX).getBytes())};
+
+    private final BiFunction<String, Udfunction.Datum, MessageT[]> testMapTFn =
+            (key, datum) -> new MessageT[]{new MessageT(
+                    TEST_EVENT_TIME,
+                    key + PROCESSED_KEY_SUFFIX,
+                    (new String(datum.getValue().toByteArray())
+                            + PROCESSED_VALUE_SUFFIX).getBytes())};
 
     private final TriFunction<String, ReduceDatumStream, io.numaproj.numaflow.function.metadata.Metadata, Message[]> testReduceFn =
             ((key, reduceChannel, md) -> {
@@ -61,7 +72,7 @@ public class FunctionServerTest {
                     }
                 }
                 return new Message[]{Message.to(
-                        key + reduceProcessedKeySuffix,
+                        key + REDUCE_PROCESSED_KEY_SUFFIX,
                         String.valueOf(sum).getBytes())};
             });
 
@@ -76,6 +87,7 @@ public class FunctionServerTest {
                 new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
         server
                 .registerMapper(new MapFunc(testMapFn))
+                .registerMapperT(new MapTFunc(testMapTFn))
                 .registerReducer(new ReduceFunc(testReduceFn))
                 .start();
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
@@ -98,8 +110,8 @@ public class FunctionServerTest {
                 .setValue(inValue)
                 .build();
 
-        String expectedKey = "inkey" + processedKeySuffix;
-        ByteString expectedValue = ByteString.copyFromUtf8("invalue" + processedValueSuffix);
+        String expectedKey = "inkey" + PROCESSED_KEY_SUFFIX;
+        ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of(DATUM_KEY, Metadata.ASCII_STRING_MARSHALLER), "inkey");
@@ -110,6 +122,37 @@ public class FunctionServerTest {
                 .mapFn(inDatum);
 
         assertEquals(1, actualDatumList.getElementsCount());
+        assertEquals(expectedKey, actualDatumList.getElements(0).getKey());
+        assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
+    }
+
+    @Test
+    public void mapperT() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        Udfunction.Datum inDatum = Udfunction.Datum
+                .newBuilder()
+                .setKey("not-my-key")
+                .setValue(inValue)
+                .build();
+
+        String expectedKey = "inkey" + PROCESSED_KEY_SUFFIX;
+        ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
+
+        Metadata metadata = new Metadata();
+        metadata.put(Metadata.Key.of(DATUM_KEY, Metadata.ASCII_STRING_MARSHALLER), "inkey");
+
+        var stub = UserDefinedFunctionGrpc.newBlockingStub(inProcessChannel);
+        var actualDatumList = stub
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
+                .mapTFn(inDatum);
+
+        assertEquals(1, actualDatumList.getElementsCount());
+        assertEquals(
+                EventTime.newBuilder().setEventTime(
+                        com.google.protobuf.Timestamp.newBuilder()
+                                .setSeconds(TEST_EVENT_TIME.getEpochSecond())
+                                .setNanos(TEST_EVENT_TIME.getNano())).build(),
+                actualDatumList.getElements(0).getEventTime());
         assertEquals(expectedKey, actualDatumList.getElements(0).getKey());
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
     }
@@ -141,7 +184,7 @@ public class FunctionServerTest {
 
         inputStreamObserver.onCompleted();
 
-        String expectedKey = reduceKey + reduceProcessedKeySuffix;
+        String expectedKey = reduceKey + REDUCE_PROCESSED_KEY_SUFFIX;
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
@@ -183,7 +226,7 @@ public class FunctionServerTest {
 
         inputStreamObserver.onCompleted();
 
-        String expectedKey = reduceKey + reduceProcessedKeySuffix;
+        String expectedKey = reduceKey + REDUCE_PROCESSED_KEY_SUFFIX;
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 

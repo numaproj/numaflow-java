@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.map.MapHandler;
+import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.metadata.IntervalWindow;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
@@ -12,6 +13,7 @@ import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 
 import java.time.Instant;
@@ -40,6 +42,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     private final long SHUTDOWN_TIME = 30;
 
     private MapHandler mapHandler;
+    private MapTHandler mapTHandler;
     private ReduceHandler reduceHandler;
 
     public FunctionService() {
@@ -47,6 +50,10 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;
+    }
+
+    public void setMapTHandler(MapTHandler mapTHandler) {
+        this.mapTHandler = mapTHandler;
     }
 
     public void setReduceHandler(ReduceHandler reduceHandler) {
@@ -85,6 +92,35 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messages));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void mapTFn(
+            Udfunction.Datum request,
+            StreamObserver<Udfunction.DatumList> responseObserver) {
+        if (this.mapTHandler == null) {
+            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+                    getMapFnMethod(),
+                    responseObserver);
+            return;
+        }
+
+        // get key from gPRC metadata
+        String key = Function.DATUM_CONTEXT_KEY.get();
+
+        // get Datum from request
+        Udfunction.Datum handlerDatum = Udfunction.Datum.newBuilder()
+                .setValue(request.getValue())
+                .setEventTime(request.getEventTime())
+                .setWatermark(request.getWatermark())
+                .build();
+
+        // process Datum
+        MessageT[] messageTs = mapTHandler.HandleDo(key, handlerDatum);
+
+        // set response
+        responseObserver.onNext(buildDatumListResponse(messageTs));
         responseObserver.onCompleted();
     }
 
@@ -223,6 +259,22 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
             datumListBuilder.addElements(Udfunction.Datum.newBuilder()
                     .setKey(message.getKey())
                     .setValue(ByteString.copyFrom(message.getValue()))
+                    .build());
+        });
+        return datumListBuilder.build();
+    }
+
+    private Udfunction.DatumList buildDatumListResponse(MessageT[] messageTs) {
+        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
+        Arrays.stream(messageTs).forEach(messageT -> {
+            datumListBuilder.addElements(Udfunction.Datum.newBuilder()
+                    .setEventTime(EventTime.newBuilder().setEventTime
+                            (com.google.protobuf.Timestamp.newBuilder()
+                                    .setSeconds(messageT.getEventTime().getEpochSecond())
+                                    .setNanos(messageT.getEventTime().getNano()))
+                    )
+                    .setKey(messageT.getKey())
+                    .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });
         return datumListBuilder.build();

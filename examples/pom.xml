@@ -45,6 +45,23 @@
                         </configuration>
                     </execution>
                     <execution>
+                      <id>event-time-filter-function</id>
+                      <phase>package</phase>
+                      <goals>
+                        <goal>dockerBuild</goal>
+                      </goals>
+                      <configuration>
+                        <container>
+                          <mainClass>
+                            io.numaproj.numaflow.examples.function.eventtimefilter.EventTimeFilterFunction
+                          </mainClass>
+                        </container>
+                        <to>
+                          <image>numaflow-java-examples/event-time-filter-function</image>
+                        </to>
+                      </configuration>
+                    </execution>
+                    <execution>
                         <id>simple-sink</id>
                         <phase>package</phase>
                         <goals>

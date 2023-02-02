@@ -14,6 +14,7 @@ import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
+import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 
 import java.io.IOException;
@@ -60,6 +61,11 @@ public class FunctionServer {
 
     public FunctionServer registerMapper(MapHandler mapHandler) {
         this.functionService.setMapHandler(mapHandler);
+        return this;
+    }
+
+    public FunctionServer registerMapperT(MapTHandler mapTHandler) {
+        this.functionService.setMapTHandler(mapTHandler);
         return this;
     }
 
