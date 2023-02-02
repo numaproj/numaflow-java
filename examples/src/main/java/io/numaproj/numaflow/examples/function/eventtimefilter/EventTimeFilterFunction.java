@@ -1,9 +1,9 @@
 package io.numaproj.numaflow.examples.function.eventtimefilter;
 
+import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.MessageT;
 import io.numaproj.numaflow.function.mapt.MapTFunc;
-import io.numaproj.numaflow.function.v1.Udfunction;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -24,10 +24,8 @@ public class EventTimeFilterFunction {
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 
-    private static MessageT[] process(String key, Udfunction.Datum data) {
-        Instant eventTime = Instant.ofEpochSecond(
-                data.getEventTime().getEventTime().getSeconds(),
-                data.getEventTime().getEventTime().getNanos());
+    private static MessageT[] process(String key, Datum data) {
+        Instant eventTime = data.getEventTime();
 
         if (eventTime.isBefore(januaryFirst2022)) {
             return new MessageT[]{MessageT.toDrop()};
@@ -36,13 +34,13 @@ public class EventTimeFilterFunction {
                     MessageT.to(
                             januaryFirst2022,
                             "within_year_2022",
-                            data.getValue().toByteArray())};
+                            data.getValue())};
         } else {
             return new MessageT[]{
                     MessageT.to(
                             januaryFirst2023,
                             "after_year_2022",
-                            data.getValue().toByteArray())};
+                            data.getValue())};
         }
     }
 
