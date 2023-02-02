@@ -8,8 +8,8 @@ import io.numaproj.numaflow.function.map.MapFunc;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-public class FlatMap {
-    private static final Logger logger = Logger.getLogger(FlatMap.class.getName());
+public class FlatMapFunction {
+    private static final Logger logger = Logger.getLogger(FlatMapFunction.class.getName());
 
     private static Message[] process(String key, Datum data) {
         String msg = new String(data.getValue());
@@ -24,6 +24,6 @@ public class FlatMap {
 
     public static void main(String[] args) throws IOException {
         logger.info("Flatmap invoked");
-        new FunctionServer().registerMapper(new MapFunc(FlatMap::process)).start();
+        new FunctionServer().registerMapper(new MapFunc(FlatMapFunction::process)).start();
     }
 }

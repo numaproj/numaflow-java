@@ -95,8 +95,8 @@ public class SinkServer {
     }
 
     /**
-     * Stop serving requests and shutdown resources.
-     * Await termination on the main thread since the grpc library uses daemon threads.
+     * Stop serving requests and shutdown resources. Await termination on the main thread since the
+     * grpc library uses daemon threads.
      */
     public void stop() throws InterruptedException {
         if (server != null) {

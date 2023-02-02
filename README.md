@@ -57,3 +57,6 @@ option java_package = "io.numaproj.numaflow.function.v1";
 ```protobuf
 option java_package = "io.numaproj.numaflow.sink.v1";
 ```
+
+## Code Style
+Use [Editor Config](https://www.jetbrains.com/help/idea/editorconfig.html). 

@@ -30,5 +30,6 @@ ij_java_method_call_chain_wrap = on_every_item
 ij_java_method_parameters_new_line_after_left_paren = true
 ij_java_method_parameters_wrap = on_every_item
 ij_java_names_count_to_use_import_on_demand = 9999
+ij_java_spaces_around_equality_operators = true
 ij_java_variable_annotation_wrap = normal
 ij_java_wrap_first_method_in_call_chain = true
