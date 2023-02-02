@@ -1,6 +1,6 @@
 package io.numaproj.numaflow.function.reduce;
 
-import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.function.Datum;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -14,12 +14,12 @@ import java.util.logging.Logger;
  */
 public class ReduceDatumStreamImpl implements ReduceDatumStream {
     private static final Logger logger = Logger.getLogger(ReduceDatumStreamImpl.class.getName());
-    private final BlockingQueue<Udfunction.Datum> blockingQueue = new LinkedBlockingDeque<>();
+    private final BlockingQueue<Datum> blockingQueue = new LinkedBlockingDeque<>();
 
     // blocking call, returns EOF if there are no messages to be read
     @Override
-    public Udfunction.Datum ReadMessage() {
-        Udfunction.Datum readMessage = null;
+    public Datum ReadMessage() {
+        Datum readMessage = null;
         try {
             readMessage = blockingQueue.take();
         } catch (InterruptedException e) {
@@ -31,7 +31,7 @@ public class ReduceDatumStreamImpl implements ReduceDatumStream {
     }
 
     // blocking call, waits until the write operation is successful
-    public void WriteMessage(Udfunction.Datum datum) throws InterruptedException {
+    public void WriteMessage(Datum datum) throws InterruptedException {
         blockingQueue.put(datum);
     }
 }

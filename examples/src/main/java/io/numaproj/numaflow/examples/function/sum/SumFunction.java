@@ -1,11 +1,11 @@
 package io.numaproj.numaflow.examples.function.sum;
 
+import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
 import io.numaproj.numaflow.function.reduce.ReduceFunc;
-import io.numaproj.numaflow.function.v1.Udfunction;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -22,13 +22,13 @@ public class SumFunction {
         Instant windowEndTime = md.GetIntervalWindow().GetEndTime();
 
         while (true) {
-            Udfunction.Datum datum = reduceDatumStream.ReadMessage();
+            Datum datum = reduceDatumStream.ReadMessage();
             // null indicates the end of the input
             if (datum == ReduceDatumStream.EOF) {
                 break;
             }
             try {
-                sum += Integer.parseInt(new String(datum.getValue().toByteArray()));
+                sum += Integer.parseInt(new String(datum.getValue()));
             } catch (NumberFormatException e) {
                 logger.severe("unable to convert the value to int, " + e.getMessage());
             }

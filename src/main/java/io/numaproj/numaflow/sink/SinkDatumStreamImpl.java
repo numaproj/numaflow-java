@@ -1,7 +1,5 @@
 package io.numaproj.numaflow.sink;
 
-import io.numaproj.numaflow.sink.v1.Udsink;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
@@ -14,12 +12,12 @@ import java.util.logging.Logger;
  */
 public class SinkDatumStreamImpl implements SinkDatumStream {
     private static final Logger logger = Logger.getLogger(SinkDatumStreamImpl.class.getName());
-    private final BlockingQueue<Udsink.Datum> blockingQueue = new LinkedBlockingDeque<>();
+    private final BlockingQueue<HandlerDatum> blockingQueue = new LinkedBlockingDeque<>();
 
     // blocking call, returns EOF if there are no messages to be read
     @Override
-    public Udsink.Datum ReadMessage() {
-        Udsink.Datum readMessage = null;
+    public HandlerDatum ReadMessage() {
+        HandlerDatum readMessage = null;
         try {
             readMessage = blockingQueue.take();
         } catch (InterruptedException e) {
@@ -31,7 +29,7 @@ public class SinkDatumStreamImpl implements SinkDatumStream {
     }
 
     // blocking call, waits until the write operation is successful
-    public void WriteMessage(Udsink.Datum datum) throws InterruptedException {
+    public void WriteMessage(HandlerDatum datum) throws InterruptedException {
         blockingQueue.put(datum);
     }
 }

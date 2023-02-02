@@ -18,6 +18,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -36,13 +37,13 @@ public class SinkServerTest {
             ((datumStream) -> {
                 List<Response> responses = new ArrayList<>();
                 while (true) {
-                    Udsink.Datum datum = datumStream.ReadMessage();
+                    Datum datum = datumStream.ReadMessage();
                     // null indicates the end of the input
                     if (datum == SinkDatumStream.EOF) {
                         break;
                     }
 
-                    logger.info(datum.getValue().toStringUtf8());
+                    logger.info(Arrays.toString(datum.getValue()));
                     responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
                 }
                 return responses;

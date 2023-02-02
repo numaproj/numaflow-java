@@ -39,23 +39,23 @@ public class FunctionServerTest {
     private final static String processedValueSuffix = "-value-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private final BiFunction<String, Udfunction.Datum, Message[]> testMapFn =
+    private final BiFunction<String, Datum, Message[]> testMapFn =
             (key, datum) -> new Message[]{new Message(
                     key + processedKeySuffix,
-                    (new String(datum.getValue().toByteArray())
+                    (new String(datum.getValue())
                             + processedValueSuffix).getBytes())};
 
     private final TriFunction<String, ReduceDatumStream, io.numaproj.numaflow.function.metadata.Metadata, Message[]> testReduceFn =
             ((key, reduceChannel, md) -> {
                 int sum = 0;
                 while (true) {
-                    Udfunction.Datum datum = reduceChannel.ReadMessage();
+                    Datum datum = reduceChannel.ReadMessage();
                     // null indicates the end of the input
                     if (datum == ReduceDatumStream.EOF) {
                         break;
                     }
                     try {
-                        sum += Integer.parseInt(new String(datum.getValue().toByteArray()));
+                        sum += Integer.parseInt(new String(datum.getValue()));
                     } catch (NumberFormatException e) {
                         logger.severe("unable to convert the value to int, " + e.getMessage());
                     }
@@ -115,7 +115,7 @@ public class FunctionServerTest {
     }
 
     @Test
-    public void reducer() throws InterruptedException {
+    public void reducerWithOneKey() {
         String reduceKey = "reduce-key";
         Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.newBuilder().setKey(reduceKey);
 
@@ -150,6 +150,49 @@ public class FunctionServerTest {
         assertEquals(expectedKey, result.getElements(0).getKey());
         assertEquals(expectedValue, result.getElements(0).getValue());
 
+    }
+
+    @Test
+    public void reducerWithMultipleKey() {
+        String reduceKey = "reduce-key";
+        int keyCount = 100;
+        Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.newBuilder().setKey(reduceKey);
+
+        Metadata metadata = new Metadata();
+        metadata.put(Metadata.Key.of(DATUM_KEY, Metadata.ASCII_STRING_MARSHALLER), reduceKey);
+        metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
+        metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
+
+        //create an output stream observer
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+
+        StreamObserver<Udfunction.Datum> inputStreamObserver = UserDefinedFunctionGrpc
+                .newStub(inProcessChannel)
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
+                .reduceFn(outputStreamObserver);
+
+        // send messages with 100 different keys
+        for (int j = 0; j < keyCount; j++) {
+            for (int i = 1; i <= 10; i++) {
+                Udfunction.Datum inputDatum = inDatumBuilder
+                        .setKey(reduceKey + j)
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                        .build();
+                inputStreamObserver.onNext(inputDatum);
+            }
+        }
+
+        inputStreamObserver.onCompleted();
+
+        String expectedKey = reduceKey + reduceProcessedKeySuffix;
+        // sum of first 10 numbers 1 to 10 -> 55
+        ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
+
+        Udfunction.DatumList result = outputStreamObserver.getResultDatum();
+        assertEquals(keyCount, result.getElementsCount());
+        for (int i = 0; i < keyCount; i++) {
+            assertEquals(expectedValue, result.getElements(0).getValue());
+        }
     }
 
 }
