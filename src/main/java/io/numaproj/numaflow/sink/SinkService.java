@@ -1,11 +1,10 @@
 package io.numaproj.numaflow.sink;
 
-import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
-
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
+
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -15,8 +14,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 
+class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
     private static final Logger logger = Logger.getLogger(SinkService.class.getName());
     // it will never be smaller than one
     private final ExecutorService sinkTaskExecutor = Executors
@@ -36,7 +36,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
      */
     @Override
     public StreamObserver<Udsink.Datum> sinkFn(StreamObserver<Udsink.ResponseList> responseObserver) {
-        if (this.sinkHandler == null) {
+        if (this.sinkHandler==null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getMapFnMethod(),
                     responseObserver);

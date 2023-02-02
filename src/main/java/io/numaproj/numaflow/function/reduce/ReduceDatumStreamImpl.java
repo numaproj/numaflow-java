@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.function.reduce;
 
 import io.numaproj.numaflow.function.v1.Udfunction;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
@@ -10,7 +11,6 @@ import java.util.logging.Logger;
  * queue, which blocks the reads if the queue is empty and blocks the writes if the queue is full
  */
 public class ReduceDatumStreamImpl implements ReduceDatumStream {
-
     private static final Logger logger = Logger.getLogger(ReduceDatumStreamImpl.class.getName());
     private final BlockingQueue<Udfunction.Datum> blockingQueue = new LinkedBlockingDeque<>();
 

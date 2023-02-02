@@ -8,7 +8,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class GrpcServerConfig {
-
     private String socketPath;
     private int maxMessageSize;
 }

@@ -15,6 +15,7 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class FunctionServer {
-
     private static final Logger logger = Logger.getLogger(FunctionServer.class.getName());
 
     private final GrpcServerConfig grpcServerConfig;
@@ -73,7 +73,7 @@ public class FunctionServer {
      */
     public void start() throws IOException {
         // cleanup socket path if it exists (unit test builder doesn't use one)
-        if (grpcServerConfig.getSocketPath() != null) {
+        if (grpcServerConfig.getSocketPath()!=null) {
             Path path = Paths.get(grpcServerConfig.getSocketPath());
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
@@ -126,7 +126,7 @@ public class FunctionServer {
      * grpc library uses daemon threads.
      */
     public void stop() {
-        if (server != null) {
+        if (server!=null) {
             try {
                 server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {

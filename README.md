@@ -59,4 +59,4 @@ option java_package = "io.numaproj.numaflow.sink.v1";
 ```
 
 ## Code Style
-If you use IntelliJ as Java IDE, use [google style guide](https://github.com/google/styleguide/blob/gh-pages/intellij-java-google-style.xml). 
+Use [Editor Config](https://www.jetbrains.com/help/idea/editorconfig.html). 

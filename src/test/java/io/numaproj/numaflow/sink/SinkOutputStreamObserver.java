@@ -4,7 +4,6 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.Udsink;
 
 public class SinkOutputStreamObserver implements StreamObserver<Udsink.ResponseList> {
-
     private Udsink.ResponseList resultDatum;
 
     public Udsink.ResponseList getResultDatum() {

@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
  */
 @AllArgsConstructor
 public class MetadataImpl implements Metadata {
-
     private final IntervalWindow intervalWindow;
 
     @Override

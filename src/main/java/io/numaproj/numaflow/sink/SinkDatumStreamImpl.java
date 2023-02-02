@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sink;
 
 import io.numaproj.numaflow.sink.v1.Udsink;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Logger;
@@ -10,7 +11,6 @@ import java.util.logging.Logger;
  * which blocks the reads if the queue is empty and blocks the writes if the queue is full
  */
 public class SinkDatumStreamImpl implements SinkDatumStream {
-
     private static final Logger logger = Logger.getLogger(SinkDatumStreamImpl.class.getName());
     private final BlockingQueue<Udsink.Datum> blockingQueue = new LinkedBlockingDeque<>();
 

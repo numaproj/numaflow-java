@@ -4,11 +4,11 @@ import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.map.MapFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;
+
 import java.io.IOException;
 import java.util.logging.Logger;
 
 public class FlatMapFunction {
-
     private static final Logger logger = Logger.getLogger(FlatMapFunction.class.getName());
 
     private static Message[] process(String key, Udfunction.Datum data) {

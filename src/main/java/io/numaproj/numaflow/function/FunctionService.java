@@ -1,8 +1,5 @@
 package io.numaproj.numaflow.function;
 
-import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
-import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -16,6 +13,7 @@ import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -27,8 +25,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
+class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
     // it will never be smaller than one
     private final ExecutorService reduceTaskExecutor = Executors
@@ -58,7 +58,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     public void mapFn(
             Udfunction.Datum request,
             StreamObserver<Udfunction.DatumList> responseObserver) {
-        if (this.mapHandler == null) {
+        if (this.mapHandler==null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
                     getMapFnMethod(),
                     responseObserver);
@@ -88,7 +88,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
      */
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
-        if (this.reduceHandler == null) {
+        if (this.reduceHandler==null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
                     responseObserver);

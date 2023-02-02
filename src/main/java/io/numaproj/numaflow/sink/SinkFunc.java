@@ -7,7 +7,6 @@ import java.util.function.Function;
  * Implementation of SinkHandler instantiated from a function
  */
 public class SinkFunc implements SinkHandler {
-
     private final Function<SinkDatumStream, List<Response>> sinkFn;
 
     public SinkFunc(Function<SinkDatumStream, List<Response>> sinkFn) {

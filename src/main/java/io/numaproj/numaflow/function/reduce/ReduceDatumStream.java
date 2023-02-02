@@ -7,7 +7,6 @@ import io.numaproj.numaflow.function.v1.Udfunction;
  * messages.
  */
 public interface ReduceDatumStream {
-
     // EOF indicates the end of input
     Udfunction.Datum EOF = Udfunction.Datum.newBuilder().setKey("EOF").build();
 

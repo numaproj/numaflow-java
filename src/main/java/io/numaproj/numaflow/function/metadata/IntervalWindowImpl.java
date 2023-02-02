@@ -1,7 +1,8 @@
 package io.numaproj.numaflow.function.metadata;
 
-import java.time.Instant;
 import lombok.AllArgsConstructor;
+
+import java.time.Instant;
 
 /**
  * IntervalWindowImpl implements IntervalWindow interface which will be passed as metadata to reduce
@@ -9,7 +10,6 @@ import lombok.AllArgsConstructor;
  */
 @AllArgsConstructor
 public class IntervalWindowImpl implements IntervalWindow {
-
     private final Instant startTime;
     private final Instant endTime;
 

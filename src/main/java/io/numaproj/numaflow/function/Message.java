@@ -6,7 +6,6 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class Message {
-
     public static final String ALL = "U+005C__ALL__";
     public static final String DROP = "U+005C__DROP__";
 
