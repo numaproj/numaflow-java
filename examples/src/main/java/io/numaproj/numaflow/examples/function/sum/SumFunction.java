@@ -24,7 +24,7 @@ public class SumFunction {
         while (true) {
             Udfunction.Datum datum = reduceDatumStream.ReadMessage();
             // null indicates the end of the input
-            if (datum==ReduceDatumStream.EOF) {
+            if (datum == ReduceDatumStream.EOF) {
                 break;
             }
             try {

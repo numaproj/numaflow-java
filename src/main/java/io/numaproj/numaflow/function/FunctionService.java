@@ -58,7 +58,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     public void mapFn(
             Udfunction.Datum request,
             StreamObserver<Udfunction.DatumList> responseObserver) {
-        if (this.mapHandler==null) {
+        if (this.mapHandler == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
                     getMapFnMethod(),
                     responseObserver);
@@ -88,7 +88,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
      */
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
-        if (this.reduceHandler==null) {
+        if (this.reduceHandler == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
                     responseObserver);

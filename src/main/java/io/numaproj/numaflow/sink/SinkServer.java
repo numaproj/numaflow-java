@@ -60,7 +60,7 @@ public class SinkServer {
      */
     public void start() throws IOException {
         // cleanup socket path if it exists (unit test builder doesn't use one)
-        if (grpcServerConfig.getSocketPath()!=null) {
+        if (grpcServerConfig.getSocketPath() != null) {
             Path path = Paths.get(grpcServerConfig.getSocketPath());
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
@@ -99,7 +99,7 @@ public class SinkServer {
      * grpc library uses daemon threads.
      */
     public void stop() throws InterruptedException {
-        if (server!=null) {
+        if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
     }

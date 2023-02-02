@@ -36,7 +36,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
      */
     @Override
     public StreamObserver<Udsink.Datum> sinkFn(StreamObserver<Udsink.ResponseList> responseObserver) {
-        if (this.sinkHandler==null) {
+        if (this.sinkHandler == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getMapFnMethod(),
                     responseObserver);

@@ -51,7 +51,7 @@ public class FunctionServerTest {
                 while (true) {
                     Udfunction.Datum datum = reduceChannel.ReadMessage();
                     // null indicates the end of the input
-                    if (datum==ReduceDatumStream.EOF) {
+                    if (datum == ReduceDatumStream.EOF) {
                         break;
                     }
                     try {

@@ -28,7 +28,6 @@ import static org.junit.Assert.assertEquals;
 public class SinkServerTest {
     private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
     private final static String processedIdSuffix = "-id-processed";
-
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
@@ -38,7 +37,7 @@ public class SinkServerTest {
                 while (true) {
                     Udsink.Datum datum = datumStream.ReadMessage();
                     // null indicates the end of the input
-                    if (datum==SinkDatumStream.EOF) {
+                    if (datum == SinkDatumStream.EOF) {
                         break;
                     }
 

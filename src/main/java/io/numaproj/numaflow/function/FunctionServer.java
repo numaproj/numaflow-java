@@ -73,7 +73,7 @@ public class FunctionServer {
      */
     public void start() throws IOException {
         // cleanup socket path if it exists (unit test builder doesn't use one)
-        if (grpcServerConfig.getSocketPath()!=null) {
+        if (grpcServerConfig.getSocketPath() != null) {
             Path path = Paths.get(grpcServerConfig.getSocketPath());
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
@@ -126,7 +126,7 @@ public class FunctionServer {
      * grpc library uses daemon threads.
      */
     public void stop() {
-        if (server!=null) {
+        if (server != null) {
             try {
                 server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {

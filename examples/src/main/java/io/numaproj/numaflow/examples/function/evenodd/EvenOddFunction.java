@@ -13,7 +13,7 @@ public class EvenOddFunction {
 
     private static Message[] process(String key, Udfunction.Datum data) {
         int value = Integer.parseInt(new String(data.getValue().toByteArray()));
-        if (value % 2==0) {
+        if (value % 2 == 0) {
             return new Message[]{Message.to("even", data.getValue().toByteArray())};
         }
         return new Message[]{Message.to("odd", data.getValue().toByteArray())};

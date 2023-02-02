@@ -20,7 +20,7 @@ public class SimpleSink {
         while (true) {
             Udsink.Datum datum = datumStream.ReadMessage();
             // EOF indicates the end of the input
-            if (datum==SinkDatumStream.EOF) {
+            if (datum == SinkDatumStream.EOF) {
                 break;
             }
             logger.info(datum.getValue().toStringUtf8());
