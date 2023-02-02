@@ -49,11 +49,11 @@ public class FunctionServerTest {
                     (new String(datum.getValue())
                             + PROCESSED_VALUE_SUFFIX).getBytes())};
 
-    private final BiFunction<String, Udfunction.Datum, MessageT[]> testMapTFn =
+    private final BiFunction<String, Datum, MessageT[]> testMapTFn =
             (key, datum) -> new MessageT[]{new MessageT(
                     TEST_EVENT_TIME,
                     key + PROCESSED_KEY_SUFFIX,
-                    (new String(datum.getValue().toByteArray())
+                    (new String(datum.getValue())
                             + PROCESSED_VALUE_SUFFIX).getBytes())};
 
     private final TriFunction<String, ReduceDatumStream, io.numaproj.numaflow.function.metadata.Metadata, Message[]> testReduceFn =

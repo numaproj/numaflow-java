@@ -8,7 +8,6 @@ import io.numaproj.numaflow.sink.SinkServer;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -24,7 +23,6 @@ public class SimpleSink {
             if (datum == SinkDatumStream.EOF) {
                 break;
             }
-            logger.info(Arrays.toString(datum.getValue()));
             responses.add(new Response(datum.getId(), true, ""));
         }
         return responses;

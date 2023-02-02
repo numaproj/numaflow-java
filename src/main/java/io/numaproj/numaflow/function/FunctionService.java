@@ -85,7 +85,8 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos()), false);
+                        request.getEventTime().getEventTime().getNanos()),
+                false);
 
         // process Datum
         Message[] messages = mapHandler.HandleDo(key, handlerDatum);
@@ -110,11 +111,15 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         String key = Function.DATUM_CONTEXT_KEY.get();
 
         // get Datum from request
-        Udfunction.Datum handlerDatum = Udfunction.Datum.newBuilder()
-                .setValue(request.getValue())
-                .setEventTime(request.getEventTime())
-                .setWatermark(request.getWatermark())
-                .build();
+        HandlerDatum handlerDatum = new HandlerDatum(
+                request.getValue().toByteArray(),
+                Instant.ofEpochSecond(
+                        request.getWatermark().getWatermark().getSeconds(),
+                        request.getWatermark().getWatermark().getNanos()),
+                Instant.ofEpochSecond(
+                        request.getEventTime().getEventTime().getSeconds(),
+                        request.getEventTime().getEventTime().getNanos()),
+                false);
 
         // process Datum
         MessageT[] messageTs = mapTHandler.HandleDo(key, handlerDatum);
