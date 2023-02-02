@@ -126,15 +126,13 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
 
     public Udsink.ResponseList buildResponseList(List<Response> responses) {
         var responseListBuilder = Udsink.ResponseList.newBuilder();
-        for (Response response : responses) {
-            Udsink.Response r = Udsink.Response.newBuilder()
+        responses.stream().forEach(response -> {
+            responseListBuilder.addResponses(Udsink.Response.newBuilder()
                     .setId(response.getId())
                     .setSuccess(response.getSuccess())
                     .setErrMsg(response.getErr())
-                    .build();
-
-            responseListBuilder.addResponses(r);
-        }
+                    .build());
+        });
         return responseListBuilder.build();
     }
 }

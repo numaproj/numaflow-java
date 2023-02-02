@@ -16,6 +16,7 @@ import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +32,6 @@ import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnM
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
 class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
-
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
     // it will never be smaller than one
     private final ExecutorService reduceTaskExecutor = Executors
@@ -179,7 +179,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         responseObserver.onCompleted();
     }
 
-    // shuts down the executor service which is used for reduce
+    /**
+     * shuts down the executor service which is used for reduce.
+     */
     public void shutDown() {
         this.reduceTaskExecutor.shutdown();
         try {
@@ -217,14 +219,12 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     private Udfunction.DatumList buildDatumListResponse(Message[] messages) {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        for (Message message : messages) {
-            Udfunction.Datum d = Udfunction.Datum.newBuilder()
+        Arrays.stream(messages).forEach(message -> {
+            datumListBuilder.addElements(Udfunction.Datum.newBuilder()
                     .setKey(message.getKey())
                     .setValue(ByteString.copyFrom(message.getValue()))
-                    .build();
-
-            datumListBuilder.addElements(d);
-        }
+                    .build());
+        });
         return datumListBuilder.build();
     }
 }

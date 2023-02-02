@@ -149,7 +149,6 @@ public class FunctionServerTest {
         assertEquals(1, result.getElementsCount());
         assertEquals(expectedKey, result.getElements(0).getKey());
         assertEquals(expectedValue, result.getElements(0).getValue());
-
     }
 
     @Test
@@ -194,5 +193,4 @@ public class FunctionServerTest {
             assertEquals(expectedValue, result.getElements(0).getValue());
         }
     }
-
 }
