@@ -134,10 +134,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
                         ActorRef actorRef = actorSystem.actorOf(SimpleActor.props(
                                 datum.getKey(),
-                                md,
-                                reduceHandler));
+                                md));
 
-                        results.add(Patterns.ask(actorRef, reduceDatumStream, Integer.MAX_VALUE));
+                        actorRef.tell(handlerDatum, actorRef);
                         streamMap.put(datum.getKey(), reduceDatumStream);
                         actorList.add(actorRef);
                     }
@@ -158,46 +157,41 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
             @Override
             public void onCompleted() {
                 Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
-                try {
-                    for (Map.Entry<String, ReduceDatumStreamImpl> entry : streamMap.entrySet()) {
-                        entry.getValue().WriteMessage(ReduceDatumStream.EOF);
-                    }
-                    Future<Iterable<Object>> finalFuture = buildDatumListResponse(
-                            results,
-                            actorSystem);
-
-                    finalFuture.onComplete(new OnComplete<>() {
-                        @Override
-                        public void onComplete(
-                                Throwable failure,
-                                Iterable<Object> success) {
-
-                            if (failure == null) {
-                                success.forEach(ele -> {
-                                    Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
-                                    responseBuilder.addAllElements(list.getElementsList());
-                                });
-                                Udfunction.DatumList response = responseBuilder.build();
-                                responseObserver.onNext(response);
-                            } else {
-                                logger.severe("error while getting output from actors - "
-                                        + failure.getMessage());
-                                responseObserver.onError(failure);
-                            }
-                            responseObserver.onCompleted();
-
-                            // terminate all the actors
-                            for (ActorRef actorRef: actorList) {
-                                actorSystem.stop(actorRef);
-                            }
-
-                            logger.info("actors are terminated");
-                        }
-                    }, actorSystem.dispatcher());
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    onError(e);
+                for (ActorRef actorRef: actorList) {
+                    results.add(Patterns.ask(actorRef, ReduceDatumStream.EOF, Integer.MAX_VALUE));
                 }
+                Future<Iterable<Object>> finalFuture = buildDatumListResponse(
+                        results,
+                        actorSystem);
+
+                finalFuture.onComplete(new OnComplete<>() {
+                    @Override
+                    public void onComplete(
+                            Throwable failure,
+                            Iterable<Object> success) {
+
+                        if (failure == null) {
+                            success.forEach(ele -> {
+                                Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
+                                responseBuilder.addAllElements(list.getElementsList());
+                            });
+                            Udfunction.DatumList response = responseBuilder.build();
+                            responseObserver.onNext(response);
+                        } else {
+                            logger.severe("error while getting output from actors - "
+                                    + failure.getMessage());
+                            responseObserver.onError(failure);
+                        }
+                        responseObserver.onCompleted();
+
+                        // terminate all the actors
+                        for (ActorRef actorRef: actorList) {
+                            actorSystem.stop(actorRef);
+                        }
+
+                        logger.info("actors are terminated");
+                    }
+                }, actorSystem.dispatcher());
                 logger.info("Actor system was terminated");
             }
         };
