@@ -4,22 +4,18 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.numaproj.numaflow.function.HandlerDatum;
-import io.numaproj.numaflow.function.Message;
-import io.numaproj.numaflow.function.metadata.Metadata;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 
 @AllArgsConstructor
 @NoArgsConstructor
-public class SimpleActor extends AbstractActor {
+public class ReduceActor extends AbstractActor {
 
-    private String key;
-    private Metadata metadata;
-    private int result;
+    private GroupBy groupBy;
 
-    public static Props props(String key, Metadata metadata) {
-        return Props.create(SimpleActor.class, key, metadata, 0);
+    public static Props props(GroupBy groupBy) {
+        return Props.create(ReduceActor.class, groupBy);
     }
 
     @Override
@@ -32,11 +28,11 @@ public class SimpleActor extends AbstractActor {
 
     public void invokeHandler(HandlerDatum handlerDatum) {
         if (handlerDatum == ReduceDatumStream.EOF) {
-            getSender().tell(new Message[]{Message.toAll(String.valueOf(result).getBytes())}, getSender());
+            getSender().tell(this.groupBy.getResult(), getSender());
             System.out.println("wrote the output successfully");
             return;
         }
-        this.result += 1;
+        this.groupBy.readMessage(handlerDatum);
     }
 
 }

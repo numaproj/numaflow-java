@@ -14,7 +14,7 @@ import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
+import io.numaproj.numaflow.function.reduce.GroupBy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -63,8 +63,8 @@ public class FunctionServer {
         return this;
     }
 
-    public FunctionServer registerReducer(ReduceHandler reduceHandler) {
-        this.functionService.setReduceHandler(reduceHandler);
+    public FunctionServer registerReducer(Class<? extends GroupBy> groupByClass) {
+        this.functionService.setReduceHandler(groupByClass);
         return this;
     }
 

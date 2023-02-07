@@ -2,7 +2,6 @@ package io.numaproj.numaflow.function.reduce;
 
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
-import io.numaproj.numaflow.utils.TriFunction;
 
 
 /**
@@ -10,14 +9,15 @@ import io.numaproj.numaflow.utils.TriFunction;
  */
 public class ReduceFunc implements ReduceHandler {
 
-    private final TriFunction<String, ReduceDatumStream, Metadata, Message[]> reduceFn;
+    private final GroupBy groupBy;
 
-    public ReduceFunc(TriFunction<String, ReduceDatumStream, Metadata, Message[]> reduceFn) {
-        this.reduceFn = reduceFn;
+    public ReduceFunc(GroupBy groupBy) {
+        this.groupBy = groupBy;
     }
 
     @Override
     public Message[] HandleDo(String key, ReduceDatumStream reduceDatumStream, Metadata md) {
-        return reduceFn.apply(key, reduceDatumStream, md);
+//        return reduceFn.apply(key, reduceDatumStream, md);
+        return null;
     }
 }
