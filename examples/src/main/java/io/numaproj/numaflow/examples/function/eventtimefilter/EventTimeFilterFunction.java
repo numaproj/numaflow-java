@@ -7,7 +7,6 @@ import io.numaproj.numaflow.function.mapt.MapTFunc;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.logging.Logger;
 
 /**
  * This is a simple User Defined Function example which receives a message, applies the following

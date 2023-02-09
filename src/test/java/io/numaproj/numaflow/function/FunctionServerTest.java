@@ -23,7 +23,6 @@ import org.junit.runners.JUnit4;
 
 import java.time.Instant;
 import java.util.function.BiFunction;
-import java.util.logging.Logger;
 
 import static io.numaproj.numaflow.function.Function.DATUM_KEY;
 import static io.numaproj.numaflow.function.Function.WIN_END_KEY;

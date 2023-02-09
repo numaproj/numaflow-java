@@ -17,6 +17,7 @@ public class ReduceOutputStreamObserver implements StreamObserver<Udfunction.Dat
     @Override
     public void onError(Throwable throwable) {
         t = throwable;
+        notifyAll();
     }
 
     @Override

@@ -6,7 +6,6 @@ import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.map.MapFunc;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 public class FlatMapFunction {
 

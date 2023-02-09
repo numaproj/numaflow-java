@@ -12,18 +12,15 @@ import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.GroupBy;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.time.Instant;
-
 import static io.numaproj.numaflow.function.Function.DATUM_KEY;
 import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
 import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
 
 public class ReduceExceptionTest {
 
@@ -96,7 +93,12 @@ public class ReduceExceptionTest {
 
         inputStreamObserver.onCompleted();
 
-        while (outputStreamObserver.t == null) ;
+        while(outputStreamObserver.t == null);
         assertNotNull(outputStreamObserver.t);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        server.stop();
     }
 }
