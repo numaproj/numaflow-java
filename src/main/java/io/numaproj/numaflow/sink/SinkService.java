@@ -4,6 +4,7 @@ import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.List;
@@ -17,8 +18,8 @@ import java.util.logging.Logger;
 
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 
+@Slf4j
 class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
-    private static final Logger logger = Logger.getLogger(SinkService.class.getName());
     // it will never be smaller than one
     private final ExecutorService sinkTaskExecutor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
@@ -72,7 +73,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                logger.log(Level.WARNING, "Encountered error in sinkFn", throwable);
+                log.warn("Encountered error in sinkFn - {}", throwable.getMessage());
                 responseObserver.onError(throwable);
             }
 

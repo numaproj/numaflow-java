@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 public class FlatMapFunction {
-    private static final Logger logger = Logger.getLogger(FlatMapFunction.class.getName());
 
     private static Message[] process(String key, Datum data) {
         String msg = new String(data.getValue());

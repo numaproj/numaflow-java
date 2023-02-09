@@ -7,6 +7,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,8 +16,8 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+@Slf4j
 public class SinkServer {
-    private static final Logger logger = Logger.getLogger(SinkServer.class.getName());
 
     private final GrpcServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
@@ -64,7 +65,7 @@ public class SinkServer {
             Path path = Paths.get(grpcServerConfig.getSocketPath());
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
-                logger.severe("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
+                log.error("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
                         + "\". Exiting");
             }
         }
@@ -76,7 +77,7 @@ public class SinkServer {
 
         // start server
         server.start();
-        logger.info(
+        log.info(
                 "Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
 
         // register shutdown hook

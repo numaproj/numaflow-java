@@ -4,19 +4,20 @@ import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.map.MapFunc;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.logging.Logger;
 
+@Slf4j
 public class EvenOddFunction {
-    private static final Logger logger = Logger.getLogger(EvenOddFunction.class.getName());
 
     private static Message[] process(String key, Datum data) {
         int value = 0;
         try {
             value = Integer.parseInt(new String(data.getValue()));
         } catch (NumberFormatException e) {
-            logger.severe("Error occurred while parsing int");
+            log.error("Error occurred while parsing int");
             return new Message[]{Message.toDrop()};
         }
         if (value % 2 == 0) {

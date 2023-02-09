@@ -20,7 +20,6 @@ import java.util.logging.Logger;
  */
 public class EventTimeFilterFunction {
 
-    private static final Logger logger = Logger.getLogger(EventTimeFilterFunction.class.getName());
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 

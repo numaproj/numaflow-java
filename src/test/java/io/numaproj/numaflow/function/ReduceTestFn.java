@@ -3,7 +3,6 @@ package io.numaproj.numaflow.function;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.GroupBy;
 
-import java.nio.ByteBuffer;
 
 public class ReduceTestFn extends GroupBy {
     private int sum = 0;

@@ -15,11 +15,13 @@ import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
 import io.numaproj.numaflow.function.reduce.GroupBy;
-import io.numaproj.numaflow.function.reduce.ReduceParentActor;
+import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
+import io.numaproj.numaflow.function.reduce.ShutdownActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
@@ -28,29 +30,20 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Logger;
 
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
+@Slf4j
 @NoArgsConstructor
 public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
     public static final ActorSystem actorSystem = ActorSystem.create("test-system");
-    private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
     public static String EOF = "EOF";
 
     private MapHandler mapHandler;
+    private MapTHandler mapTHandler;
     private Class<? extends GroupBy> groupBy;
 
     public void setMapHandler(MapHandler mapHandler) {
@@ -64,6 +57,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
     public void setReduceHandler(Class<? extends GroupBy> groupBy) {
         this.groupBy = groupBy;
     }
+
     /**
      * Applies a function to each datum element.
      */
@@ -89,8 +83,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos()),
-                false);
+                        request.getEventTime().getEventTime().getNanos())
+        );
 
         // process Datum
         Message[] messages = mapHandler.HandleDo(key, handlerDatum);
@@ -104,6 +98,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
     public void mapTFn(
             Udfunction.Datum request,
             StreamObserver<Udfunction.DatumList> responseObserver) {
+
         if (this.mapTHandler == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
                     getMapFnMethod(),
@@ -122,8 +117,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos()),
-                false);
+                        request.getEventTime().getEventTime().getNanos())
+        );
 
         // process Datum
         MessageT[] messageTs = mapTHandler.HandleDo(key, handlerDatum);
@@ -137,7 +132,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
      * Streams input data to reduceFn and returns the result.
      */
     @Override
-    public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
+    public StreamObserver<Udfunction.Datum> reduceFn(final StreamObserver<Udfunction.DatumList> responseObserver) {
+
         if (this.groupBy == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
@@ -156,20 +152,28 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
         Metadata md = new MetadataImpl(iw);
 
+        ActorRef shutdownActorRef = actorSystem.
+                actorOf(ShutdownActor.props(responseObserver));
+
         ActorRef parentActorRef = actorSystem
-                    .actorOf(ReduceParentActor.props(groupBy, md));
+                .actorOf(ReduceSupervisorActor.props(groupBy, md, shutdownActorRef));
+
 
         List<scala.concurrent.Future<Object>> results = new ArrayList<>();
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
             public void onNext(Udfunction.Datum datum) {
-                parentActorRef.tell(datum, parentActorRef);
+                if (!parentActorRef.isTerminated()) {
+                    parentActorRef.tell(datum, parentActorRef);
+                } else {
+                    responseObserver.onError(new Throwable("Actor system was terminated"));
+                }
             }
 
             @Override
             public void onError(Throwable throwable) {
-                logger.warning("Encountered error in reduceFn" + throwable.getMessage());
+                log.error("error from the client" + throwable.getMessage());
             }
 
             @Override
@@ -180,35 +184,39 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
                 List<Future<Object>> udfResultFutures;
                 try {
-                    udfResultFutures = (List<Future<Object>>) Await.result(resultFuture, Duration.Inf());
+                    udfResultFutures = (List<Future<Object>>) Await.result(
+                            resultFuture,
+                            Duration.Inf());
                 } catch (TimeoutException | InterruptedException e) {
                     responseObserver.onError(e);
                     return;
                 }
 
-                Futures.sequence(udfResultFutures, actorSystem.dispatcher()).onComplete(new OnComplete<>() {
-                    @Override
-                    public void onComplete(
-                            Throwable failure,
-                            Iterable<Object> success) {
+                Futures
+                        .sequence(udfResultFutures, actorSystem.dispatcher())
+                        .onComplete(new OnComplete<>() {
+                            @Override
+                            public void onComplete(
+                                    Throwable failure,
+                                    Iterable<Object> success) {
 
-                        if(failure != null) {
-                            logger.severe("error while getting output from actors - "
-                                    + failure.getMessage());
-                            responseObserver.onError(failure);
-                            return;
-                        }
+                                if (failure != null) {
+                                    log.error("error while getting output from actors - "
+                                            + failure.getMessage());
+                                    responseObserver.onError(failure);
+                                    return;
+                                }
 
-                        success.forEach(ele -> {
-                            Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
-                            responseBuilder.addAllElements(list.getElementsList());
-                        });
-                        Udfunction.DatumList response = responseBuilder.build();
-                        responseObserver.onNext(response);
+                                success.forEach(ele -> {
+                                    Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
+                                    responseBuilder.addAllElements(list.getElementsList());
+                                });
+                                Udfunction.DatumList response = responseBuilder.build();
+                                responseObserver.onNext(response);
 
-                        responseObserver.onCompleted();
-                    }
-                }, actorSystem.dispatcher());
+                                responseObserver.onCompleted();
+                            }
+                        }, actorSystem.dispatcher());
             }
         };
     }
@@ -220,24 +228,6 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
     public void isReady(Empty request, StreamObserver<Udfunction.ReadyResponse> responseObserver) {
         responseObserver.onNext(Udfunction.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
-    }
-
-    private Udfunction.DatumList buildDatumListResponse(Message[] messages) {
-        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        // wait for all the handlers to return
-        for (Future<Message[]> result : results) {
-            // result.get() is a blocking call
-            Message[] resultMessages = result.get();
-            for (Message message : resultMessages) {
-                Udfunction.Datum d = Udfunction.Datum.newBuilder()
-                        .setKey(message.getKey())
-                        .setValue(ByteString.copyFrom(message.getValue()))
-                        .build();
-
-                datumListBuilder.addElements(d);
-            }
-        }
-        return datumListBuilder.build();
     }
 
     private Udfunction.DatumList buildDatumListResponse(Message[] messages) {

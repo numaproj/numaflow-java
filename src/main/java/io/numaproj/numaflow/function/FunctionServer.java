@@ -15,18 +15,17 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.reduce.GroupBy;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
+@Slf4j
 public class FunctionServer {
-    private static final Logger logger = Logger.getLogger(FunctionServer.class.getName());
 
     private final GrpcServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
@@ -84,7 +83,7 @@ public class FunctionServer {
             Path path = Paths.get(grpcServerConfig.getSocketPath());
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
-                logger.severe("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
+                log.error("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
                         + "\". Exiting");
             }
         }
@@ -115,7 +114,7 @@ public class FunctionServer {
 
         // start server
         server.start();
-        logger.info(
+        log.info(
                 "Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
 
         // register shutdown hook
@@ -124,7 +123,6 @@ public class FunctionServer {
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
             FunctionServer.this.stop();
             System.err.println("*** server shut down");
-//            this.functionService.shutDown();
         }));
     }
 

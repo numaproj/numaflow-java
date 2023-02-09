@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.common;
 
 import io.numaproj.numaflow.function.Function;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,10 +18,5 @@ public class GrpcServerConfig {
 
     public GrpcServerConfig(String socketPath) {
         this(socketPath, Function.DEFAULT_MESSAGE_SIZE);
-    }
-
-    public GrpcServerConfig(String socketPath, int maxMessageSize) {
-        this.socketPath = socketPath;
-        this.maxMessageSize = maxMessageSize;
     }
 }
