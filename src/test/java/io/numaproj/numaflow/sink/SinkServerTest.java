@@ -7,7 +7,6 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GrpcServerConfig;
-import io.numaproj.numaflow.function.FunctionServerTest;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import org.junit.After;
@@ -27,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnit4.class)
 public class SinkServerTest {
-    private static final Logger logger = Logger.getLogger(FunctionServerTest.class.getName());
+    private static final Logger logger = Logger.getLogger(SinkServerTest.class.getName());
     private final static String processedIdSuffix = "-id-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();

@@ -16,6 +16,7 @@ import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
+import io.numaproj.numaflow.function.reduce.GroupBy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -69,8 +70,8 @@ public class FunctionServer {
         return this;
     }
 
-    public FunctionServer registerReducer(ReduceHandler reduceHandler) {
-        this.functionService.setReduceHandler(reduceHandler);
+    public FunctionServer registerReducer(Class<? extends GroupBy> groupByClass) {
+        this.functionService.setReduceHandler(groupByClass);
         return this;
     }
 
@@ -123,7 +124,7 @@ public class FunctionServer {
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
             FunctionServer.this.stop();
             System.err.println("*** server shut down");
-            this.functionService.shutDown();
+//            this.functionService.shutDown();
         }));
     }
 
