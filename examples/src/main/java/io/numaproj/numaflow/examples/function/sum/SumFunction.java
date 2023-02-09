@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.examples.function.sum;
 
+import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.HandlerDatum;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.GroupBy;
@@ -47,8 +47,8 @@ public class SumFunction extends GroupBy {
     }
 
     @Override
-    public void readMessage(HandlerDatum handlerDatum) {
-        result += 1;
+    public void readMessage(Datum datum) {
+
     }
 
     @Override

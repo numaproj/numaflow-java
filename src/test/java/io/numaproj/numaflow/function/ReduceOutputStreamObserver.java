@@ -8,7 +8,6 @@ public class ReduceOutputStreamObserver implements StreamObserver<Udfunction.Dat
 
     @Override
     public void onNext(Udfunction.DatumList datum) {
-        System.out.println(datum.getElementsCount());
         resultDatum = datum;
     }
 

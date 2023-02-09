@@ -23,16 +23,16 @@ public class ReduceActor extends AbstractActor {
         return ReceiveBuilder
                 .create()
                 .match(HandlerDatum.class, this::invokeHandler)
+                .match(String.class, this::getResult)
                 .build();
     }
 
-    public void invokeHandler(HandlerDatum handlerDatum) {
-        if (handlerDatum == ReduceDatumStream.EOF) {
-            getSender().tell(this.groupBy.getResult(), getSender());
-            System.out.println("wrote the output successfully");
-            return;
-        }
+    private void invokeHandler(HandlerDatum handlerDatum) {
         this.groupBy.readMessage(handlerDatum);
+    }
+
+    private void getResult(String eof) {
+        getSender().tell(this.groupBy.getResult(), getSelf());
     }
 
 }

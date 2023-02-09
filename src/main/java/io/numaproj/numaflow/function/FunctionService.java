@@ -14,33 +14,32 @@ import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
 import io.numaproj.numaflow.function.reduce.GroupBy;
-import io.numaproj.numaflow.function.reduce.ReduceActor;
-import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
-import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
+import io.numaproj.numaflow.function.reduce.ReduceParentActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
+import lombok.NoArgsConstructor;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
 
-import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
-class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
+@NoArgsConstructor
+public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
+    public static final ActorSystem actorSystem = ActorSystem.create("test-system");
     private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
-    private static final ActorSystem actorSystem = ActorSystem.create("test-system");
-
+    public static String EOF = "EOF";
 
     private MapHandler mapHandler;
     private Class<? extends GroupBy> groupBy;
-
-    public FunctionService() {
-    }
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;
@@ -90,8 +89,6 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
      */
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
-        ConcurrentHashMap<String, ReduceDatumStreamImpl> streamMap = new ConcurrentHashMap();
-        List<ActorRef> actorList = new ArrayList<>();
         if (this.groupBy == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
@@ -110,84 +107,59 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
         Metadata md = new MetadataImpl(iw);
 
+        ActorRef parentActorRef = actorSystem
+                    .actorOf(ReduceParentActor.props(groupBy, md));
+
         List<scala.concurrent.Future<Object>> results = new ArrayList<>();
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
             public void onNext(Udfunction.Datum datum) {
-                // get Datum from request
-                HandlerDatum handlerDatum = new HandlerDatum(
-                        datum.getValue().toByteArray(),
-                        Instant.ofEpochSecond(
-                                datum.getWatermark().getWatermark().getSeconds(),
-                                datum.getWatermark().getWatermark().getNanos()),
-                        Instant.ofEpochSecond(
-                                datum.getEventTime().getEventTime().getSeconds(),
-                                datum.getEventTime().getEventTime().getNanos()));
-                try {
-                    if (!streamMap.containsKey(datum.getKey())) {
-
-                        GroupBy g = groupBy.getDeclaredConstructor(String.class, Metadata.class)
-                                .newInstance(datum.getKey(), md);
-
-                        ActorRef actorRef = actorSystem.actorOf(ReduceActor.props(g));
-
-                        actorRef.tell(handlerDatum, actorRef);
-                        actorList.add(actorRef);
-                    }
-                    streamMap.get(datum.getKey()).WriteMessage(handlerDatum);
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    onError(e);
-                } catch (InvocationTargetException | InstantiationException |
-                         IllegalAccessException | NoSuchMethodException e) {
-                    onError(e);
-                }
+                parentActorRef.tell(datum, parentActorRef);
             }
 
             @Override
             public void onError(Throwable throwable) {
                 logger.warning("Encountered error in reduceFn" + throwable.getMessage());
-                responseObserver.onError(throwable);
-                responseObserver.onCompleted();
             }
 
             @Override
             public void onCompleted() {
                 Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
-                for (ActorRef actorRef : actorList) {
-                    results.add(Patterns.ask(actorRef, ReduceDatumStream.EOF, Integer.MAX_VALUE));
+                Future<Object> resultFuture = Patterns.ask(parentActorRef, EOF, Integer.MAX_VALUE);
+
+
+                List<Future<Object>> udfResultFutures;
+                try {
+                    udfResultFutures = (List<Future<Object>>) Await.result(resultFuture, Duration.Inf());
+                } catch (TimeoutException | InterruptedException e) {
+                    responseObserver.onError(e);
+                    return;
                 }
 
-                Futures.sequence(results, actorSystem.dispatcher()).onComplete(new OnComplete<>() {
+                Futures.sequence(udfResultFutures, actorSystem.dispatcher()).onComplete(new OnComplete<>() {
                     @Override
                     public void onComplete(
                             Throwable failure,
                             Iterable<Object> success) {
 
-                        if (failure == null) {
-                            success.forEach(ele -> {
-                                Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
-                                responseBuilder.addAllElements(list.getElementsList());
-                            });
-                            Udfunction.DatumList response = responseBuilder.build();
-                            responseObserver.onNext(response);
-                        } else {
+                        if(failure != null) {
                             logger.severe("error while getting output from actors - "
                                     + failure.getMessage());
                             responseObserver.onError(failure);
+                            return;
                         }
+
+                        success.forEach(ele -> {
+                            Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
+                            responseBuilder.addAllElements(list.getElementsList());
+                        });
+                        Udfunction.DatumList response = responseBuilder.build();
+                        responseObserver.onNext(response);
+
                         responseObserver.onCompleted();
-
-                        // terminate all the actors
-                        for (ActorRef actorRef : actorList) {
-                            actorSystem.stop(actorRef);
-                        }
-
-                        logger.info("actors are terminated");
                     }
                 }, actorSystem.dispatcher());
-                logger.info("Actor system was terminated");
             }
         };
     }
