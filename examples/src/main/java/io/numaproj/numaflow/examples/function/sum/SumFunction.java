@@ -24,12 +24,12 @@ public class SumFunction extends GroupBy {
     }
 
     @Override
-    public void readMessage(Datum datum) {
+    public void addMessage(Datum datum) {
         sum += Integer.parseInt(new String(datum.getValue()));
     }
 
     @Override
-    public Message[] getResult() {
+    public Message[] getOutput() {
         return new Message[]{Message.toAll(String.valueOf(sum).getBytes())};
     }
 }

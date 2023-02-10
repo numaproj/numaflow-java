@@ -14,6 +14,10 @@ public class Function {
 
     public static final String WIN_END_KEY = "x-numaflow-win-end-time";
 
+    public static final String EOF = "EOF";
+
+    public static final String SUCCESS = "SUCCESS";
+
     public static final Metadata.Key<String> DATUM_METADATA_KEY = Metadata.Key.of(
             Function.DATUM_KEY,
             Metadata.ASCII_STRING_MARSHALLER);

@@ -12,12 +12,12 @@ public class ReduceTestFn extends GroupBy {
     }
 
     @Override
-    public void readMessage(Datum datum) {
+    public void addMessage(Datum datum) {
         sum += Integer.parseInt(new String(datum.getValue()));
     }
 
     @Override
-    public Message[] getResult() {
+    public Message[] getOutput() {
         return new Message[]{Message.to(
                 key + "-processed",
                 String.valueOf(sum).getBytes())};

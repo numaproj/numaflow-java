@@ -7,6 +7,9 @@ import io.numaproj.numaflow.function.HandlerDatum;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
+/**
+ * Reduce actor invokes the user defined code and returns the result.
+ */
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -28,11 +31,11 @@ public class ReduceActor extends AbstractActor {
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {
-        this.groupBy.readMessage(handlerDatum);
+        this.groupBy.addMessage(handlerDatum);
     }
 
     private void getResult(String eof) {
-        getSender().tell(this.groupBy.getResult(), getSelf());
+        getSender().tell(this.groupBy.getOutput(), getSelf());
     }
 
 }

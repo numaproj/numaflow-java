@@ -5,12 +5,17 @@ import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import lombok.AllArgsConstructor;
 
+/**
+ * GroupBy exposes methods for performing reduce operation.
+ */
+
+
 @AllArgsConstructor
 public abstract class GroupBy {
     public String key;
     public Metadata metadata;
 
-    public abstract void readMessage(Datum datum);
+    public abstract void addMessage(Datum datum);
 
-    public abstract Message[] getResult();
+    public abstract Message[] getOutput();
 }
