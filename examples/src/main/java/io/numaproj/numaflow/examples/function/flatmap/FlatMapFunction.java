@@ -23,7 +23,6 @@ public class FlatMapFunction {
     }
 
     public static void main(String[] args) throws IOException {
-        logger.info("Flatmap invoked");
         new FunctionServer().registerMapper(new MapFunc(FlatMapFunction::process)).start();
     }
 }
