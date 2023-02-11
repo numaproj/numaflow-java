@@ -41,7 +41,6 @@ public class ShutdownActor extends AbstractActor {
     private void shutdown(Throwable throwable) {
         failureFuture.completeExceptionally(throwable);
         responseObserver.onError(throwable);
-        FunctionService.actorSystem.terminate();
     }
 
     // if there are no exceptions, complete the future without exception.

@@ -18,6 +18,7 @@ import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
@@ -25,25 +26,6 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertEquals;
 
 public class ReduceSupervisorActorTest {
-
-    public static class TestGroupBy extends GroupBy {
-
-        int count = 0;
-
-        public TestGroupBy(String key, Metadata metadata) {
-            super(key, metadata);
-        }
-
-        @Override
-        public void addMessage(Datum datum) {
-            count += 1;
-        }
-
-        @Override
-        public Message[] getOutput() {
-            return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
-        }
-    }
 
     @Test
     public void invokeSingleActor() throws InterruptedException, TimeoutException {
@@ -56,7 +38,8 @@ public class ReduceSupervisorActorTest {
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
-                        .props(new ReduceOutputStreamObserver(),
+                        .props(
+                                new ReduceOutputStreamObserver(),
                                 completableFuture));
 
         Metadata md = new MetadataImpl(
@@ -81,6 +64,17 @@ public class ReduceSupervisorActorTest {
                 Await.result(resultFuture, Duration.Inf());
 
         assertEquals(udfResults.size(), 1);
+        udfResults.forEach(f -> {
+            try {
+                Message[] output = (Message[]) Await.result(f, Duration.Inf());
+                Arrays.stream(output).forEach(message -> {
+                    assertEquals(message.getKey(), Message.ALL);
+                    assertEquals(new String(message.getValue()), "10");
+                });
+            } catch (TimeoutException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test
@@ -94,7 +88,8 @@ public class ReduceSupervisorActorTest {
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
-                        .props(new ReduceOutputStreamObserver(),
+                        .props(
+                                new ReduceOutputStreamObserver(),
                                 completableFuture));
 
         Metadata md = new MetadataImpl(
@@ -119,5 +114,35 @@ public class ReduceSupervisorActorTest {
                 Await.result(resultFuture, Duration.Inf());
 
         assertEquals(udfResults.size(), 10);
+        udfResults.forEach(f -> {
+            try {
+                Message[] output = (Message[]) Await.result(f, Duration.Inf());
+                Arrays.stream(output).forEach(message -> {
+                    assertEquals(message.getKey(), Message.ALL);
+                    assertEquals(new String(message.getValue()), "1");
+                });
+            } catch (TimeoutException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static class TestGroupBy extends GroupBy {
+
+        int count = 0;
+
+        public TestGroupBy(String key, Metadata metadata) {
+            super(key, metadata);
+        }
+
+        @Override
+        public void addMessage(Datum datum) {
+            count += 1;
+        }
+
+        @Override
+        public Message[] getOutput() {
+            return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
+        }
     }
 }
