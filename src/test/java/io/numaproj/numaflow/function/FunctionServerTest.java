@@ -166,12 +166,12 @@ public class FunctionServerTest {
         String expectedKey = reduceKey + REDUCE_PROCESSED_KEY_SUFFIX;
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
-        while (outputStreamObserver.resultDatum == null);
+        while (outputStreamObserver.resultDatum.get() == null);
 
-        assertEquals(1, outputStreamObserver.resultDatum.getElementsCount());
-        assertEquals(expectedKey, outputStreamObserver.resultDatum.getElements(0).getKey());
+        assertEquals(1, outputStreamObserver.resultDatum.get().getElementsCount());
+        assertEquals(expectedKey, outputStreamObserver.resultDatum.get().getElements(0).getKey());
         ;
-        assertEquals(expectedValue, outputStreamObserver.resultDatum.getElements(0).getValue());
+        assertEquals(expectedValue, outputStreamObserver.resultDatum.get().getElements(0).getValue());
 
     }
 
@@ -210,8 +210,9 @@ public class FunctionServerTest {
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
-        while (outputStreamObserver.resultDatum == null);
-        Udfunction.DatumList result = outputStreamObserver.resultDatum;
+        while (outputStreamObserver.resultDatum.get() == null) {
+        }
+        Udfunction.DatumList result = outputStreamObserver.resultDatum.get();
         assertEquals(100, result.getElementsCount());
         for (int i = 0; i < keyCount; i++) {
             assertEquals(expectedValue, result.getElements(0).getValue());

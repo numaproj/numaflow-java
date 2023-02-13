@@ -3,7 +3,6 @@ package io.numaproj.numaflow.function.reduce;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ChildRestartStats;
-import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
@@ -56,9 +55,10 @@ public class ReduceSupervisorActor extends AbstractActor {
         return Props.create(ReduceSupervisorActor.class, groupBy, md, shutdownActor);
     }
 
-    // if there is an uncaught exception stop the actor, send a signal to shut down
+    // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
+        log.info("supervisor pre restart was executed");
         shutdownActor.tell(reason, ActorRef.noSender());
         FunctionService.actorSystem.stop(getSelf());
     }
@@ -71,6 +71,7 @@ public class ReduceSupervisorActor extends AbstractActor {
 
     @Override
     public void postStop() {
+        log.info("post stop of supervisor executed - {}", getSelf().toString());
         shutdownActor.tell(Function.SUCCESS, ActorRef.noSender());
     }
 
@@ -104,20 +105,8 @@ public class ReduceSupervisorActor extends AbstractActor {
         for (Map.Entry<String, ActorRef> entry : actorsMap.entrySet()) {
             results.add(Patterns.ask(entry.getValue(), EOF, Integer.MAX_VALUE));
         }
-        // once you get the result, kill the child actors
-        terminateActors();
         actorsMap.clear();
         getSender().tell(results, getSelf());
-    }
-
-    private void terminateActors() {
-        /*
-            terminate actors, because actors will not be garbage collected.
-            by sending poison pill, we can ensure the last message gets executed.
-        */
-        for (Map.Entry<String, ActorRef> entry: actorsMap.entrySet()) {
-            entry.getValue().tell(PoisonPill.getInstance(), ActorRef.noSender());
-        }
     }
 
     private HandlerDatum constructHandlerDatum(Udfunction.Datum datum) {
@@ -162,11 +151,10 @@ public class ReduceSupervisorActor extends AbstractActor {
 
             Preconditions.checkArgument(!restart, "on failures, we will never restart our actors, we escalate");
             /*
-                   indicate the sender about the exception.
-                   stop the parent and all the child actors will automatically be terminated.
+                   tell the shutdown actor about the exception.
              */
+            log.info("process failure of supervisor strategy executed - {}", getSelf().toString());
             shutdownActor.tell(cause, context.parent());
-            FunctionService.actorSystem.stop(getSelf());
-        }
+         }
     }
 }

@@ -6,11 +6,13 @@ import akka.japi.pf.ReceiveBuilder;
 import io.numaproj.numaflow.function.HandlerDatum;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Reduce actor invokes the user defined code and returns the result.
  */
 
+@Slf4j
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReduceActor extends AbstractActor {

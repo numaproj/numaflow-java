@@ -2,7 +2,6 @@ package io.numaproj.numaflow.function;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
 import akka.dispatch.Futures;
 import akka.dispatch.OnComplete;
 import akka.pattern.Patterns;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
+import static io.numaproj.numaflow.function.Function.EOF;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
@@ -41,7 +41,6 @@ import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduce
 public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
     public static final ActorSystem actorSystem = ActorSystem.create("reduce");
-    public static String EOF = "EOF";
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
@@ -201,10 +200,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                     return;
                 }
 
-                // kill the parent by sending a poison pill after getting the result.
-                parentActorRef.tell(PoisonPill.getInstance(), ActorRef.noSender());
-
-                extractResult(udfResultFutures, responseObserver);
+                extractResult(udfResultFutures, responseObserver, parentActorRef);
 
             }
         };
@@ -249,7 +245,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
     /*
         extracts and returns the result to the observer.
      */
-    private void extractResult(List<Future<Object>> futureList, StreamObserver<Udfunction.DatumList> responseObserver) {
+    private void extractResult(List<Future<Object>> futureList, StreamObserver<Udfunction.DatumList> responseObserver, ActorRef supervisorActorRef) {
         Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
 
         // build the response when its completed.
@@ -276,20 +272,27 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                         });
                         Udfunction.DatumList response = responseBuilder.build();
 
-
                         responseObserver.onNext(response);
                         responseObserver.onCompleted();
+
+                        /*
+                            once the result is return we can stop the supervisor actor.
+                            stopping the supervisor will stop all its child actors.
+                            we should  explicitly stop the actors for it to be garbage collected.
+                        */
+                        actorSystem.stop(supervisorActorRef);
                     }
                 }, actorSystem.dispatcher());
     }
 
-    // throws RuntimeException, if there are any uncaught exceptions.
+    // log the exception and exit if there are any uncaught exceptions.
     private void handleFailure(CompletableFuture<Void> failureFuture) {
         new Thread(() -> {
             try {
                 failureFuture.get();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+                System.exit(1);
             }
         }).start();
     }
