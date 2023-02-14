@@ -25,7 +25,11 @@ public class SumFunction extends GroupBy {
 
     @Override
     public void addMessage(Datum datum) {
-        sum += Integer.parseInt(new String(datum.getValue()));
+        try {
+            sum += Integer.parseInt(new String(datum.getValue()));
+        } catch (NumberFormatException e) {
+            log.info("error while parsing integer - {}", e.getMessage());
+        }
     }
 
     @Override

@@ -36,7 +36,6 @@ public class FunctionServerTest {
     private final static String PROCESSED_VALUE_SUFFIX = "-value-processed";
     private final static Instant TEST_EVENT_TIME = Instant.MIN;
 
-    private final static String reduceProcessedKeySuffix = "-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private final BiFunction<String, Datum, Message[]> testMapFn =
@@ -210,8 +209,8 @@ public class FunctionServerTest {
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
-        while (outputStreamObserver.resultDatum.get() == null) {
-        }
+        while (outputStreamObserver.resultDatum.get() == null);
+
         Udfunction.DatumList result = outputStreamObserver.resultDatum.get();
         assertEquals(100, result.getElementsCount());
         for (int i = 0; i < keyCount; i++) {

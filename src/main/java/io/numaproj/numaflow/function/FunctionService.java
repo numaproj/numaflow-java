@@ -180,7 +180,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("error from the client" + throwable.getMessage());
+                log.error("Error from the client - {}" , throwable.getMessage());
                 responseObserver.onError(throwable);
             }
 
@@ -259,8 +259,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
                         // if there are any failures indicate it to the observer.
                         if (failure != null) {
-                            log.error("error while getting output from actors - "
-                                    + failure.getMessage());
+                            log.error("Error while getting output from actors - {}"
+                                    , failure.getMessage());
 
                             responseObserver.onError(failure);
                             return;
@@ -276,7 +276,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                         responseObserver.onCompleted();
 
                         /*
-                            once the result is return we can stop the supervisor actor.
+                            once the result is returned we can stop the supervisor actor.
                             stopping the supervisor will stop all its child actors.
                             we should  explicitly stop the actors for it to be garbage collected.
                         */

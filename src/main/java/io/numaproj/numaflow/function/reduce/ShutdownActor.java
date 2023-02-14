@@ -39,14 +39,16 @@ public class ShutdownActor extends AbstractActor {
          indicate that same to response observer.
      */
     private void shutdown(Throwable throwable) {
-        log.info("got a shut down exception");
+        log.debug("got a shut down exception");
         failureFuture.completeExceptionally(throwable);
         responseObserver.onError(throwable);
     }
 
     // if there are no exceptions, complete the future without exception.
     private void completedSuccessfully(String eof) {
-        log.info("completed successfully of shutdown executed");
+        log.debug("completed successfully of shutdown executed");
         failureFuture.complete(null);
+        // if all the actors completed successfully, we can stop the shutdown actor.
+        getContext().getSystem().stop(getSelf());
     }
 }

@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 public class ReduceSupervisorActorTest {
 
     @Test
-    public void invokeSingleActor() throws InterruptedException, TimeoutException {
+    public void invokeSingleActor() throws RuntimeException {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
         CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
 
@@ -60,8 +60,13 @@ public class ReduceSupervisorActorTest {
         Future<Object> resultFuture = Patterns
                 .ask(supervisor, Function.EOF, Integer.MAX_VALUE);
 
-        List<Future<Object>> udfResults = (List<Future<Object>>)
-                Await.result(resultFuture, Duration.Inf());
+        List<Future<Object>> udfResults = null;
+        try {
+            udfResults = (List<Future<Object>>)
+                    Await.result(resultFuture, Duration.Inf());
+        } catch (TimeoutException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         assertEquals(udfResults.size(), 1);
         udfResults.forEach(f -> {
@@ -78,7 +83,7 @@ public class ReduceSupervisorActorTest {
     }
 
     @Test
-    public void invokeMultipleActors() throws InterruptedException, TimeoutException {
+    public void invokeMultipleActors() throws RuntimeException {
         final ActorSystem actorSystem = ActorSystem.create("test-system-2");
         CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
 
@@ -110,8 +115,13 @@ public class ReduceSupervisorActorTest {
         Future<Object> resultFuture = Patterns
                 .ask(supervisor, Function.EOF, Integer.MAX_VALUE);
 
-        List<Future<Object>> udfResults = (List<Future<Object>>)
-                Await.result(resultFuture, Duration.Inf());
+        List<Future<Object>> udfResults = null;
+        try {
+            udfResults = (List<Future<Object>>)
+                    Await.result(resultFuture, Duration.Inf());
+        } catch (TimeoutException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         assertEquals(udfResults.size(), 10);
         udfResults.forEach(f -> {

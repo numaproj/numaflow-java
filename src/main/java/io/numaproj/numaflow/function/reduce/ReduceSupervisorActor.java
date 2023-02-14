@@ -58,7 +58,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
-        log.info("supervisor pre restart was executed");
+        log.debug("supervisor pre restart was executed");
         shutdownActor.tell(reason, ActorRef.noSender());
         FunctionService.actorSystem.stop(getSelf());
     }
@@ -71,7 +71,7 @@ public class ReduceSupervisorActor extends AbstractActor {
 
     @Override
     public void postStop() {
-        log.info("post stop of supervisor executed - {}", getSelf().toString());
+        log.debug("post stop of supervisor executed - {}", getSelf().toString());
         shutdownActor.tell(Function.SUCCESS, ActorRef.noSender());
     }
 
@@ -153,7 +153,7 @@ public class ReduceSupervisorActor extends AbstractActor {
             /*
                    tell the shutdown actor about the exception.
              */
-            log.info("process failure of supervisor strategy executed - {}", getSelf().toString());
+            log.debug("process failure of supervisor strategy executed - {}", getSelf().toString());
             shutdownActor.tell(cause, context.parent());
          }
     }

@@ -43,13 +43,11 @@ public class ShutDownActorTest {
                 .actorOf(ReduceSupervisorActor
                         .props(TestException.class, md, shutdownActor));
 
-        for (int i = 1; i <= 1; i++) {
-            Udfunction.Datum inputDatum = inDatumBuilder
-                    .setKey("reduce-test" + i)
-                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                    .build();
-            supervisor.tell(inputDatum, ActorRef.noSender());
-        }
+        Udfunction.Datum inputDatum = inDatumBuilder
+                .setKey("reduce-test")
+                .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                .build();
+        supervisor.tell(inputDatum, ActorRef.noSender());
 
         try {
             completableFuture.get();
