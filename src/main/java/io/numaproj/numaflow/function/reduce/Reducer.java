@@ -6,12 +6,12 @@ import io.numaproj.numaflow.function.metadata.Metadata;
 import lombok.AllArgsConstructor;
 
 /**
- * GroupBy exposes methods for performing reduce operation.
+ * Reducer exposes methods for performing reduce operation.
  */
 
 
 @AllArgsConstructor
-public abstract class GroupBy {
+public abstract class Reducer {
     public String key;
     public Metadata metadata;
 

@@ -17,9 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 public class ReduceActor extends AbstractActor {
 
-    private GroupBy groupBy;
+    private Reducer groupBy;
 
-    public static Props props(GroupBy groupBy) {
+    public static Props props(Reducer groupBy) {
         return Props.create(ReduceActor.class, groupBy);
     }
 

@@ -4,13 +4,13 @@ import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
-import io.numaproj.numaflow.function.reduce.GroupBy;
+import io.numaproj.numaflow.function.reduce.Reducer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
 @Slf4j
-public class SumFunction extends GroupBy {
+public class SumFunction extends Reducer {
 
     private int sum = 0;
 

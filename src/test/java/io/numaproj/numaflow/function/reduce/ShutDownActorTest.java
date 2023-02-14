@@ -57,7 +57,7 @@ public class ShutDownActorTest {
         }
     }
 
-    public static class TestException extends GroupBy {
+    public static class TestException extends Reducer {
 
         int count = 0;
 

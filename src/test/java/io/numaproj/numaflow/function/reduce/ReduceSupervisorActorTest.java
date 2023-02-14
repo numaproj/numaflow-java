@@ -47,7 +47,7 @@ public class ReduceSupervisorActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(TestGroupBy.class, md, shutdownActor));
+                        .props(TestReducer.class, md, shutdownActor));
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
@@ -102,7 +102,7 @@ public class ReduceSupervisorActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(TestGroupBy.class, md, shutdownActor));
+                        .props(TestReducer.class, md, shutdownActor));
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
@@ -137,11 +137,11 @@ public class ReduceSupervisorActorTest {
         });
     }
 
-    public static class TestGroupBy extends GroupBy {
+    public static class TestReducer extends Reducer {
 
         int count = 0;
 
-        public TestGroupBy(String key, Metadata metadata) {
+        public TestReducer(String key, Metadata metadata) {
             super(key, metadata);
         }
 

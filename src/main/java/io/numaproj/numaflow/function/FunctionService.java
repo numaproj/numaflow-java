@@ -14,7 +14,7 @@ import io.numaproj.numaflow.function.metadata.IntervalWindow;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
-import io.numaproj.numaflow.function.reduce.GroupBy;
+import io.numaproj.numaflow.function.reduce.Reducer;
 import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
 import io.numaproj.numaflow.function.reduce.ShutdownActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
@@ -44,7 +44,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
-    private Class<? extends GroupBy> groupBy;
+    private Class<? extends Reducer> groupBy;
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;
@@ -54,7 +54,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         this.mapTHandler = mapTHandler;
     }
 
-    public void setReduceHandler(Class<? extends GroupBy> groupBy) {
+    public void setReduceHandler(Class<? extends Reducer> groupBy) {
         this.groupBy = groupBy;
     }
 

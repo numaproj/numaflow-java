@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.function;
 
 import io.numaproj.numaflow.function.metadata.Metadata;
-import io.numaproj.numaflow.function.reduce.GroupBy;
+import io.numaproj.numaflow.function.reduce.Reducer;
 
 
-public class ReduceTestFn extends GroupBy {
+public class ReduceTestFn extends Reducer {
     private int sum = 0;
 
     public ReduceTestFn(String key, Metadata metadata) {

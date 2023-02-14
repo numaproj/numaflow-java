@@ -33,14 +33,14 @@ import java.util.Optional;
 
 @Slf4j
 public class ReduceSupervisorActor extends AbstractActor {
-    private final Class<? extends GroupBy> groupBy;
+    private final Class<? extends Reducer> groupBy;
     private final Metadata md;
     private final ActorRef shutdownActor;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
     private final List<Future<Object>> results = new ArrayList<>();
 
     public ReduceSupervisorActor(
-            Class<? extends GroupBy> groupBy,
+            Class<? extends Reducer> groupBy,
             Metadata md,
             ActorRef shutdownActor) {
         this.groupBy = groupBy;
@@ -49,7 +49,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     }
 
     public static Props props(
-            Class<? extends GroupBy> groupBy,
+            Class<? extends Reducer> groupBy,
             Metadata md,
             ActorRef shutdownActor) {
         return Props.create(ReduceSupervisorActor.class, groupBy, md, shutdownActor);
@@ -87,7 +87,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     private void invokeActors(Udfunction.Datum datum) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         if (!actorsMap.containsKey(datum.getKey())) {
 
-            GroupBy g = groupBy
+            Reducer g = groupBy
                     .getDeclaredConstructor(String.class, Metadata.class)
                     .newInstance(datum.getKey(), md);
 

@@ -15,7 +15,7 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GrpcServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
-import io.numaproj.numaflow.function.reduce.GroupBy;
+import io.numaproj.numaflow.function.reduce.Reducer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class FunctionServer {
         return this;
     }
 
-    public FunctionServer registerReducer(Class<? extends GroupBy> groupByClass) {
+    public FunctionServer registerReducer(Class<? extends Reducer> groupByClass) {
         this.functionService.setReduceHandler(groupByClass);
         return this;
     }
