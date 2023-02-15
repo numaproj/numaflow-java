@@ -8,7 +8,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.common.GrpcServerConfig;
+import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.function.map.MapFunc;
 import io.numaproj.numaflow.function.mapt.MapTFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;
@@ -60,7 +60,7 @@ public class FunctionServerTest {
 
         server = new FunctionServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
-                new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+                new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
 
         server
                 .registerMapper(new MapFunc(testMapFn))

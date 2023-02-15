@@ -6,7 +6,7 @@ import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.numaproj.numaflow.common.GrpcServerConfig;
+import io.numaproj.numaflow.common.GRPCServerConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -18,13 +18,13 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class SinkServer {
 
-    private final GrpcServerConfig grpcServerConfig;
+    private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final SinkService sinkService = new SinkService();
     private Server server;
 
     public SinkServer() {
-        this(new GrpcServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+        this(new GRPCServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
@@ -32,11 +32,11 @@ public class SinkServer {
      *
      * @param grpcServerConfig to configure the socket path and max message size for grpc
      */
-    public SinkServer(GrpcServerConfig grpcServerConfig) {
+    public SinkServer(GRPCServerConfig grpcServerConfig) {
         this(grpcServerConfig, new EpollEventLoopGroup());
     }
 
-    public SinkServer(GrpcServerConfig grpcServerConfig, EpollEventLoopGroup group) {
+    public SinkServer(GRPCServerConfig grpcServerConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
                 .forAddress(new DomainSocketAddress(grpcServerConfig.getSocketPath()))
                 .channelType(EpollServerDomainSocketChannel.class)
@@ -45,7 +45,7 @@ public class SinkServer {
                 .bossEventLoopGroup(group), grpcServerConfig);
     }
 
-    public SinkServer(ServerBuilder<?> serverBuilder, GrpcServerConfig grpcServerConfig) {
+    public SinkServer(ServerBuilder<?> serverBuilder, GRPCServerConfig grpcServerConfig) {
         this.grpcServerConfig = grpcServerConfig;
         this.serverBuilder = serverBuilder;
     }

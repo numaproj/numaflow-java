@@ -12,7 +12,7 @@ import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.numaproj.numaflow.common.GrpcServerConfig;
+import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.Reducer;
@@ -27,13 +27,13 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class FunctionServer {
 
-    private final GrpcServerConfig grpcServerConfig;
+    private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final FunctionService functionService = new FunctionService();
     private Server server;
 
     public FunctionServer() {
-        this(new GrpcServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+        this(new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
@@ -41,11 +41,11 @@ public class FunctionServer {
      *
      * @param grpcServerConfig to configure the socket path and max message size for grpc
      */
-    public FunctionServer(GrpcServerConfig grpcServerConfig) {
+    public FunctionServer(GRPCServerConfig grpcServerConfig) {
         this(grpcServerConfig, new EpollEventLoopGroup());
     }
 
-    public FunctionServer(GrpcServerConfig grpcServerConfig, EpollEventLoopGroup group) {
+    public FunctionServer(GRPCServerConfig grpcServerConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
                 .forAddress(new DomainSocketAddress(grpcServerConfig.getSocketPath()))
                 .channelType(EpollServerDomainSocketChannel.class)
@@ -54,7 +54,7 @@ public class FunctionServer {
                 .bossEventLoopGroup(group), grpcServerConfig);
     }
 
-    public FunctionServer(ServerBuilder<?> serverBuilder, GrpcServerConfig grpcServerConfig) {
+    public FunctionServer(ServerBuilder<?> serverBuilder, GRPCServerConfig grpcServerConfig) {
         this.grpcServerConfig = grpcServerConfig;
         this.serverBuilder = serverBuilder;
     }
