@@ -8,6 +8,7 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -23,6 +24,11 @@ public class ShutdownActor extends AbstractActor {
 
     public static Props props(StreamObserver<Udfunction.DatumList> responseObserver, CompletableFuture<Void> failureFuture) {
         return Props.create(ShutdownActor.class, responseObserver, failureFuture);
+    }
+
+    @Override
+    public void preRestart(Throwable reason, Optional<Object> message) {
+        failureFuture.completeExceptionally(reason);
     }
 
     @Override
