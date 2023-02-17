@@ -14,12 +14,12 @@ public class IntervalWindowImpl implements IntervalWindow {
     private final Instant endTime;
 
     @Override
-    public Instant GetStartTime() {
+    public Instant getStartTime() {
         return this.startTime;
     }
 
     @Override
-    public Instant GetEndTime() {
+    public Instant getEndTime() {
         return this.endTime;
     }
 }

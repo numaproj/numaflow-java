@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.examples.function.forward;
+package io.numaproj.numaflow.examples.function.map.forward;
 
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;

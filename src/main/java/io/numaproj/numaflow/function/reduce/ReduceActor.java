@@ -4,6 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.numaproj.numaflow.function.HandlerDatum;
+import io.numaproj.numaflow.function.metadata.Metadata;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 public class ReduceActor extends AbstractActor {
 
+    private String key;
+    private Metadata md;
     private Reducer groupBy;
 
-    public static Props props(Reducer groupBy) {
-        return Props.create(ReduceActor.class, groupBy);
+    public static Props props(String key, Metadata md, Reducer groupBy) {
+        return Props.create(ReduceActor.class, key, md, groupBy);
     }
 
     @Override
@@ -33,11 +36,11 @@ public class ReduceActor extends AbstractActor {
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {
-        this.groupBy.addMessage(handlerDatum);
+        this.groupBy.addMessage(key, handlerDatum, md);
     }
 
     private void getResult(String eof) {
-        getSender().tell(this.groupBy.getOutput(), getSelf());
+        getSender().tell(this.groupBy.getOutput(key, md), getSelf());
     }
 
 }

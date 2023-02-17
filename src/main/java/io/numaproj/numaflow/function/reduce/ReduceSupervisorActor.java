@@ -33,26 +33,26 @@ import java.util.Optional;
 
 @Slf4j
 public class ReduceSupervisorActor extends AbstractActor {
-    private final Class<? extends Reducer> groupBy;
+    private final ReducerFactory<? extends Reducer> reducerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
     private final List<Future<Object>> results = new ArrayList<>();
 
     public ReduceSupervisorActor(
-            Class<? extends Reducer> groupBy,
+            ReducerFactory<? extends Reducer> reducerFactory,
             Metadata md,
             ActorRef shutdownActor) {
-        this.groupBy = groupBy;
+        this.reducerFactory = reducerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
     }
 
     public static Props props(
-            Class<? extends Reducer> groupBy,
+            ReducerFactory<? extends Reducer> reducerFactory,
             Metadata md,
             ActorRef shutdownActor) {
-        return Props.create(ReduceSupervisorActor.class, groupBy, md, shutdownActor);
+        return Props.create(ReduceSupervisorActor.class, reducerFactory, md, shutdownActor);
     }
 
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
@@ -84,16 +84,14 @@ public class ReduceSupervisorActor extends AbstractActor {
                 .build();
     }
 
-    private void invokeActors(Udfunction.Datum datum) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private void invokeActors(Udfunction.Datum datum) {
         if (!actorsMap.containsKey(datum.getKey())) {
 
-            Reducer g = groupBy
-                    .getDeclaredConstructor(String.class, Metadata.class)
-                    .newInstance(datum.getKey(), md);
+            Reducer reducer = reducerFactory.createReducer();
 
 
             ActorRef actorRef = getContext()
-                    .actorOf(ReduceActor.props(g));
+                    .actorOf(ReduceActor.props(datum.getKey(), md, reducer));
 
             actorsMap.put(datum.getKey(), actorRef);
         }
@@ -149,12 +147,14 @@ public class ReduceSupervisorActor extends AbstractActor {
                 ChildRestartStats stats,
                 Iterable<ChildRestartStats> children) {
 
-            Preconditions.checkArgument(!restart, "on failures, we will never restart our actors, we escalate");
+            Preconditions.checkArgument(
+                    !restart,
+                    "on failures, we will never restart our actors, we escalate");
             /*
                    tell the shutdown actor about the exception.
              */
             log.debug("process failure of supervisor strategy executed - {}", getSelf().toString());
             shutdownActor.tell(cause, context.parent());
-         }
+        }
     }
 }

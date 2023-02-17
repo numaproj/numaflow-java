@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.examples.function.eventtimefilter;
+package io.numaproj.numaflow.examples.function.map.eventtimefilter;
 
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;

@@ -14,8 +14,9 @@ import io.numaproj.numaflow.function.metadata.IntervalWindow;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
-import io.numaproj.numaflow.function.reduce.Reducer;
 import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
+import io.numaproj.numaflow.function.reduce.Reducer;
+import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import io.numaproj.numaflow.function.reduce.ShutdownActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
@@ -44,7 +45,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
-    private Class<? extends Reducer> groupBy;
+    private ReducerFactory<? extends Reducer> reducerFactory;
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;
@@ -54,8 +55,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         this.mapTHandler = mapTHandler;
     }
 
-    public void setReduceHandler(Class<? extends Reducer> groupBy) {
-        this.groupBy = groupBy;
+    public void setReduceHandler(ReducerFactory<? extends Reducer> reducerFactory) {
+        this.reducerFactory = reducerFactory;
     }
 
     /**
@@ -134,7 +135,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
     @Override
     public StreamObserver<Udfunction.Datum> reduceFn(final StreamObserver<Udfunction.DatumList> responseObserver) {
 
-        if (this.groupBy == null) {
+        if (this.reducerFactory == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
                     responseObserver);
@@ -164,7 +165,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             we create a child actor for every key in a window.
         */
         ActorRef parentActorRef = actorSystem
-                .actorOf(ReduceSupervisorActor.props(groupBy, md, shutdownActorRef));
+                .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef));
 
 
         return new StreamObserver<Udfunction.Datum>() {
@@ -180,7 +181,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("Error from the client - {}" , throwable.getMessage());
+                log.error("Error from the client - {}", throwable.getMessage());
                 responseObserver.onError(throwable);
             }
 
@@ -245,7 +246,10 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
     /*
         extracts and returns the result to the observer.
      */
-    private void extractResult(List<Future<Object>> futureList, StreamObserver<Udfunction.DatumList> responseObserver, ActorRef supervisorActorRef) {
+    private void extractResult(
+            List<Future<Object>> futureList,
+            StreamObserver<Udfunction.DatumList> responseObserver,
+            ActorRef supervisorActorRef) {
         Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
 
         // build the response when its completed.

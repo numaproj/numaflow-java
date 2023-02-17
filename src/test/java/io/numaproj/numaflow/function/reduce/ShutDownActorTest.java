@@ -41,7 +41,7 @@ public class ShutDownActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(TestException.class, md, shutdownActor));
+                        .props(new TestReducerFactory(), md, shutdownActor));
 
         Udfunction.Datum inputDatum = inDatumBuilder
                 .setKey("reduce-test")
@@ -57,23 +57,27 @@ public class ShutDownActorTest {
         }
     }
 
-    public static class TestException extends Reducer {
-
-        int count = 0;
-
-        public TestException(String key, Metadata metadata) {
-            super(key, metadata);
-        }
+    public static class TestReducerFactory extends ReducerFactory<TestReducerFactory.TestReducer> {
 
         @Override
-        public void addMessage(Datum datum) {
-            count += 1;
-            throw new RuntimeException("UDF Failure");
+        public TestReducer createReducer() {
+            return new TestReducer();
         }
 
-        @Override
-        public Message[] getOutput() {
-            return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
+        public static class TestReducer extends Reducer {
+
+            int count = 0;
+
+            @Override
+            public void addMessage(String key, Datum datum, Metadata md) {
+                count += 1;
+                throw new RuntimeException("UDF Failure");
+            }
+
+            @Override
+            public Message[] getOutput(String key, Metadata md) {
+                return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
+            }
         }
     }
 }

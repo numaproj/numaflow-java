@@ -47,7 +47,7 @@ public class ReduceSupervisorActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(TestReducer.class, md, shutdownActor));
+                        .props(new TestReducerFactory(), md, shutdownActor));
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
@@ -102,7 +102,7 @@ public class ReduceSupervisorActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(TestReducer.class, md, shutdownActor));
+                        .props(new TestReducerFactory(), md, shutdownActor));
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
@@ -137,22 +137,27 @@ public class ReduceSupervisorActorTest {
         });
     }
 
-    public static class TestReducer extends Reducer {
 
-        int count = 0;
-
-        public TestReducer(String key, Metadata metadata) {
-            super(key, metadata);
-        }
+    public static class TestReducerFactory extends ReducerFactory<TestReducerFactory.TestReducer> {
 
         @Override
-        public void addMessage(Datum datum) {
-            count += 1;
+        public TestReducer createReducer() {
+            return new TestReducer();
         }
 
-        @Override
-        public Message[] getOutput() {
-            return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
+        public static class TestReducer extends Reducer {
+
+            int count = 0;
+
+            @Override
+            public void addMessage(String key, Datum datum, Metadata md) {
+                count += 1;
+            }
+
+            @Override
+            public Message[] getOutput(String key, Metadata md) {
+                return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
+            }
         }
     }
 }
