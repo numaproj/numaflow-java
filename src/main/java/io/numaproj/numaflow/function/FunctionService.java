@@ -1,5 +1,10 @@
 package io.numaproj.numaflow.function;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.dispatch.Futures;
+import akka.dispatch.OnComplete;
+import akka.pattern.Patterns;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -9,44 +14,37 @@ import io.numaproj.numaflow.function.metadata.IntervalWindow;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
-import io.numaproj.numaflow.function.reduce.ReduceDatumStream;
-import io.numaproj.numaflow.function.reduce.ReduceDatumStreamImpl;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
+import io.numaproj.numaflow.function.reduce.Reducer;
+import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
+import io.numaproj.numaflow.function.reduce.ShutdownActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 
+import static io.numaproj.numaflow.function.Function.EOF;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
-class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
-    private static final Logger logger = Logger.getLogger(FunctionService.class.getName());
-    // it will never be smaller than one
-    private final ExecutorService reduceTaskExecutor = Executors
-            .newCachedThreadPool();
+@Slf4j
+@NoArgsConstructor
+public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
-    private final long SHUTDOWN_TIME = 30;
+    public static final ActorSystem actorSystem = ActorSystem.create("reduce");
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
-    private ReduceHandler reduceHandler;
-
-    public FunctionService() {
-    }
+    private Class<? extends Reducer> groupBy;
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;
@@ -56,8 +54,8 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         this.mapTHandler = mapTHandler;
     }
 
-    public void setReduceHandler(ReduceHandler reduceHandler) {
-        this.reduceHandler = reduceHandler;
+    public void setReduceHandler(Class<? extends Reducer> groupBy) {
+        this.groupBy = groupBy;
     }
 
     /**
@@ -85,8 +83,8 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos()),
-                false);
+                        request.getEventTime().getEventTime().getNanos())
+        );
 
         // process Datum
         Message[] messages = mapHandler.HandleDo(key, handlerDatum);
@@ -100,6 +98,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     public void mapTFn(
             Udfunction.Datum request,
             StreamObserver<Udfunction.DatumList> responseObserver) {
+
         if (this.mapTHandler == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
                     getMapFnMethod(),
@@ -118,8 +117,8 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos()),
-                false);
+                        request.getEventTime().getEventTime().getNanos())
+        );
 
         // process Datum
         MessageT[] messageTs = mapTHandler.HandleDo(key, handlerDatum);
@@ -133,10 +132,9 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
      * Streams input data to reduceFn and returns the result.
      */
     @Override
-    public StreamObserver<Udfunction.Datum> reduceFn(StreamObserver<Udfunction.DatumList> responseObserver) {
-        ConcurrentHashMap<String, ReduceDatumStreamImpl> streamMap = new ConcurrentHashMap();
+    public StreamObserver<Udfunction.Datum> reduceFn(final StreamObserver<Udfunction.DatumList> responseObserver) {
 
-        if (this.reduceHandler == null) {
+        if (this.groupBy == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
                     responseObserver);
@@ -154,59 +152,56 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
         Metadata md = new MetadataImpl(iw);
 
-        List<Future<Message[]>> results = new ArrayList<>();
+        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
+
+        // create a shutdown actor that listens to exceptions.
+        ActorRef shutdownActorRef = actorSystem.
+                actorOf(ShutdownActor.props(responseObserver, failureFuture));
+
+        handleFailure(failureFuture);
+        /*
+            create a supervisor actor which assign the tasks to child actors.
+            we create a child actor for every key in a window.
+        */
+        ActorRef parentActorRef = actorSystem
+                .actorOf(ReduceSupervisorActor.props(groupBy, md, shutdownActorRef));
+
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
             public void onNext(Udfunction.Datum datum) {
-                // get Datum from request
-                HandlerDatum handlerDatum = new HandlerDatum(
-                        datum.getValue().toByteArray(),
-                        Instant.ofEpochSecond(
-                                datum.getWatermark().getWatermark().getSeconds(),
-                                datum.getWatermark().getWatermark().getNanos()),
-                        Instant.ofEpochSecond(
-                                datum.getEventTime().getEventTime().getSeconds(),
-                                datum.getEventTime().getEventTime().getNanos()),
-                        false);
-                try {
-                    if (!streamMap.containsKey(datum.getKey())) {
-                        ReduceDatumStreamImpl reduceDatumStream = new ReduceDatumStreamImpl();
-                        results.add(reduceTaskExecutor.submit(() -> reduceHandler.HandleDo(
-                                datum.getKey(),
-                                reduceDatumStream,
-                                md)));
-                        streamMap.put(datum.getKey(), reduceDatumStream);
-                    }
-                    streamMap.get(datum.getKey()).WriteMessage(handlerDatum);
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    onError(e);
+                // send the message to parent actor, which takes care of distribution.
+                if (!parentActorRef.isTerminated()) {
+                    parentActorRef.tell(datum, parentActorRef);
+                } else {
+                    responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }
             }
 
             @Override
             public void onError(Throwable throwable) {
-                logger.log(Level.WARNING, "Encountered error in reduceFn", throwable);
+                log.error("Error from the client - {}" , throwable.getMessage());
                 responseObserver.onError(throwable);
             }
 
             @Override
             public void onCompleted() {
-                Udfunction.DatumList response = Udfunction.DatumList
-                        .newBuilder()
-                        .getDefaultInstanceForType();
+
+                // Ask the parent to return the list of futures returned by child actors.
+                Future<Object> resultFuture = Patterns.ask(parentActorRef, EOF, Integer.MAX_VALUE);
+
+                List<Future<Object>> udfResultFutures;
                 try {
-                    for (Map.Entry<String, ReduceDatumStreamImpl> entry : streamMap.entrySet()) {
-                        entry.getValue().WriteMessage(ReduceDatumStream.EOF);
-                    }
-                    response = buildDatumListResponse(results);
-                } catch (InterruptedException | ExecutionException e) {
-                    Thread.interrupted();
-                    onError(e);
+                    udfResultFutures = (List<Future<Object>>) Await.result(
+                            resultFuture,
+                            Duration.Inf());
+                } catch (TimeoutException | InterruptedException e) {
+                    responseObserver.onError(e);
+                    return;
                 }
-                responseObserver.onNext(response);
-                responseObserver.onCompleted();
+
+                extractResult(udfResultFutures, responseObserver, parentActorRef);
+
             }
         };
     }
@@ -218,44 +213,6 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     public void isReady(Empty request, StreamObserver<Udfunction.ReadyResponse> responseObserver) {
         responseObserver.onNext(Udfunction.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
-    }
-
-    /**
-     * shuts down the executor service which is used for reduce.
-     */
-    public void shutDown() {
-        this.reduceTaskExecutor.shutdown();
-        try {
-            if (!reduceTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-                System.err.println("Reduce executor did not terminate in the specified time.");
-                List<Runnable> droppedTasks = reduceTaskExecutor.shutdownNow();
-                System.err.println("Reduce executor was abruptly shut down. " + droppedTasks.size()
-                        + " tasks will not be executed.");
-            } else {
-                System.err.println("Reduce executor was terminated.");
-            }
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-            e.printStackTrace();
-        }
-    }
-
-    private Udfunction.DatumList buildDatumListResponse(List<Future<Message[]>> results) throws ExecutionException, InterruptedException {
-        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        // wait for all the handlers to return
-        for (Future<Message[]> result : results) {
-            // result.get() is a blocking call
-            Message[] resultMessages = result.get();
-            for (Message message : resultMessages) {
-                Udfunction.Datum d = Udfunction.Datum.newBuilder()
-                        .setKey(message.getKey())
-                        .setValue(ByteString.copyFrom(message.getValue()))
-                        .build();
-
-                datumListBuilder.addElements(d);
-            }
-        }
-        return datumListBuilder.build();
     }
 
     private Udfunction.DatumList buildDatumListResponse(Message[] messages) {
@@ -283,5 +240,60 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
                     .build());
         });
         return datumListBuilder.build();
+    }
+
+    /*
+        extracts and returns the result to the observer.
+     */
+    private void extractResult(List<Future<Object>> futureList, StreamObserver<Udfunction.DatumList> responseObserver, ActorRef supervisorActorRef) {
+        Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
+
+        // build the response when its completed.
+        Futures
+                .sequence(futureList, actorSystem.dispatcher())
+                .onComplete(new OnComplete<>() {
+                    @Override
+                    public void onComplete(
+                            Throwable failure,
+                            Iterable<Object> success) {
+
+                        // if there are any failures indicate it to the observer.
+                        if (failure != null) {
+                            log.error("Error while getting output from actors - {}"
+                                    , failure.getMessage());
+
+                            responseObserver.onError(failure);
+                            return;
+                        }
+
+                        success.forEach(ele -> {
+                            Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
+                            responseBuilder.addAllElements(list.getElementsList());
+                        });
+                        Udfunction.DatumList response = responseBuilder.build();
+
+                        responseObserver.onNext(response);
+                        responseObserver.onCompleted();
+
+                        /*
+                            once the result is returned we can stop the supervisor actor.
+                            stopping the supervisor will stop all its child actors.
+                            we should  explicitly stop the actors for it to be garbage collected.
+                        */
+                        actorSystem.stop(supervisorActorRef);
+                    }
+                }, actorSystem.dispatcher());
+    }
+
+    // log the exception and exit if there are any uncaught exceptions.
+    private void handleFailure(CompletableFuture<Void> failureFuture) {
+        new Thread(() -> {
+            try {
+                failureFuture.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }).start();
     }
 }

@@ -15,7 +15,7 @@ public class HandlerDatum implements Datum {
 
     // poison packet for reduce stream, to indicate EOF
     public static HandlerDatum EOF() {
-        return new HandlerDatum(null, null, null , null, true);
+        return new HandlerDatum(null, null, null, null, true);
     }
 
     @Override

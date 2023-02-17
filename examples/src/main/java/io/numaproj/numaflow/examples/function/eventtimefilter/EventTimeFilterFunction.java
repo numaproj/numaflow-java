@@ -7,7 +7,6 @@ import io.numaproj.numaflow.function.mapt.MapTFunc;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.logging.Logger;
 
 /**
  * This is a simple User Defined Function example which receives a message, applies the following
@@ -20,7 +19,6 @@ import java.util.logging.Logger;
  */
 public class EventTimeFilterFunction {
 
-    private static final Logger logger = Logger.getLogger(EventTimeFilterFunction.class.getName());
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 

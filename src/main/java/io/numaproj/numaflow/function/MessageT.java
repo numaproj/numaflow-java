@@ -1,11 +1,12 @@
 package io.numaproj.numaflow.function;
 
-import static io.numaproj.numaflow.function.Message.ALL;
-import static io.numaproj.numaflow.function.Message.DROP;
-
-import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.time.Instant;
+
+import static io.numaproj.numaflow.function.Message.ALL;
+import static io.numaproj.numaflow.function.Message.DROP;
 
 /**
  * MessageT is used to wrap the data return by UDF functions. Compared with Message, MessageT

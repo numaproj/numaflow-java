@@ -59,4 +59,5 @@ option java_package = "io.numaproj.numaflow.sink.v1";
 ```
 
 ## Code Style
+
 Use [Editor Config](https://www.jetbrains.com/help/idea/editorconfig.html). 
