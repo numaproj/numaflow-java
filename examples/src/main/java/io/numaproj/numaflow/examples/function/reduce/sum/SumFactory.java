@@ -11,7 +11,7 @@ public class SumFactory extends ReducerFactory<SumFunction> {
 
     public static void main(String[] args) throws IOException {
         log.info("sum udf was invoked");
-        new FunctionServer().registerReducer(new SumFactory()).start();
+        new FunctionServer().registerReducerFactory(new SumFactory()).start();
     }
 
     @Override

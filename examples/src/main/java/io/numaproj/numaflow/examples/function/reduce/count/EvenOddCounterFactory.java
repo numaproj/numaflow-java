@@ -14,7 +14,7 @@ import java.util.Objects;
 
 @Slf4j
 @AllArgsConstructor
-public class CountFactory extends ReducerFactory<CountFactory.EvenOddCounter> {
+public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.EvenOddCounter> {
     private Config config;
 
     @Override
@@ -65,7 +65,7 @@ public class CountFactory extends ReducerFactory<CountFactory.EvenOddCounter> {
 
     public static void main(String[] args) throws IOException {
         log.info("counter udf was invoked");
-        Config config = new Config(1, 2);
-        new FunctionServer().registerReducer(new CountFactory(config)).start();
+        Config config = new Config(1, 1);
+        new FunctionServer().registerReducerFactory(new EvenOddCounterFactory(config)).start();
     }
 }

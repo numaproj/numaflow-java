@@ -70,7 +70,7 @@ public class FunctionServer {
         return this;
     }
 
-    public FunctionServer registerReducer(ReducerFactory<? extends Reducer> reducerFactory) {
+    public FunctionServer registerReducerFactory(ReducerFactory<? extends Reducer> reducerFactory) {
         this.functionService.setReduceHandler(reducerFactory);
         return this;
     }

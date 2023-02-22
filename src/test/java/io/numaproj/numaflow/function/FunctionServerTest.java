@@ -65,7 +65,7 @@ public class FunctionServerTest {
         server
                 .registerMapper(new MapFunc(testMapFn))
                 .registerMapperT(new MapTFunc(testMapTFn))
-                .registerReducer(new ReduceTestFactory())
+                .registerReducerFactory(new ReduceTestFactory())
                 .start();
 
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
