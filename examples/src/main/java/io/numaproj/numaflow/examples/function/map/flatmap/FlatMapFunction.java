@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.examples.function.flatmap;
+package io.numaproj.numaflow.examples.function.map.flatmap;
 
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;

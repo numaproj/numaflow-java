@@ -10,7 +10,7 @@ public class MetadataImpl implements Metadata {
     private final IntervalWindow intervalWindow;
 
     @Override
-    public IntervalWindow GetIntervalWindow() {
+    public IntervalWindow getIntervalWindow() {
         return intervalWindow;
     }
 }

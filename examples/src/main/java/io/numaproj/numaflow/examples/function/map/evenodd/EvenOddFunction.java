@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.examples.function.evenodd;
+package io.numaproj.numaflow.examples.function.map.evenodd;
 
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;

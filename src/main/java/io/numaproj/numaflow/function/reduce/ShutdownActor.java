@@ -22,7 +22,9 @@ public class ShutdownActor extends AbstractActor {
     private StreamObserver<Udfunction.DatumList> responseObserver;
     private final CompletableFuture<Void> failureFuture;
 
-    public static Props props(StreamObserver<Udfunction.DatumList> responseObserver, CompletableFuture<Void> failureFuture) {
+    public static Props props(
+            StreamObserver<Udfunction.DatumList> responseObserver,
+            CompletableFuture<Void> failureFuture) {
         return Props.create(ShutdownActor.class, responseObserver, failureFuture);
     }
 

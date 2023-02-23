@@ -16,6 +16,7 @@ import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.Reducer;
+import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -69,8 +70,8 @@ public class FunctionServer {
         return this;
     }
 
-    public FunctionServer registerReducer(Class<? extends Reducer> groupByClass) {
-        this.functionService.setReduceHandler(groupByClass);
+    public FunctionServer registerReducerFactory(ReducerFactory<? extends Reducer> reducerFactory) {
+        this.functionService.setReduceHandler(reducerFactory);
         return this;
     }
 

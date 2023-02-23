@@ -65,7 +65,7 @@ public class FunctionServerTest {
         server
                 .registerMapper(new MapFunc(testMapFn))
                 .registerMapperT(new MapTFunc(testMapTFn))
-                .registerReducer(ReduceTestFn.class)
+                .registerReducerFactory(new ReduceTestFactory())
                 .start();
 
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
@@ -165,12 +165,14 @@ public class FunctionServerTest {
         String expectedKey = reduceKey + REDUCE_PROCESSED_KEY_SUFFIX;
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
-        while (outputStreamObserver.resultDatum.get() == null);
+        while (outputStreamObserver.resultDatum.get() == null) ;
 
         assertEquals(1, outputStreamObserver.resultDatum.get().getElementsCount());
         assertEquals(expectedKey, outputStreamObserver.resultDatum.get().getElements(0).getKey());
         ;
-        assertEquals(expectedValue, outputStreamObserver.resultDatum.get().getElements(0).getValue());
+        assertEquals(
+                expectedValue,
+                outputStreamObserver.resultDatum.get().getElements(0).getValue());
 
     }
 
@@ -209,7 +211,7 @@ public class FunctionServerTest {
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
-        while (outputStreamObserver.resultDatum.get() == null);
+        while (outputStreamObserver.resultDatum.get() == null) ;
 
         Udfunction.DatumList result = outputStreamObserver.resultDatum.get();
         assertEquals(100, result.getElementsCount());
