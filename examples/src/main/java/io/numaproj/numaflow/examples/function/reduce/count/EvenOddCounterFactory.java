@@ -36,10 +36,11 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
         public void addMessage(String key, Datum datum, Metadata md) {
             try {
                 int val = Integer.parseInt(new String(datum.getValue()));
+                // increment based on the value specified in the config
                 if (val % 2 == 0) {
-                    evenCount += config.getEvenValue();
+                    evenCount += config.getEvenIncrementBy();
                 } else {
-                    oddCount += config.getOddValue();
+                    oddCount += config.getOddIncrementBy();
                 }
             } catch (NumberFormatException e) {
                 log.info("error while parsing integer - {}", e.getMessage());
@@ -65,7 +66,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
 
     public static void main(String[] args) throws IOException {
         log.info("counter udf was invoked");
-        Config config = new Config(1, 1);
+        Config config = new Config(1, 2);
         new FunctionServer().registerReducerFactory(new EvenOddCounterFactory(config)).start();
     }
 }
