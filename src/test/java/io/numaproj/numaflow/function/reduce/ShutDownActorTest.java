@@ -41,7 +41,11 @@ public class ShutDownActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(new TestReducerFactory(), md, shutdownActor));
+                        .props(
+                                new TestExceptionFactory(),
+                                md,
+                                shutdownActor,
+                                new ReduceOutputStreamObserver()));
 
         Udfunction.Datum inputDatum = inDatumBuilder
                 .setKey("reduce-test")
@@ -57,14 +61,14 @@ public class ShutDownActorTest {
         }
     }
 
-    public static class TestReducerFactory extends ReducerFactory<TestReducerFactory.TestReducer> {
+    public static class TestExceptionFactory extends ReducerFactory<TestExceptionFactory.TestException> {
 
         @Override
-        public TestReducer createReducer() {
-            return new TestReducer();
+        public TestException createReducer() {
+            return new TestException();
         }
 
-        public static class TestReducer extends Reducer {
+        public static class TestException extends Reducer {
 
             int count = 0;
 
