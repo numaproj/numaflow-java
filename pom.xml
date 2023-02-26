@@ -167,6 +167,7 @@
                 <configuration>
                     <excludes>
                         <exclude>io/numaproj/numaflow/sink/v1/*</exclude>
+                        <exclude>io/numaproj/numaflow/function/v1/*</exclude>
                         <exclude>io/numaproj/numaflow/function/metadata/*</exclude>
                         <exclude>io/numaproj/numaflow/utils/*</exclude>
                     </excludes>
