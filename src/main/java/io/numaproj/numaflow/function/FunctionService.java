@@ -164,16 +164,16 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             create a supervisor actor which assign the tasks to child actors.
             we create a child actor for every key in a window.
         */
-        ActorRef parentActorRef = actorSystem
-                .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef));
+        ActorRef supervisorActor = actorSystem
+                .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef, responseObserver));
 
 
         return new StreamObserver<Udfunction.Datum>() {
             @Override
             public void onNext(Udfunction.Datum datum) {
                 // send the message to parent actor, which takes care of distribution.
-                if (!parentActorRef.isTerminated()) {
-                    parentActorRef.tell(datum, parentActorRef);
+                if (!supervisorActor.isTerminated()) {
+                    supervisorActor.tell(datum, supervisorActor);
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }
@@ -187,21 +187,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
             @Override
             public void onCompleted() {
-
-                // Ask the parent to return the list of futures returned by child actors.
-                Future<Object> resultFuture = Patterns.ask(parentActorRef, EOF, Integer.MAX_VALUE);
-
-                List<Future<Object>> udfResultFutures;
-                try {
-                    udfResultFutures = (List<Future<Object>>) Await.result(
-                            resultFuture,
-                            Duration.Inf());
-                } catch (TimeoutException | InterruptedException e) {
-                    responseObserver.onError(e);
-                    return;
-                }
-
-                extractResult(udfResultFutures, responseObserver, parentActorRef);
+                // indicate the end of input to the supervisor
+                supervisorActor.tell(EOF, ActorRef.noSender());
 
             }
         };
@@ -241,52 +228,6 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                     .build());
         });
         return datumListBuilder.build();
-    }
-
-    /*
-        extracts and returns the result to the observer.
-     */
-    private void extractResult(
-            List<Future<Object>> futureList,
-            StreamObserver<Udfunction.DatumList> responseObserver,
-            ActorRef supervisorActorRef) {
-        Udfunction.DatumList.Builder responseBuilder = Udfunction.DatumList.newBuilder();
-
-        // build the response when its completed.
-        Futures
-                .sequence(futureList, actorSystem.dispatcher())
-                .onComplete(new OnComplete<>() {
-                    @Override
-                    public void onComplete(
-                            Throwable failure,
-                            Iterable<Object> success) {
-
-                        // if there are any failures indicate it to the observer.
-                        if (failure != null) {
-                            log.error("Error while getting output from actors - {}"
-                                    , failure.getMessage());
-
-                            responseObserver.onError(failure);
-                            return;
-                        }
-
-                        success.forEach(ele -> {
-                            Udfunction.DatumList list = buildDatumListResponse((Message[]) ele);
-                            responseBuilder.addAllElements(list.getElementsList());
-                        });
-                        Udfunction.DatumList response = responseBuilder.build();
-
-                        responseObserver.onNext(response);
-                        responseObserver.onCompleted();
-
-                        /*
-                            once the result is returned we can stop the supervisor actor.
-                            stopping the supervisor will stop all its child actors.
-                            we should  explicitly stop the actors for it to be garbage collected.
-                        */
-                        actorSystem.stop(supervisorActorRef);
-                    }
-                }, actorSystem.dispatcher());
     }
 
     // log the exception and exit if there are any uncaught exceptions.

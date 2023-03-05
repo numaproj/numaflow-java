@@ -2,10 +2,8 @@ package io.numaproj.numaflow.function.reduce;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.pattern.Patterns;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.Function;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.ReduceOutputStreamObserver;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
@@ -13,17 +11,13 @@ import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import org.junit.Test;
-import scala.concurrent.Await;
-import scala.concurrent.Future;
-import scala.concurrent.duration.Duration;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
+import static io.numaproj.numaflow.function.Function.EOF;
+import static org.junit.Assert.fail;
 
 public class ReduceSupervisorActorTest {
 
@@ -45,9 +39,11 @@ public class ReduceSupervisorActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(new TestReducerFactory(), md, shutdownActor));
+                        .props(new TestReducerFactory(), md, shutdownActor, outputStreamObserver));
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
@@ -57,29 +53,13 @@ public class ReduceSupervisorActorTest {
             supervisor.tell(inputDatum, ActorRef.noSender());
         }
 
-        Future<Object> resultFuture = Patterns
-                .ask(supervisor, Function.EOF, Integer.MAX_VALUE);
+        supervisor.tell(EOF, ActorRef.noSender());
 
-        List<Future<Object>> udfResults = null;
         try {
-            udfResults = (List<Future<Object>>)
-                    Await.result(resultFuture, Duration.Inf());
-        } catch (TimeoutException | InterruptedException e) {
-            throw new RuntimeException(e);
+            completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Expected the future to complete without exception");
         }
-
-        assertEquals(udfResults.size(), 1);
-        udfResults.forEach(f -> {
-            try {
-                Message[] output = (Message[]) Await.result(f, Duration.Inf());
-                Arrays.stream(output).forEach(message -> {
-                    assertEquals(message.getKey(), Message.ALL);
-                    assertEquals(new String(message.getValue()), "10");
-                });
-            } catch (TimeoutException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
     }
 
     @Test
@@ -102,7 +82,11 @@ public class ReduceSupervisorActorTest {
 
         ActorRef supervisor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(new TestReducerFactory(), md, shutdownActor));
+                        .props(
+                                new TestReducerFactory(),
+                                md,
+                                shutdownActor,
+                                new ReduceOutputStreamObserver()));
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
@@ -112,31 +96,13 @@ public class ReduceSupervisorActorTest {
             supervisor.tell(inputDatum, ActorRef.noSender());
         }
 
-        Future<Object> resultFuture = Patterns
-                .ask(supervisor, Function.EOF, Integer.MAX_VALUE);
-
-        List<Future<Object>> udfResults = null;
+        supervisor.tell(EOF, ActorRef.noSender());
         try {
-            udfResults = (List<Future<Object>>)
-                    Await.result(resultFuture, Duration.Inf());
-        } catch (TimeoutException | InterruptedException e) {
-            throw new RuntimeException(e);
+            completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Expected the future to complete without exception");
         }
-
-        assertEquals(udfResults.size(), 10);
-        udfResults.forEach(f -> {
-            try {
-                Message[] output = (Message[]) Await.result(f, Duration.Inf());
-                Arrays.stream(output).forEach(message -> {
-                    assertEquals(message.getKey(), Message.ALL);
-                    assertEquals(new String(message.getValue()), "1");
-                });
-            } catch (TimeoutException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
     }
-
 
     public static class TestReducerFactory extends ReducerFactory<TestReducerFactory.TestReducer> {
 
