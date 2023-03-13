@@ -16,7 +16,7 @@
         <dependency>
             <groupId>io.numaproj.numaflow</groupId>
             <artifactId>numaflow-java</artifactId>
-            <version>0.3.2</version>
+            <version>0.3.4</version>
         </dependency>
     </dependencies>
 
