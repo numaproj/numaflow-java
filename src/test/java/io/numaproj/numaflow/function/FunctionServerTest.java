@@ -39,13 +39,13 @@ public class FunctionServerTest {
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private final BiFunction<String, Datum, Message[]> testMapFn =
-            (key, datum) -> new Message[]{new Message(
+            (key, datum) -> new Message[]{Message.to(
                     key + PROCESSED_KEY_SUFFIX,
                     (new String(datum.getValue())
                             + PROCESSED_VALUE_SUFFIX).getBytes())};
 
     private final BiFunction<String, Datum, MessageT[]> testMapTFn =
-            (key, datum) -> new MessageT[]{new MessageT(
+            (key, datum) -> new MessageT[]{MessageT.to(
                     TEST_EVENT_TIME,
                     key + PROCESSED_KEY_SUFFIX,
                     (new String(datum.getValue())
@@ -165,7 +165,7 @@ public class FunctionServerTest {
         String expectedKey = reduceKey + REDUCE_PROCESSED_KEY_SUFFIX;
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
-        while (!outputStreamObserver.completed.get());
+        while (!outputStreamObserver.completed.get()) ;
 
         assertEquals(1, outputStreamObserver.resultDatum.get().getElementsCount());
         assertEquals(expectedKey, outputStreamObserver.resultDatum.get().getElements(0).getKey());
@@ -211,7 +211,7 @@ public class FunctionServerTest {
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
-        while (!outputStreamObserver.completed.get());
+        while (!outputStreamObserver.completed.get()) ;
         Udfunction.DatumList result = outputStreamObserver.resultDatum.get();
         assertEquals(100, result.getElementsCount());
         for (int i = 0; i < keyCount; i++) {

@@ -1,9 +1,10 @@
 package io.numaproj.numaflow.function;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class Message {
     public static final String ALL = "U+005C__ALL__";
