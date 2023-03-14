@@ -24,7 +24,7 @@ Add this dependency to your project's build file:
 compile "io.numaproj.numaflow:numaflow-java:${latest}"
 ```
 
-### Examples to write UDFs and UDSinks in Java
+### Examples on how to write UDFs and UDSinks in Java
 
 * **User Defined Function(UDF)**
   * [Map](src/main/java/io/numaproj/numaflow/examples/function/map)
