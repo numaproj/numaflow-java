@@ -27,8 +27,8 @@ compile "io.numaproj.numaflow:numaflow-java:${latest}"
 ### Examples to write UDFs and UDSinks in Java
 
 * **User Defined Function(UDF)**
-  * [Map](examples/src/main/java/io/numaproj/numaflow/examples/function/map)
-  * [Reduce](examples/src/main/java/io/numaproj/numaflow/examples/function/reduce)
+  * [Map](src/main/java/io/numaproj/numaflow/examples/function/map)
+  * [Reduce](src/main/java/io/numaproj/numaflow/examples/function/reduce)
 
 * **User Defined Sink(UDSink)**
-  * [Sink](examples/src/main/java/io/numaproj/numaflow/examples/sink/simple)
+  * [Sink](src/main/java/io/numaproj/numaflow/examples/sink/simple)
