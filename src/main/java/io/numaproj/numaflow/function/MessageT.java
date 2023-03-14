@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.function;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -12,7 +13,7 @@ import static io.numaproj.numaflow.function.Message.DROP;
  * MessageT is used to wrap the data return by UDF functions. Compared with Message, MessageT
  * contains one more field, the event time, usually extracted from the payload.
  */
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class MessageT {
 
