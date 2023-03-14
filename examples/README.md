@@ -1,75 +1,34 @@
 ## Build
 
-The sdk artifacts aren't deployed anywhere, so ensure you have run `mvn clean install` on the sdk
-first to ensure
-artifacts are in your local `~/.m2/repository`. Alternatively publish them to a repository that
-maven can access.
+The sdk artifacts are published as GitHub packages. Check the links below on how to use GitHub packages as dependencies in a Java Project.
+- [Reference](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry)
+- [Reference](https://github.com/orgs/community/discussions/26634#discussioncomment-3252638)
+### Maven users
 
-The build assumes a local docker daemon is running as it uses and loads images to it
-named `numaflow-java-examples/<example-name>:latest` by default.
+Add this dependency to your project's POM:
 
-## Install
-
-```bash
-# Build
-mvn clean install
-
-# Either load to a local cluster, or alternatively push to a registry
-IMAGE_REGISTRY="my.fake.registry"
-
-docker tag numaflow-java-examples/forward-function:latest $IMAGE_REGISTRY/numaflow-java-examples/forward-function:latest
-docker push $IMAGE_REGISTRY/numaflow-java-examples/forward-function:latest
-
-docker tag numaflow-java-examples/simple-sink:latest $IMAGE_REGISTRY/numaflow-java-examples/simple-sink:latest
-docker push $IMAGE_REGISTRY/numaflow-java-examples/simple-sink:latest
-
-# For first-time install
-kubectl apply -f example-java-pipeline.yaml
-
-# Updates after re-build
-kubectl delete po -l numaflow.numaproj.io/vertex-name=simple-sink
-kubectl delete po -l numaflow.numaproj.io/vertex-name=forward-function
+```xml
+<dependency>
+  <groupId>io.numaproj.numaflow</groupId>
+  <artifactId>numaflow-java</artifactId>
+  <version>${latest}</version>
+  <scope>compile</scope>
+</dependency>
 ```
 
-`example-java-pipeline.yaml`:
+### Gradle users
 
-```yaml
-apiVersion: numaflow.numaproj.io/v1alpha1
-kind: Pipeline
-metadata:
-  name: example-java-pipeline
-spec:
-  vertices:
-    - name: in
-      source:
-        generator: {}
-    - name: forward-function
-      udf:
-        container:
-          # Modify if necessary
-          image: numaflow-java-examples/forward-function:latest
-    - name: simple-sink
-      sink:
-        udsink:
-          container:
-            # Modify if necessary
-            image: numaflow-java-examples/simple-sink:latest
-  edges:
-    - from: in
-      to: forward-function
-    - from: forward-function
-      to: simple-sink
+Add this dependency to your project's build file:
+
+```groovy
+compile "io.numaproj.numaflow:numaflow-java:${latest}"
 ```
 
-## Uninstall
+### Examples on how to write UDFs and UDSinks in Java
 
-```bash
-# Cleanup cluster
-kubectl delete -f example-java-pipeline.yaml
+* **User Defined Function(UDF)**
+  * [Map](src/main/java/io/numaproj/numaflow/examples/function/map)
+  * [Reduce](src/main/java/io/numaproj/numaflow/examples/function/reduce)
 
-# Cleanup local machine
-docker rmi numaflow-java-examples/forward-function:latest numaflow-java-examples/simple-sink:latest
-
-# If you created other tags, also clean those up
-docker rmi $IMAGE_REGISTRY/numaflow-java-examples/forward-function:latest $IMAGE_REGISTRY/numaflow-java-examples/simple-sink:latest
-```
+* **User Defined Sink(UDSink)**
+  * [Sink](src/main/java/io/numaproj/numaflow/examples/sink/simple)
