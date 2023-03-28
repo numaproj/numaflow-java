@@ -68,7 +68,7 @@ public class ShutDownActorTest {
             return new TestException();
         }
 
-        public static class TestException extends Reducer {
+        public static class TestException extends ReduceHandler {
 
             int count = 0;
 

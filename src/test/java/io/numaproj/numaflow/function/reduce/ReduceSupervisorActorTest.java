@@ -104,14 +104,14 @@ public class ReduceSupervisorActorTest {
         }
     }
 
-    public static class TestReducerFactory extends ReducerFactory<TestReducerFactory.TestReducer> {
+    public static class TestReducerFactory extends ReducerFactory<TestReducerFactory.TestReduceHandler> {
 
         @Override
-        public TestReducer createReducer() {
-            return new TestReducer();
+        public TestReduceHandler createReducer() {
+            return new TestReduceHandler();
         }
 
-        public static class TestReducer extends Reducer {
+        public static class TestReduceHandler extends ReduceHandler {
 
             int count = 0;
 

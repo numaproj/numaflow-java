@@ -9,8 +9,8 @@ import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GRPCServerConfig;
-import io.numaproj.numaflow.function.map.MapFunc;
-import io.numaproj.numaflow.function.mapt.MapTFunc;
+import io.numaproj.numaflow.function.map.MapHandler;
+import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
@@ -38,6 +38,28 @@ public class FunctionServerTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
+
+    private static class TestMapFn extends MapHandler {
+        @Override
+        public Message[] processMessage(String key, Datum datum) {
+            return new Message[]{Message.to(
+                    key + PROCESSED_KEY_SUFFIX,
+                    (new String(datum.getValue())
+                            + PROCESSED_VALUE_SUFFIX).getBytes())};
+        }
+    }
+
+    private static class TestMapTFn extends MapTHandler {
+        @Override
+        public MessageT[] processMessage(String key, Datum datum) {
+            return new MessageT[]{MessageT.to(
+                    TEST_EVENT_TIME,
+                    key + PROCESSED_KEY_SUFFIX,
+                    (new String(datum.getValue())
+                            + PROCESSED_VALUE_SUFFIX).getBytes())};
+        }
+    }
+
     private final BiFunction<String, Datum, Message[]> testMapFn =
             (key, datum) -> new Message[]{Message.to(
                     key + PROCESSED_KEY_SUFFIX,
@@ -63,8 +85,8 @@ public class FunctionServerTest {
                 new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
 
         server
-                .registerMapper(new MapFunc(testMapFn))
-                .registerMapperT(new MapTFunc(testMapTFn))
+                .registerMapHandler(new TestMapFn())
+                .registerMapTHandler(new TestMapTFn())
                 .registerReducerFactory(new ReduceTestFactory())
                 .start();
 

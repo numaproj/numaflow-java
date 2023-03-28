@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.function;
 
 import io.numaproj.numaflow.function.metadata.Metadata;
-import io.numaproj.numaflow.function.reduce.Reducer;
+import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
 
 public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTestFn> {
@@ -10,7 +10,7 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
         return new ReduceTestFn();
     }
 
-    public static class ReduceTestFn extends Reducer {
+    public static class ReduceTestFn extends ReduceHandler {
         private int sum = 0;
 
         @Override

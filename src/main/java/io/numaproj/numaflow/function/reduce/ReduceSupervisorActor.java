@@ -32,7 +32,7 @@ import java.util.Optional;
 
 @Slf4j
 public class ReduceSupervisorActor extends AbstractActor {
-    private final ReducerFactory<? extends Reducer> reducerFactory;
+    private final ReducerFactory<? extends ReduceHandler> reducerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
     private final StreamObserver<Udfunction.DatumList> responseObserver;
@@ -40,7 +40,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     private final List<Future<Object>> results = new ArrayList<>();
 
     public ReduceSupervisorActor(
-            ReducerFactory<? extends Reducer> reducerFactory,
+            ReducerFactory<? extends ReduceHandler> reducerFactory,
             Metadata md,
             ActorRef shutdownActor,
             StreamObserver<Udfunction.DatumList> responseObserver) {
@@ -51,7 +51,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     }
 
     public static Props props(
-            ReducerFactory<? extends Reducer> reducerFactory,
+            ReducerFactory<? extends ReduceHandler> reducerFactory,
             Metadata md,
             ActorRef shutdownActor,
             StreamObserver<Udfunction.DatumList> responseObserver) {
@@ -96,10 +96,10 @@ public class ReduceSupervisorActor extends AbstractActor {
     private void invokeActors(Udfunction.Datum datum) {
         if (!actorsMap.containsKey(datum.getKey())) {
 
-            Reducer reducer = reducerFactory.createReducer();
+            ReduceHandler reduceHandler = reducerFactory.createReducer();
 
             ActorRef actorRef = getContext()
-                    .actorOf(ReduceActor.props(datum.getKey(), md, reducer));
+                    .actorOf(ReduceActor.props(datum.getKey(), md, reduceHandler));
 
             actorsMap.put(datum.getKey(), actorRef);
         }

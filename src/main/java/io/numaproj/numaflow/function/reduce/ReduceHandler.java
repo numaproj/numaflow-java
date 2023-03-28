@@ -9,7 +9,7 @@ import io.numaproj.numaflow.function.metadata.Metadata;
  */
 
 
-public abstract class Reducer {
+public abstract class ReduceHandler {
     /*
         addMessage will be invoked for each input message.
         It can be used to read the input data from datum and

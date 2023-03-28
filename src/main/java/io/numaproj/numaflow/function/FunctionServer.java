@@ -15,7 +15,7 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
-import io.numaproj.numaflow.function.reduce.Reducer;
+import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,17 +60,17 @@ public class FunctionServer {
         this.serverBuilder = serverBuilder;
     }
 
-    public FunctionServer registerMapper(MapHandler mapHandler) {
+    public FunctionServer registerMapHandler(MapHandler mapHandler) {
         this.functionService.setMapHandler(mapHandler);
         return this;
     }
 
-    public FunctionServer registerMapperT(MapTHandler mapTHandler) {
+    public FunctionServer registerMapTHandler(MapTHandler mapTHandler) {
         this.functionService.setMapTHandler(mapTHandler);
         return this;
     }
 
-    public FunctionServer registerReducerFactory(ReducerFactory<? extends Reducer> reducerFactory) {
+    public FunctionServer registerReducerFactory(ReducerFactory<? extends ReduceHandler> reducerFactory) {
         this.functionService.setReduceHandler(reducerFactory);
         return this;
     }
