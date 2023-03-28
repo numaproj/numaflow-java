@@ -4,7 +4,7 @@ import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.Message;
 
 /**
- * Mapper exposes method for performing map operation.
+ * MapHandler exposes method for performing map operation.
  * Implementations should override the processMessage method
  * which will be used for processing the input messages
  */

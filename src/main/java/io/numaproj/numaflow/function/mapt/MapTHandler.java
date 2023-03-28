@@ -4,7 +4,7 @@ import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.MessageT;
 
 /**
- * MapperT exposes method for performing transform operation
+ * MapTHandler exposes method for performing transform operation
  * in the source. Implementations should override the processMessage
  * method which will be used for transforming the input messages
  */

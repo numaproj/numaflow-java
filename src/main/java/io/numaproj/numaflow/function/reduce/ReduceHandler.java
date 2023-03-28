@@ -5,7 +5,7 @@ import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 
 /**
- * Reducer exposes methods for performing reduce operation.
+ * ReduceHandler exposes methods for performing reduce operation.
  */
 
 
