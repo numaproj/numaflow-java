@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.function.reduce;
 
 import akka.actor.AbstractActor;
+import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
@@ -40,6 +41,7 @@ public class ShutdownActor extends AbstractActor {
                 .create()
                 .match(Throwable.class, this::shutdown)
                 .match(String.class, this::completedSuccessfully)
+                .match(AllDeadLetters.class, this::handleDeadLetters)
                 .build();
     }
 
@@ -63,7 +65,7 @@ public class ShutdownActor extends AbstractActor {
 
     // if we see dead letters, we need to stop the execution and exit
     // to make sure no messages are lost
-    private void handleDeadLetters(DeadLetter deadLetter) {
+    private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.debug("got a dead letter, stopping the execution");
         failureFuture.completeExceptionally(new Throwable("dead letters"));
         getContext().getSystem().stop(getSelf());

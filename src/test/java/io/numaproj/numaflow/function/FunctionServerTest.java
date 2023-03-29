@@ -22,7 +22,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.time.Instant;
-import java.util.function.BiFunction;
 
 import static io.numaproj.numaflow.function.Function.DATUM_KEY;
 import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
@@ -59,19 +58,6 @@ public class FunctionServerTest {
                             + PROCESSED_VALUE_SUFFIX).getBytes())};
         }
     }
-
-    private final BiFunction<String, Datum, Message[]> testMapFn =
-            (key, datum) -> new Message[]{Message.to(
-                    key + PROCESSED_KEY_SUFFIX,
-                    (new String(datum.getValue())
-                            + PROCESSED_VALUE_SUFFIX).getBytes())};
-
-    private final BiFunction<String, Datum, MessageT[]> testMapTFn =
-            (key, datum) -> new MessageT[]{MessageT.to(
-                    TEST_EVENT_TIME,
-                    key + PROCESSED_KEY_SUFFIX,
-                    (new String(datum.getValue())
-                            + PROCESSED_VALUE_SUFFIX).getBytes())};
 
     private FunctionServer server;
     private ManagedChannel inProcessChannel;

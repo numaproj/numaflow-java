@@ -2,6 +2,7 @@ package io.numaproj.numaflow.function;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -152,8 +153,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         ActorRef shutdownActorRef = actorSystem.
                 actorOf(ShutdownActor.props(responseObserver, failureFuture));
 
-
-        actorSystem.getEventStream().subscribe(shutdownActorRef, DeadLetter.class);
+        // subscribe for dead letters
+        actorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
         handleFailure(failureFuture);
         /*
