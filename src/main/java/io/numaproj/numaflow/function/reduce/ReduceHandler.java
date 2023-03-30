@@ -5,11 +5,11 @@ import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 
 /**
- * Reducer exposes methods for performing reduce operation.
+ * ReduceHandler exposes methods for performing reduce operation.
  */
 
 
-public abstract class Reducer {
+public abstract class ReduceHandler {
     /*
         addMessage will be invoked for each input message.
         It can be used to read the input data from datum and

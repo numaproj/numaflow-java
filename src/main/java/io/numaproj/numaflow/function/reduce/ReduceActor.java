@@ -23,9 +23,9 @@ public class ReduceActor extends AbstractActor {
 
     private String key;
     private Metadata md;
-    private Reducer groupBy;
+    private ReduceHandler groupBy;
 
-    public static Props props(String key, Metadata md, Reducer groupBy) {
+    public static Props props(String key, Metadata md, ReduceHandler groupBy) {
         return Props.create(ReduceActor.class, key, md, groupBy);
     }
 

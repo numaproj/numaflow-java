@@ -31,21 +31,24 @@ public class SinkServerTest {
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
-    private final Function<SinkDatumStream, List<Response>> testSinkFn =
-            ((datumStream) -> {
-                List<Response> responses = new ArrayList<>();
-                while (true) {
-                    Datum datum = datumStream.ReadMessage();
-                    // null indicates the end of the input
-                    if (datum == SinkDatumStream.EOF) {
-                        break;
-                    }
+    private static class TestSinkFn extends SinkHandler {
 
-                    logger.info(Arrays.toString(datum.getValue()));
-                    responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
+        @Override
+        public List<Response> processMessage(SinkDatumStream datumStream) {
+            List<Response> responses = new ArrayList<>();
+            while (true) {
+                Datum datum = datumStream.ReadMessage();
+                // null indicates the end of the input
+                if (datum == SinkDatumStream.EOF) {
+                    break;
                 }
-                return responses;
-            });
+
+                logger.info(Arrays.toString(datum.getValue()));
+                responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
+            }
+            return responses;
+        }
+    }
 
     private SinkServer server;
     private ManagedChannel inProcessChannel;
@@ -56,7 +59,7 @@ public class SinkServerTest {
         server = new SinkServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
                 new GRPCServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
-        server.registerSinker(new SinkFunc(testSinkFn)).start();
+        server.registerSinker(new TestSinkFn()).start();
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
                 .forName(serverName)
                 .directExecutor()

@@ -2,9 +2,8 @@ package io.numaproj.numaflow.function;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.dispatch.Futures;
-import akka.dispatch.OnComplete;
-import akka.pattern.Patterns;
+import akka.actor.AllDeadLetters;
+import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -15,7 +14,7 @@ import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
 import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
-import io.numaproj.numaflow.function.reduce.Reducer;
+import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import io.numaproj.numaflow.function.reduce.ShutdownActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
@@ -23,15 +22,10 @@ import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import scala.concurrent.Await;
-import scala.concurrent.Future;
-import scala.concurrent.duration.Duration;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 
 import static io.numaproj.numaflow.function.Function.EOF;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
@@ -45,7 +39,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
-    private ReducerFactory<? extends Reducer> reducerFactory;
+    private ReducerFactory<? extends ReduceHandler> reducerFactory;
 
     public void setMapHandler(MapHandler mapHandler) {
         this.mapHandler = mapHandler;
@@ -55,7 +49,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         this.mapTHandler = mapTHandler;
     }
 
-    public void setReduceHandler(ReducerFactory<? extends Reducer> reducerFactory) {
+    public void setReduceHandler(ReducerFactory<? extends ReduceHandler> reducerFactory) {
         this.reducerFactory = reducerFactory;
     }
 
@@ -88,7 +82,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        Message[] messages = mapHandler.HandleDo(key, handlerDatum);
+        Message[] messages = mapHandler.processMessage(key, handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messages));
@@ -122,7 +116,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        MessageT[] messageTs = mapTHandler.HandleDo(key, handlerDatum);
+        MessageT[] messageTs = mapTHandler.processMessage(key, handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messageTs));
@@ -158,6 +152,9 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         // create a shutdown actor that listens to exceptions.
         ActorRef shutdownActorRef = actorSystem.
                 actorOf(ShutdownActor.props(responseObserver, failureFuture));
+
+        // subscribe for dead letters
+        actorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
         handleFailure(failureFuture);
         /*

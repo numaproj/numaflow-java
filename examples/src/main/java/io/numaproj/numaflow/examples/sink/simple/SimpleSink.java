@@ -3,7 +3,7 @@ package io.numaproj.numaflow.examples.sink.simple;
 import io.numaproj.numaflow.sink.Datum;
 import io.numaproj.numaflow.sink.Response;
 import io.numaproj.numaflow.sink.SinkDatumStream;
-import io.numaproj.numaflow.sink.SinkFunc;
+import io.numaproj.numaflow.sink.SinkHandler;
 import io.numaproj.numaflow.sink.SinkServer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,10 +12,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Slf4j
-public class SimpleSink {
+/**
+ * This is a simple User Defined Sink example which logs the input message
+ */
 
-    private static List<Response> process(SinkDatumStream datumStream) {
+@Slf4j
+public class SimpleSink extends SinkHandler {
+
+    public List<Response> processMessage(SinkDatumStream datumStream) {
         ArrayList<Response> responses = new ArrayList<>();
 
         while (true) {
@@ -31,6 +35,6 @@ public class SimpleSink {
     }
 
     public static void main(String[] args) throws IOException {
-        new SinkServer().registerSinker(new SinkFunc(SimpleSink::process)).start();
+        new SinkServer().registerSinker(new SimpleSink()).start();
     }
 }

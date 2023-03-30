@@ -4,9 +4,15 @@ import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.Message;
 
 /**
- * Interface of map function implementation.
+ * MapHandler exposes method for performing map operation.
+ * Implementations should override the processMessage method
+ * which will be used for processing the input messages
  */
-public interface MapHandler {
-    // Function to process each coming message
-    Message[] HandleDo(String key, Datum datum);
+
+public abstract class MapHandler {
+    /*
+        processMessage will be invoked for each input message.
+        this method will be used for processing messages
+     */
+    public abstract Message[] processMessage(String key, Datum datum);
 }

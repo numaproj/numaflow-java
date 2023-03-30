@@ -3,7 +3,7 @@ package io.numaproj.numaflow.examples.function.map.eventtimefilter;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.MessageT;
-import io.numaproj.numaflow.function.mapt.MapTFunc;
+import io.numaproj.numaflow.function.mapt.MapTHandler;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -17,12 +17,12 @@ import java.time.Instant;
  * Otherwise, (exclusively after year 2022), update the key to "after_year_2022" and update the
  * message event time to Jan 1st 2023.
  */
-public class EventTimeFilterFunction {
+public class EventTimeFilterFunction extends MapTHandler {
 
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 
-    private static MessageT[] process(String key, Datum data) {
+    public MessageT[] processMessage(String key, Datum data) {
         Instant eventTime = data.getEventTime();
 
         if (eventTime.isBefore(januaryFirst2022)) {
@@ -44,7 +44,7 @@ public class EventTimeFilterFunction {
 
     public static void main(String[] args) throws IOException {
         new FunctionServer()
-                .registerMapperT(new MapTFunc(EventTimeFilterFunction::process))
+                .registerMapTHandler(new EventTimeFilterFunction())
                 .start();
     }
 }

@@ -2,6 +2,9 @@ package io.numaproj.numaflow.function.reduce;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.AllDeadLetters;
+import akka.actor.DeadLetter;
+import akka.actor.DeadLetter$;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.Message;
@@ -23,7 +26,7 @@ public class ShutDownActorTest {
 
     @Test
     public void testFailure() {
-        final ActorSystem actorSystem = ActorSystem.create("test-system-2");
+        final ActorSystem actorSystem = ActorSystem.create("test-system-1");
         CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
 
         String reduceKey = "reduce-key";
@@ -61,6 +64,42 @@ public class ShutDownActorTest {
         }
     }
 
+    @Test
+    public void testDeadLetterHandling() {
+        final ActorSystem actorSystem = ActorSystem.create("test-system-2");
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+
+        ActorRef shutdownActor = actorSystem
+                .actorOf(ShutdownActor
+                        .props(
+                                new ReduceOutputStreamObserver(),
+                                completableFuture));
+
+        actorSystem.eventStream().subscribe(shutdownActor, AllDeadLetters.class);
+
+        Metadata md = new MetadataImpl(
+                new IntervalWindowImpl(Instant.now(), Instant.now()));
+
+        ActorRef supervisor = actorSystem
+                .actorOf(ReduceSupervisorActor
+                        .props(
+                                new TestExceptionFactory(),
+                                md,
+                                shutdownActor,
+                                new ReduceOutputStreamObserver()));
+
+        DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisor);
+        supervisor.tell(deadLetter, ActorRef.noSender());
+
+        try {
+            completableFuture.get();
+            fail("Expected the future to complete with exception");
+        } catch (Exception e) {
+            assertEquals(e.getMessage(), "java.lang.Throwable: dead letters");
+        }
+    }
+
+
     public static class TestExceptionFactory extends ReducerFactory<TestExceptionFactory.TestException> {
 
         @Override
@@ -68,7 +107,7 @@ public class ShutDownActorTest {
             return new TestException();
         }
 
-        public static class TestException extends Reducer {
+        public static class TestException extends ReduceHandler {
 
             int count = 0;
 

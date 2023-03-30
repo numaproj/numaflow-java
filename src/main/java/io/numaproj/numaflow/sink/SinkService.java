@@ -43,7 +43,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         }
         SinkDatumStreamImpl sinkDatumStream = new SinkDatumStreamImpl();
 
-        Future<List<Response>> result = sinkTaskExecutor.submit(() -> sinkHandler.HandleDo(
+        Future<List<Response>> result = sinkTaskExecutor.submit(() -> sinkHandler.processMessage(
                 sinkDatumStream));
 
         return new StreamObserver<Udsink.Datum>() {

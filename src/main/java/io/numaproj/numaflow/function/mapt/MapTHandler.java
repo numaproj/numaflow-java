@@ -4,10 +4,18 @@ import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.MessageT;
 
 /**
- * Interface of mapT function implementation.
+ * MapTHandler exposes method for performing transform operation
+ * in the source. Implementations should override the processMessage
+ * method which will be used for transforming the input messages
  */
-public interface MapTHandler {
 
-    // Function to process each coming message
-    MessageT[] HandleDo(String key, Datum datum);
+public abstract class MapTHandler {
+
+    /*
+        processMessage will be invoked for each input message.
+        this method will be used for processing and transforming
+        the messages
+     */
+    public abstract MessageT[] processMessage(String key, Datum datum);
+
 }
