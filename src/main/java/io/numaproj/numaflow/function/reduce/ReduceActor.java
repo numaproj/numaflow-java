@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Reduce actor invokes the user defined code and returns the result.
@@ -21,11 +22,11 @@ import java.util.Arrays;
 @AllArgsConstructor
 public class ReduceActor extends AbstractActor {
 
-    private String key;
+    private String[] key;
     private Metadata md;
     private ReduceHandler groupBy;
 
-    public static Props props(String key, Metadata md, ReduceHandler groupBy) {
+    public static Props props(String[] key, Metadata md, ReduceHandler groupBy) {
         return Props.create(ReduceActor.class, key, md, groupBy);
     }
 
@@ -52,7 +53,7 @@ public class ReduceActor extends AbstractActor {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
         Arrays.stream(messages).forEach(message -> {
             datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .setKey(message.getKey())
+                    .addAllKey(List.of(message.getKey()))
                     .setValue(ByteString.copyFrom(message.getValue()))
                     .build());
         });

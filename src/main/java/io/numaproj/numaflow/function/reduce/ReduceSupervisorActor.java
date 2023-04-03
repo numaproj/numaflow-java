@@ -17,14 +17,13 @@ import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
 import scala.collection.Iterable;
-import scala.concurrent.Future;
 
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 /**
  * Supervisor actor distributes the messages to actors and handles failure.
@@ -37,7 +36,6 @@ public class ReduceSupervisorActor extends AbstractActor {
     private final ActorRef shutdownActor;
     private final StreamObserver<Udfunction.DatumList> responseObserver;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
-    private final List<Future<Object>> results = new ArrayList<>();
 
     public ReduceSupervisorActor(
             ReducerFactory<? extends ReduceHandler> reducerFactory,
@@ -94,17 +92,17 @@ public class ReduceSupervisorActor extends AbstractActor {
         track all the child actors using actors map
      */
     private void invokeActors(Udfunction.Datum datum) {
-        if (!actorsMap.containsKey(datum.getKey())) {
-
+        String[] key = datum.getKeyList().toArray(new String[0]);
+        String keyStr = String.join("", key);
+        if (!actorsMap.containsKey(keyStr)) {
             ReduceHandler reduceHandler = reducerFactory.createReducer();
-
             ActorRef actorRef = getContext()
-                    .actorOf(ReduceActor.props(datum.getKey(), md, reduceHandler));
+                    .actorOf(ReduceActor.props(key, md, reduceHandler));
 
-            actorsMap.put(datum.getKey(), actorRef);
+            actorsMap.put(keyStr, actorRef);
         }
         HandlerDatum handlerDatum = constructHandlerDatum(datum);
-        actorsMap.get(datum.getKey()).tell(handlerDatum, getSelf());
+        actorsMap.get(keyStr).tell(handlerDatum, getSelf());
     }
 
     private void sendEOF(String EOF) {
@@ -123,7 +121,7 @@ public class ReduceSupervisorActor extends AbstractActor {
          */
 
         responseObserver.onNext(actorResponse.getDatumList());
-        actorsMap.remove(actorResponse.getKey());
+        actorsMap.remove(String.join("", actorResponse.getKey()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();
             getContext().getSystem().stop(getSelf());

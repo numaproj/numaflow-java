@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.function.Function.EOF;
@@ -67,9 +68,6 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             return;
         }
 
-        // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
-
         // get Datum from request
         HandlerDatum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
@@ -82,7 +80,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        Message[] messages = mapHandler.processMessage(key, handlerDatum);
+        Message[] messages = mapHandler.processMessage(request.getKeyList().toArray(new String[0]), handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messages));
@@ -101,9 +99,6 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             return;
         }
 
-        // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
-
         // get Datum from request
         HandlerDatum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
@@ -116,7 +111,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        MessageT[] messageTs = mapTHandler.processMessage(key, handlerDatum);
+        MessageT[] messageTs = mapTHandler.processMessage(request.getKeyList().toArray(new String[0]), handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messageTs));
@@ -204,7 +199,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
         Arrays.stream(messages).forEach(message -> {
             datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .setKey(message.getKey())
+                    .addAllKey(List.of(message.getKey()))
                     .setValue(ByteString.copyFrom(message.getValue()))
                     .build());
         });
@@ -220,7 +215,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                                     .setSeconds(messageT.getEventTime().getEpochSecond())
                                     .setNanos(messageT.getEventTime().getNano()))
                     )
-                    .setKey(messageT.getKey())
+                    .addAllKey(List.of(messageT.getKey()))
                     .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });

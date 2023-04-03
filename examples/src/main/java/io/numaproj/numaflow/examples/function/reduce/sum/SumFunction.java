@@ -13,7 +13,7 @@ public class SumFunction extends ReduceHandler {
     private int sum = 0;
 
     @Override
-    public void addMessage(String key, Datum datum, Metadata md) {
+    public void addMessage(String[] key, Datum datum, Metadata md) {
         try {
             sum += Integer.parseInt(new String(datum.getValue()));
         } catch (NumberFormatException e) {
@@ -22,7 +22,7 @@ public class SumFunction extends ReduceHandler {
     }
 
     @Override
-    public Message[] getOutput(String key, Metadata md) {
+    public Message[] getOutput(String[] key, Metadata md) {
         return new Message[]{Message.toAll(String.valueOf(sum).getBytes())};
     }
 }
