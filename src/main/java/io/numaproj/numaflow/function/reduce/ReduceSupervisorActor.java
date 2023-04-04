@@ -87,17 +87,17 @@ public class ReduceSupervisorActor extends AbstractActor {
     }
 
     /*
-        based on key of the input message invoke the right actor
-        if there is no actor for an incoming key, create a new actor
+        based on the keys of the input message invoke the right actor
+        if there is no actor for an incoming set of keys, create a new actor
         track all the child actors using actors map
      */
     private void invokeActors(Udfunction.Datum datum) {
-        String[] key = datum.getKeyList().toArray(new String[0]);
-        String keyStr = String.join("", key);
+        String[] keys = datum.getKeysList().toArray(new String[0]);
+        String keyStr = String.join("", keys);
         if (!actorsMap.containsKey(keyStr)) {
             ReduceHandler reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
-                    .actorOf(ReduceActor.props(key, md, reduceHandler));
+                    .actorOf(ReduceActor.props(keys, md, reduceHandler));
 
             actorsMap.put(keyStr, actorRef);
         }
@@ -121,7 +121,7 @@ public class ReduceSupervisorActor extends AbstractActor {
          */
 
         responseObserver.onNext(actorResponse.getDatumList());
-        actorsMap.remove(String.join("", actorResponse.getKey()));
+        actorsMap.remove(String.join("", actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();
             getContext().getSystem().stop(getSelf());

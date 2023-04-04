@@ -51,6 +51,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
             public void onNext(Udsink.Datum d) {
                 // get Datum from request
                 HandlerDatum handlerDatum = new HandlerDatum(
+                        d.getKeysList().toArray(new String[0]),
                         d.getValue().toByteArray(),
                         Instant.ofEpochSecond(
                                 d.getWatermark().getWatermark().getSeconds(),

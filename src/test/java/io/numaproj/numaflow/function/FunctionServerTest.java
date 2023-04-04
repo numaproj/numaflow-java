@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.numaproj.numaflow.function.Function.DATUM_KEY;
 import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
 import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
@@ -42,10 +41,10 @@ public class FunctionServerTest {
 
     private static class TestMapFn extends MapHandler {
         @Override
-        public Message[] processMessage(String[] key, Datum datum) {
-            String[] updatedKey = Arrays.stream(key).map(c -> c+PROCESSED_KEY_SUFFIX).toArray(String[]::new);
+        public Message[] processMessage(String[] keys, Datum datum) {
+            String[] updatedKeys = Arrays.stream(keys).map(c -> c+PROCESSED_KEY_SUFFIX).toArray(String[]::new);
             return new Message[]{Message.to(
-                   updatedKey,
+                   updatedKeys,
                     (new String(datum.getValue())
                             + PROCESSED_VALUE_SUFFIX).getBytes())};
         }
@@ -53,11 +52,11 @@ public class FunctionServerTest {
 
     private static class TestMapTFn extends MapTHandler {
         @Override
-        public MessageT[] processMessage(String[] key, Datum datum) {
-            String[] updatedKey = Arrays.stream(key).map(c -> c+PROCESSED_KEY_SUFFIX).toArray(String[]::new);
+        public MessageT[] processMessage(String[] keys, Datum datum) {
+            String[] updatedKeys = Arrays.stream(keys).map(c -> c+PROCESSED_KEY_SUFFIX).toArray(String[]::new);
             return new MessageT[]{MessageT.to(
                     TEST_EVENT_TIME,
-                    updatedKey,
+                    updatedKeys,
                     (new String(datum.getValue())
                             + PROCESSED_VALUE_SUFFIX).getBytes())};
         }
@@ -96,7 +95,7 @@ public class FunctionServerTest {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
         Udfunction.Datum inDatum = Udfunction.Datum
                 .newBuilder()
-                .addAllKey(List.of("test-map-key"))
+                .addAllKeys(List.of("test-map-key"))
                 .setValue(inValue)
                 .build();
 
@@ -109,7 +108,7 @@ public class FunctionServerTest {
                 .mapFn(inDatum);
 
         assertEquals(1, actualDatumList.getElementsCount());
-        assertEquals(expectedKey, actualDatumList.getElements(0).getKeyList().toArray(new String[0]));
+        assertEquals(expectedKey, actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
     }
 
@@ -118,7 +117,7 @@ public class FunctionServerTest {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
         Udfunction.Datum inDatum = Udfunction.Datum
                 .newBuilder()
-                .addKey("test-map-key")
+                .addKeys("test-map-key")
                 .setValue(inValue)
                 .build();
 
@@ -136,7 +135,7 @@ public class FunctionServerTest {
                                 .setSeconds(TEST_EVENT_TIME.getEpochSecond())
                                 .setNanos(TEST_EVENT_TIME.getNano())).build(),
                 actualDatumList.getElements(0).getEventTime());
-        assertEquals(expectedKey, actualDatumList.getElements(0).getKeyList().toArray(new String[0]));
+        assertEquals(expectedKey, actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
     }
 
@@ -159,20 +158,20 @@ public class FunctionServerTest {
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = Udfunction.Datum.newBuilder()
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                    .addKey(reduceKey)
+                    .addKeys(reduceKey)
                     .build();
             inputStreamObserver.onNext(inputDatum);
         }
 
         inputStreamObserver.onCompleted();
 
-        String[] expectedKey = new String[]{reduceKey + REDUCE_PROCESSED_KEY_SUFFIX};
+        String[] expectedKeys = new String[]{reduceKey + REDUCE_PROCESSED_KEY_SUFFIX};
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
         while (!outputStreamObserver.completed.get()) ;
 
         assertEquals(1, outputStreamObserver.resultDatum.get().getElementsCount());
-        assertEquals(expectedKey, outputStreamObserver.resultDatum.get().getElements(0).getKeyList().toArray(new String[0]));
+        assertEquals(expectedKeys, outputStreamObserver.resultDatum.get().getElements(0).getKeysList().toArray(new String[0]));
         ;
         assertEquals(
                 expectedValue,
@@ -186,7 +185,6 @@ public class FunctionServerTest {
         int keyCount = 100;
 
         Metadata metadata = new Metadata();
-        metadata.put(Metadata.Key.of(DATUM_KEY, Metadata.ASCII_STRING_MARSHALLER), reduceKey);
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
         metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
 
@@ -202,7 +200,7 @@ public class FunctionServerTest {
         for (int j = 0; j < keyCount; j++) {
             for (int i = 1; i <= 10; i++) {
                 Udfunction.Datum inputDatum = Udfunction.Datum.newBuilder()
-                        .addKey(reduceKey + j)
+                        .addKeys(reduceKey + j)
                         .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                         .build();
                 inputStreamObserver.onNext(inputDatum);

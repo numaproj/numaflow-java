@@ -3,7 +3,6 @@ package io.numaproj.numaflow.function;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
-import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -80,7 +79,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        Message[] messages = mapHandler.processMessage(request.getKeyList().toArray(new String[0]), handlerDatum);
+        Message[] messages = mapHandler.processMessage(request.getKeysList().toArray(new String[0]), handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messages));
@@ -111,7 +110,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        MessageT[] messageTs = mapTHandler.processMessage(request.getKeyList().toArray(new String[0]), handlerDatum);
+        MessageT[] messageTs = mapTHandler.processMessage(request.getKeysList().toArray(new String[0]), handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messageTs));
@@ -154,7 +153,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         handleFailure(failureFuture);
         /*
             create a supervisor actor which assign the tasks to child actors.
-            we create a child actor for every key in a window.
+            we create a child actor for every unique set of keys in a window
         */
         ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef, responseObserver));
@@ -199,7 +198,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
         Arrays.stream(messages).forEach(message -> {
             datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .addAllKey(List.of(message.getKey()))
+                    .addAllKeys(List.of(message.getKeys()))
                     .setValue(ByteString.copyFrom(message.getValue()))
                     .build());
         });
@@ -215,7 +214,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                                     .setSeconds(messageT.getEventTime().getEpochSecond())
                                     .setNanos(messageT.getEventTime().getNano()))
                     )
-                    .addAllKey(List.of(messageT.getKey()))
+                    .addAllKeys(List.of(messageT.getKeys()))
                     .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });

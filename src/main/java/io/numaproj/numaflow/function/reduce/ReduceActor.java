@@ -22,12 +22,12 @@ import java.util.List;
 @AllArgsConstructor
 public class ReduceActor extends AbstractActor {
 
-    private String[] key;
+    private String[] keys;
     private Metadata md;
     private ReduceHandler groupBy;
 
-    public static Props props(String[] key, Metadata md, ReduceHandler groupBy) {
-        return Props.create(ReduceActor.class, key, md, groupBy);
+    public static Props props(String[] keys, Metadata md, ReduceHandler groupBy) {
+        return Props.create(ReduceActor.class, keys, md, groupBy);
     }
 
     @Override
@@ -40,11 +40,11 @@ public class ReduceActor extends AbstractActor {
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {
-        this.groupBy.addMessage(key, handlerDatum, md);
+        this.groupBy.addMessage(keys, handlerDatum, md);
     }
 
     private void getResult(String eof) {
-        Message[] resultMessages = this.groupBy.getOutput(key, md);
+        Message[] resultMessages = this.groupBy.getOutput(keys, md);
         // send the result back to sender(parent actor)
         getSender().tell(buildDatumListResponse(resultMessages), getSelf());
     }
@@ -53,11 +53,11 @@ public class ReduceActor extends AbstractActor {
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
         Arrays.stream(messages).forEach(message -> {
             datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .addAllKey(List.of(message.getKey()))
+                    .addAllKeys(List.of(message.getKeys()))
                     .setValue(ByteString.copyFrom(message.getValue()))
                     .build());
         });
-        return new ActorResponse(this.key, datumListBuilder.build());
+        return new ActorResponse(this.keys, datumListBuilder.build());
     }
 
 }

@@ -16,6 +16,6 @@ public abstract class MapTHandler {
         this method will be used for processing and transforming
         the messages
      */
-    public abstract MessageT[] processMessage(String[] key, Datum datum);
+    public abstract MessageT[] processMessage(String[] keys, Datum datum);
 
 }

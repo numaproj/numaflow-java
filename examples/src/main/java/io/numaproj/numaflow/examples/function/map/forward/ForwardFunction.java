@@ -12,7 +12,7 @@ import java.io.IOException;
  */
 
 public class ForwardFunction extends MapHandler {
-    public Message[] processMessage(String[] key, Datum data) {
+    public Message[] processMessage(String[] keys, Datum data) {
         return new Message[]{Message.toAll(data.getValue())};
     }
 

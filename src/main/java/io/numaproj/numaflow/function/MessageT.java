@@ -18,7 +18,7 @@ import static io.numaproj.numaflow.function.Message.DROP;
 public class MessageT {
 
     private Instant eventTime;
-    private final String[] key;
+    private final String[] keys;
     private final byte[] value;
 
     // creates a MessageT to be dropped

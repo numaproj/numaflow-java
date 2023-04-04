@@ -16,15 +16,15 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
         private int sum = 0;
 
         @Override
-        public void addMessage(String[] key, Datum datum, Metadata md) {
+        public void addMessage(String[] kesy, Datum datum, Metadata md) {
             sum += Integer.parseInt(new String(datum.getValue()));
         }
 
         @Override
-        public Message[] getOutput(String[] key, Metadata md) {
-            String[] updatedKey = Arrays.stream(key).map(c -> c+"-processed").toArray(String[]::new);
+        public Message[] getOutput(String[] keys, Metadata md) {
+            String[] updatedKeys = Arrays.stream(keys).map(c -> c+"-processed").toArray(String[]::new);
             return new Message[]{Message.to(
-                    updatedKey,
+                    updatedKeys,
                     String.valueOf(sum).getBytes())};
         }
     }

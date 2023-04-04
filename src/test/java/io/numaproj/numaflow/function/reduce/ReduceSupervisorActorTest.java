@@ -28,7 +28,7 @@ public class ReduceSupervisorActorTest {
 
         String reduceKey = "reduce-key";
         Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.
-                newBuilder().addKey(reduceKey);
+                newBuilder().addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
@@ -47,7 +47,7 @@ public class ReduceSupervisorActorTest {
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
-                    .addKey("reduce-test")
+                    .addKeys("reduce-test")
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .build();
             supervisor.tell(inputDatum, ActorRef.noSender());
@@ -86,7 +86,7 @@ public class ReduceSupervisorActorTest {
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = Udfunction.Datum.newBuilder()
-                    .addKey("reduce-test" + i)
+                    .addKeys("reduce-test" + i)
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .build();
             supervisor.tell(inputDatum, ActorRef.noSender());
@@ -112,12 +112,12 @@ public class ReduceSupervisorActorTest {
             int count = 0;
 
             @Override
-            public void addMessage(String[] key, Datum datum, Metadata md) {
+            public void addMessage(String[] keys, Datum datum, Metadata md) {
                 count += 1;
             }
 
             @Override
-            public Message[] getOutput(String[] key, Metadata md) {
+            public Message[] getOutput(String[] keys, Metadata md) {
                 return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
             }
         }

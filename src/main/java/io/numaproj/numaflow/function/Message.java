@@ -10,7 +10,7 @@ public class Message {
     public static final String ALL = "U+005C__ALL__";
     public static final String DROP = "U+005C__DROP__";
 
-    private final String[] key;
+    private final String[] keys;
     private final byte[] value;
 
     // creates a Message to be dropped

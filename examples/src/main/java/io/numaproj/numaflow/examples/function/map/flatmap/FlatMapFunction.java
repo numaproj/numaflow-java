@@ -16,7 +16,7 @@ import java.io.IOException;
 
 public class FlatMapFunction extends MapHandler {
 
-    public Message[] processMessage(String[] key, Datum data) {
+    public Message[] processMessage(String[] keys, Datum data) {
         String msg = new String(data.getValue());
         String[] strs = msg.split(",");
         Message[] results = new Message[strs.length];

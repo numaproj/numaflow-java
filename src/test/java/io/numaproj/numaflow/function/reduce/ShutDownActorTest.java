@@ -30,7 +30,7 @@ public class ShutDownActorTest {
 
         String reduceKey = "reduce-key";
         Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.
-                newBuilder().addKey(reduceKey);
+                newBuilder().addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
@@ -50,7 +50,7 @@ public class ShutDownActorTest {
                                 new ReduceOutputStreamObserver()));
 
         Udfunction.Datum inputDatum = inDatumBuilder
-                .addKey("reduce-test")
+                .addKeys("reduce-test")
                 .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                 .build();
         supervisor.tell(inputDatum, ActorRef.noSender());
@@ -111,13 +111,13 @@ public class ShutDownActorTest {
             int count = 0;
 
             @Override
-            public void addMessage(String[] key, Datum datum, Metadata md) {
+            public void addMessage(String[] keys, Datum datum, Metadata md) {
                 count += 1;
                 throw new RuntimeException("UDF Failure");
             }
 
             @Override
-            public Message[] getOutput(String[] key, Metadata md) {
+            public Message[] getOutput(String[] keys, Metadata md) {
                 return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
             }
         }
