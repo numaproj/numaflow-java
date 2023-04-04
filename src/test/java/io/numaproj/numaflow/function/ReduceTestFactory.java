@@ -16,7 +16,7 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
         private int sum = 0;
 
         @Override
-        public void addMessage(String[] kesy, Datum datum, Metadata md) {
+        public void addMessage(String[] keys, Datum datum, Metadata md) {
             sum += Integer.parseInt(new String(datum.getValue()));
         }
 
