@@ -16,6 +16,8 @@ public class Function {
 
     public static final String SUCCESS = "SUCCESS";
 
+    public static final String DELIMITTER = ":";
+
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = Metadata.Key.of(
             Function.WIN_START_KEY,
             Metadata.ASCII_STRING_MARSHALLER);

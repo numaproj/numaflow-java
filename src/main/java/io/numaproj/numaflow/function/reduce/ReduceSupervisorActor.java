@@ -93,7 +93,7 @@ public class ReduceSupervisorActor extends AbstractActor {
      */
     private void invokeActors(Udfunction.Datum datum) {
         String[] keys = datum.getKeysList().toArray(new String[0]);
-        String keyStr = String.join("", keys);
+        String keyStr = String.join(Function.DELIMITTER, keys);
         if (!actorsMap.containsKey(keyStr)) {
             ReduceHandler reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
@@ -121,7 +121,7 @@ public class ReduceSupervisorActor extends AbstractActor {
          */
 
         responseObserver.onNext(actorResponse.getDatumList());
-        actorsMap.remove(String.join("", actorResponse.getKeys()));
+        actorsMap.remove(String.join(Function.DELIMITTER, actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();
             getContext().getSystem().stop(getSelf());
