@@ -14,5 +14,5 @@ public abstract class MapHandler {
         processMessage will be invoked for each input message.
         this method will be used for processing messages
      */
-    public abstract Message[] processMessage(String key, Datum datum);
+    public abstract Message[] processMessage(String[] key, Datum datum);
 }

@@ -10,7 +10,7 @@ import java.io.IOException;
 
 /**
  * This is a simple User Defined Function example which receives a message,
- * and attaches a key to the message based on the value, if the value is even
+ * and attaches keys to the message based on the value, if the value is even
  * the key will be set as "even" if the value is odd the key will be set as
  * "odd"
  */
@@ -18,7 +18,7 @@ import java.io.IOException;
 @Slf4j
 public class EvenOddFunction extends MapHandler {
 
-    public Message[] processMessage(String key, Datum data) {
+    public Message[] processMessage(String[] keys, Datum data) {
         int value = 0;
         try {
             value = Integer.parseInt(new String(data.getValue()));
@@ -27,9 +27,9 @@ public class EvenOddFunction extends MapHandler {
             return new Message[]{Message.toDrop()};
         }
         if (value % 2 == 0) {
-            return new Message[]{Message.to("even", data.getValue())};
+            return new Message[]{Message.to(new String[]{"even"}, data.getValue())};
         }
-        return new Message[]{Message.to("odd", data.getValue())};
+        return new Message[]{Message.to(new String[]{"odd"}, data.getValue())};
     }
 
     public static void main(String[] args) throws IOException {

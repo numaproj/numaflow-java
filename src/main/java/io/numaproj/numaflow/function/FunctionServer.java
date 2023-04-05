@@ -99,8 +99,6 @@ public class FunctionServer {
 
                 final var context =
                         Context.current().withValues(
-                                Function.DATUM_CONTEXT_KEY,
-                                headers.get(Function.DATUM_METADATA_KEY),
                                 Function.WINDOW_START_TIME,
                                 headers.get(Function.DATUM_METADATA_WIN_START),
                                 Function.WINDOW_END_TIME,

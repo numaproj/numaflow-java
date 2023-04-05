@@ -80,7 +80,7 @@ public class SinkServerTest {
                 .newStub(inProcessChannel)
                 .sinkFn(outputStreamObserver);
 
-        Udsink.Datum.Builder inDatumBuilder = Udsink.Datum.newBuilder().setKey("sink");
+        Udsink.Datum.Builder inDatumBuilder = Udsink.Datum.newBuilder().addKeys("sink");
         String actualId = "sink_test_id";
         String expectedId = actualId + processedIdSuffix;
 

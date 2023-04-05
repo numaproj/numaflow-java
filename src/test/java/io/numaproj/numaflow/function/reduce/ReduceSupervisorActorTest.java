@@ -28,7 +28,7 @@ public class ReduceSupervisorActorTest {
 
         String reduceKey = "reduce-key";
         Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.
-                newBuilder().setKey(reduceKey);
+                newBuilder().addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
@@ -47,7 +47,7 @@ public class ReduceSupervisorActorTest {
 
         for (int i = 1; i <= 10; i++) {
             Udfunction.Datum inputDatum = inDatumBuilder
-                    .setKey("reduce-test")
+                    .addKeys("reduce-test")
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .build();
             supervisor.tell(inputDatum, ActorRef.noSender());
@@ -67,10 +67,6 @@ public class ReduceSupervisorActorTest {
         final ActorSystem actorSystem = ActorSystem.create("test-system-2");
         CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
 
-        String reduceKey = "reduce-key";
-        Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.
-                newBuilder().setKey(reduceKey);
-
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
                         .props(
@@ -89,8 +85,8 @@ public class ReduceSupervisorActorTest {
                                 new ReduceOutputStreamObserver()));
 
         for (int i = 1; i <= 10; i++) {
-            Udfunction.Datum inputDatum = inDatumBuilder
-                    .setKey("reduce-test" + i)
+            Udfunction.Datum inputDatum = Udfunction.Datum.newBuilder()
+                    .addKeys("reduce-test" + i)
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .build();
             supervisor.tell(inputDatum, ActorRef.noSender());
@@ -116,12 +112,12 @@ public class ReduceSupervisorActorTest {
             int count = 0;
 
             @Override
-            public void addMessage(String key, Datum datum, Metadata md) {
+            public void addMessage(String[] keys, Datum datum, Metadata md) {
                 count += 1;
             }
 
             @Override
-            public Message[] getOutput(String key, Metadata md) {
+            public Message[] getOutput(String[] keys, Metadata md) {
                 return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
             }
         }

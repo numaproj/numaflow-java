@@ -3,7 +3,6 @@ package io.numaproj.numaflow.function;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
-import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -25,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.function.Function.EOF;
@@ -67,9 +67,6 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             return;
         }
 
-        // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
-
         // get Datum from request
         HandlerDatum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
@@ -82,7 +79,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        Message[] messages = mapHandler.processMessage(key, handlerDatum);
+        Message[] messages = mapHandler.processMessage(request.getKeysList().toArray(new String[0]), handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messages));
@@ -101,9 +98,6 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             return;
         }
 
-        // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
-
         // get Datum from request
         HandlerDatum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
@@ -116,7 +110,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        MessageT[] messageTs = mapTHandler.processMessage(key, handlerDatum);
+        MessageT[] messageTs = mapTHandler.processMessage(request.getKeysList().toArray(new String[0]), handlerDatum);
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messageTs));
@@ -159,7 +153,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         handleFailure(failureFuture);
         /*
             create a supervisor actor which assign the tasks to child actors.
-            we create a child actor for every key in a window.
+            we create a child actor for every unique set of keys in a window
         */
         ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef, responseObserver));
@@ -204,7 +198,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
         Arrays.stream(messages).forEach(message -> {
             datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .setKey(message.getKey())
+                    .addAllKeys(List.of(message.getKeys()))
                     .setValue(ByteString.copyFrom(message.getValue()))
                     .build());
         });
@@ -220,7 +214,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                                     .setSeconds(messageT.getEventTime().getEpochSecond())
                                     .setNanos(messageT.getEventTime().getNano()))
                     )
-                    .setKey(messageT.getKey())
+                    .addAllKeys(List.of(messageT.getKeys()))
                     .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });

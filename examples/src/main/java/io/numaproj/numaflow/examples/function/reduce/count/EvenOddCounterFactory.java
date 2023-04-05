@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Objects;
 
 @Slf4j
@@ -33,7 +34,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
         }
 
         @Override
-        public void addMessage(String key, Datum datum, Metadata md) {
+        public void addMessage(String[] keys, Datum datum, Metadata md) {
             try {
                 int val = Integer.parseInt(new String(datum.getValue()));
                 // increment based on the value specified in the config
@@ -48,7 +49,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
         }
 
         @Override
-        public Message[] getOutput(String key, Metadata md) {
+        public Message[] getOutput(String[] keys, Metadata md) {
             log.info(
                     "even and odd count - {} {}, window - {} {}",
                     evenCount,
@@ -56,10 +57,10 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
                     md.getIntervalWindow().getStartTime().toString(),
                     md.getIntervalWindow().getEndTime().toString());
 
-            if (Objects.equals(key, "even")) {
-                return new Message[]{Message.to(key, String.valueOf(evenCount).getBytes())};
+            if (Arrays.equals(keys, new String[]{"even"})) {
+                return new Message[]{Message.to(keys, String.valueOf(evenCount).getBytes())};
             } else {
-                return new Message[]{Message.to(key, String.valueOf(oddCount).getBytes())};
+                return new Message[]{Message.to(keys, String.valueOf(oddCount).getBytes())};
             }
         }
     }

@@ -7,6 +7,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class HandlerDatum implements Datum {
 
+    private String[] keys;
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
@@ -15,7 +16,12 @@ public class HandlerDatum implements Datum {
 
     // poison packet for reduce stream, to indicate EOF
     public static HandlerDatum EOF() {
-        return new HandlerDatum(null, null, null, null, true);
+        return new HandlerDatum(null, null, null, null, null, true);
+    }
+
+    @Override
+    public String[] getKeys() {
+        return keys;
     }
 
     @Override

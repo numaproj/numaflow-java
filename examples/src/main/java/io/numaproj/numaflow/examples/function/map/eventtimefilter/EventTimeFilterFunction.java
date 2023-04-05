@@ -22,7 +22,7 @@ public class EventTimeFilterFunction extends MapTHandler {
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 
-    public MessageT[] processMessage(String key, Datum data) {
+    public MessageT[] processMessage(String[] keys, Datum data) {
         Instant eventTime = data.getEventTime();
 
         if (eventTime.isBefore(januaryFirst2022)) {
@@ -31,13 +31,13 @@ public class EventTimeFilterFunction extends MapTHandler {
             return new MessageT[]{
                     MessageT.to(
                             januaryFirst2022,
-                            "within_year_2022",
+                            new String[]{"within_year_2022"},
                             data.getValue())};
         } else {
             return new MessageT[]{
                     MessageT.to(
                             januaryFirst2023,
-                            "after_year_2022",
+                            new String[]{"after_year_2022"},
                             data.getValue())};
         }
     }
