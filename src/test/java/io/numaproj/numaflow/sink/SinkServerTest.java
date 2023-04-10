@@ -19,7 +19,6 @@ import org.junit.runners.JUnit4;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -30,26 +29,6 @@ public class SinkServerTest {
     private final static String processedIdSuffix = "-id-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
-    private static class TestSinkFn extends SinkHandler {
-
-        @Override
-        public List<Response> processMessage(SinkDatumStream datumStream) {
-            List<Response> responses = new ArrayList<>();
-            while (true) {
-                Datum datum = datumStream.ReadMessage();
-                // null indicates the end of the input
-                if (datum == SinkDatumStream.EOF) {
-                    break;
-                }
-
-                logger.info(Arrays.toString(datum.getValue()));
-                responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
-            }
-            return responses;
-        }
-    }
-
     private SinkServer server;
     private ManagedChannel inProcessChannel;
 
@@ -76,16 +55,18 @@ public class SinkServerTest {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
-        StreamObserver<Udsink.Datum> inputStreamObserver = UserDefinedSinkGrpc
+        StreamObserver<Udsink.DatumRequest> inputStreamObserver = UserDefinedSinkGrpc
                 .newStub(inProcessChannel)
                 .sinkFn(outputStreamObserver);
 
-        Udsink.Datum.Builder inDatumBuilder = Udsink.Datum.newBuilder().addKeys("sink");
+        Udsink.DatumRequest.Builder inDatumBuilder = Udsink.DatumRequest
+                .newBuilder()
+                .addKeys("sink");
         String actualId = "sink_test_id";
         String expectedId = actualId + processedIdSuffix;
 
         for (int i = 1; i <= 10; i++) {
-            Udsink.Datum inputDatum = inDatumBuilder
+            Udsink.DatumRequest inputDatum = inDatumBuilder
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .setId(actualId)
                     .build();
@@ -98,5 +79,24 @@ public class SinkServerTest {
         assertEquals(10, responseList.getResponsesCount());
         responseList.getResponsesList()
                 .forEach(response -> assertEquals(response.getId(), expectedId));
+    }
+
+    private static class TestSinkFn extends SinkHandler {
+
+        @Override
+        public List<Response> processMessage(SinkDatumStream datumStream) {
+            List<Response> responses = new ArrayList<>();
+            while (true) {
+                Datum datum = datumStream.ReadMessage();
+                // null indicates the end of the input
+                if (datum == SinkDatumStream.EOF) {
+                    break;
+                }
+
+                logger.info(Arrays.toString(datum.getValue()));
+                responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
+            }
+            return responses;
+        }
     }
 }

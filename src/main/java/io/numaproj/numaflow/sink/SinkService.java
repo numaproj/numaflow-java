@@ -35,7 +35,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
      * Applies a function to each datum element in the stream.
      */
     @Override
-    public StreamObserver<Udsink.Datum> sinkFn(StreamObserver<Udsink.ResponseList> responseObserver) {
+    public StreamObserver<Udsink.DatumRequest> sinkFn(StreamObserver<Udsink.ResponseList> responseObserver) {
         if (this.sinkHandler == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getMapFnMethod(),
@@ -46,9 +46,9 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         Future<List<Response>> result = sinkTaskExecutor.submit(() -> sinkHandler.processMessage(
                 sinkDatumStream));
 
-        return new StreamObserver<Udsink.Datum>() {
+        return new StreamObserver<Udsink.DatumRequest>() {
             @Override
-            public void onNext(Udsink.Datum d) {
+            public void onNext(Udsink.DatumRequest d) {
                 // get Datum from request
                 HandlerDatum handlerDatum = new HandlerDatum(
                         d.getKeysList().toArray(new String[0]),

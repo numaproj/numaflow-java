@@ -3,6 +3,7 @@ package io.numaproj.numaflow.examples.function.map.forward;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.map.MapHandler;
 
 import java.io.IOException;
@@ -12,11 +13,15 @@ import java.io.IOException;
  */
 
 public class ForwardFunction extends MapHandler {
-    public Message[] processMessage(String[] keys, Datum data) {
-        return new Message[]{Message.toAll(data.getValue())};
-    }
 
     public static void main(String[] args) throws IOException {
         new FunctionServer().registerMapHandler(new ForwardFunction()).start();
+    }
+
+    public MessageList processMessage(String[] keys, Datum data) {
+        return MessageList
+                .builder()
+                .addMessage(Message.builder().value(data.getValue()).build())
+                .build();
     }
 }

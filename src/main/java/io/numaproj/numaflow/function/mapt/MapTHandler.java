@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.function.mapt;
 
 import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.MessageT;
+import io.numaproj.numaflow.function.MessageTList;
 
 /**
  * MapTHandler exposes method for performing transform operation
@@ -16,6 +16,6 @@ public abstract class MapTHandler {
         this method will be used for processing and transforming
         the messages
      */
-    public abstract MessageT[] processMessage(String[] keys, Datum datum);
+    public abstract MessageTList processMessage(String[] keys, Datum datum);
 
 }

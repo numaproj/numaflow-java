@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -19,6 +18,11 @@ import java.util.List;
 @Slf4j
 public class SimpleSink extends SinkHandler {
 
+    public static void main(String[] args) throws IOException {
+        new SinkServer().registerSinker(new SimpleSink()).start();
+    }
+
+    @Override
     public List<Response> processMessage(SinkDatumStream datumStream) {
         ArrayList<Response> responses = new ArrayList<>();
 
@@ -28,13 +32,9 @@ public class SimpleSink extends SinkHandler {
             if (datum == SinkDatumStream.EOF) {
                 break;
             }
-            log.info(Arrays.toString(datum.getValue()));
+            log.info(new String(datum.getValue()));
             responses.add(new Response(datum.getId(), true, ""));
         }
         return responses;
-    }
-
-    public static void main(String[] args) throws IOException {
-        new SinkServer().registerSinker(new SimpleSink()).start();
     }
 }

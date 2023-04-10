@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.function.reduce;
 
 import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.metadata.Metadata;
 
 /**
@@ -21,5 +21,5 @@ public abstract class ReduceHandler {
         getOutput will be invoked at the end of input.
         It can is used to return the aggregated result.
      */
-    public abstract Message[] getOutput(String[] keys, Metadata md);
+    public abstract MessageList getOutput(String[] keys, Metadata md);
 }

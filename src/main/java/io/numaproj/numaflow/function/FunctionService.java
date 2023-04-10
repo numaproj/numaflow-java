@@ -12,8 +12,8 @@ import io.numaproj.numaflow.function.metadata.IntervalWindow;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
-import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
+import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import io.numaproj.numaflow.function.reduce.ShutdownActor;
 import io.numaproj.numaflow.function.v1.Udfunction;
@@ -23,6 +23,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -58,8 +59,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
      */
     @Override
     public void mapFn(
-            Udfunction.Datum request,
-            StreamObserver<Udfunction.DatumList> responseObserver) {
+            Udfunction.DatumRequest request,
+            StreamObserver<Udfunction.DatumResponseList> responseObserver) {
         if (this.mapHandler == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
                     getMapFnMethod(),
@@ -79,17 +80,19 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        Message[] messages = mapHandler.processMessage(request.getKeysList().toArray(new String[0]), handlerDatum);
+        MessageList messageList = mapHandler.processMessage(request
+                .getKeysList()
+                .toArray(new String[0]), handlerDatum);
 
         // set response
-        responseObserver.onNext(buildDatumListResponse(messages));
+        responseObserver.onNext(buildDatumListResponse(messageList));
         responseObserver.onCompleted();
     }
 
     @Override
     public void mapTFn(
-            Udfunction.Datum request,
-            StreamObserver<Udfunction.DatumList> responseObserver) {
+            Udfunction.DatumRequest request,
+            StreamObserver<Udfunction.DatumResponseList> responseObserver) {
 
         if (this.mapTHandler == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
@@ -110,10 +113,12 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         );
 
         // process Datum
-        MessageT[] messageTs = mapTHandler.processMessage(request.getKeysList().toArray(new String[0]), handlerDatum);
+        MessageTList messageTList = mapTHandler.processMessage(request
+                .getKeysList()
+                .toArray(new String[0]), handlerDatum);
 
         // set response
-        responseObserver.onNext(buildDatumListResponse(messageTs));
+        responseObserver.onNext(buildDatumListResponse(messageTList));
         responseObserver.onCompleted();
     }
 
@@ -121,7 +126,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
      * Streams input data to reduceFn and returns the result.
      */
     @Override
-    public StreamObserver<Udfunction.Datum> reduceFn(final StreamObserver<Udfunction.DatumList> responseObserver) {
+    public StreamObserver<Udfunction.DatumRequest> reduceFn(final StreamObserver<Udfunction.DatumResponseList> responseObserver) {
 
         if (this.reducerFactory == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
@@ -156,12 +161,16 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             we create a child actor for every unique set of keys in a window
         */
         ActorRef supervisorActor = actorSystem
-                .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef, responseObserver));
+                .actorOf(ReduceSupervisorActor.props(
+                        reducerFactory,
+                        md,
+                        shutdownActorRef,
+                        responseObserver));
 
 
-        return new StreamObserver<Udfunction.Datum>() {
+        return new StreamObserver<Udfunction.DatumRequest>() {
             @Override
-            public void onNext(Udfunction.Datum datum) {
+            public void onNext(Udfunction.DatumRequest datum) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
                     supervisorActor.tell(datum, supervisorActor);
@@ -194,27 +203,29 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         responseObserver.onCompleted();
     }
 
-    private Udfunction.DatumList buildDatumListResponse(Message[] messages) {
-        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        Arrays.stream(messages).forEach(message -> {
-            datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .addAllKeys(List.of(message.getKeys()))
+    private Udfunction.DatumResponseList buildDatumListResponse(MessageList messageList) {
+        Udfunction.DatumResponseList.Builder datumListBuilder = Udfunction.DatumResponseList.newBuilder();
+        messageList.getMessages().forEach(message -> {
+            datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
                     .setValue(ByteString.copyFrom(message.getValue()))
+                    .addAllKeys(message.getKeys() == null? new ArrayList<>(): List.of(message.getKeys()))
+                    .addAllTags(message.getTags() == null? new ArrayList<>(): List.of(message.getTags()))
                     .build());
         });
         return datumListBuilder.build();
     }
 
-    private Udfunction.DatumList buildDatumListResponse(MessageT[] messageTs) {
-        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        Arrays.stream(messageTs).forEach(messageT -> {
-            datumListBuilder.addElements(Udfunction.Datum.newBuilder()
+    private Udfunction.DatumResponseList buildDatumListResponse(MessageTList messageTList) {
+        Udfunction.DatumResponseList.Builder datumListBuilder = Udfunction.DatumResponseList.newBuilder();
+        messageTList.getMessages().forEach(messageT -> {
+            datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
                     .setEventTime(EventTime.newBuilder().setEventTime
                             (com.google.protobuf.Timestamp.newBuilder()
                                     .setSeconds(messageT.getEventTime().getEpochSecond())
                                     .setNanos(messageT.getEventTime().getNano()))
                     )
-                    .addAllKeys(List.of(messageT.getKeys()))
+                    .addAllKeys(messageT.getKeys() == null? new ArrayList<>(): List.of(messageT.getKeys()))
+                    .addAllTags(messageT.getTags() == null? new ArrayList<>(): List.of(messageT.getTags()))
                     .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });
