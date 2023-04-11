@@ -70,8 +70,8 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
                 val = String.valueOf(oddCount).getBytes();
             }
             return MessageList
-                    .builder()
-                    .addMessage(Message.builder().keys(keys).value(val).build())
+                    .newBuilder()
+                    .addMessage(Message.newBuilder().keys(keys).value(val).build())
                     .build();
         }
     }

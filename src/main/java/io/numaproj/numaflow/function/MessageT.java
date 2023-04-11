@@ -12,9 +12,8 @@ import static io.numaproj.numaflow.function.Message.DROP;
  * contains one more field, the event time, usually extracted from the payload.
  */
 @Getter
-@Builder
+@Builder(builderMethodName = "newBuilder")
 public class MessageT {
-
     private final String[] keys;
     private final byte[] value;
     private final String[] tags;
@@ -22,6 +21,6 @@ public class MessageT {
 
     // creates a MessageT to be dropped
     public static MessageT toDrop() {
-        return MessageT.builder().tags(new String[]{DROP}).build();
+        return MessageT.newBuilder().tags(new String[]{DROP}).build();
     }
 }

@@ -217,9 +217,9 @@ public class FunctionServerTest {
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
             return MessageList
-                    .builder()
+                    .newBuilder()
                     .addMessage(Message
-                            .builder()
+                            .newBuilder()
                             .keys(updatedKeys)
                             .tags(new String[]{"test-tag"})
                             .value((new String(datum.getValue())
@@ -237,9 +237,9 @@ public class FunctionServerTest {
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
             return MessageTList
-                    .builder()
+                    .newBuilder()
                     .addMessage(MessageT
-                            .builder()
+                            .newBuilder()
                             .eventTime(TEST_EVENT_TIME)
                             .keys(updatedKeys)
                             .tags(new String[]{"test-tag"})

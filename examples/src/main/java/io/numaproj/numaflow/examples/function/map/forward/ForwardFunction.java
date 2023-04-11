@@ -20,8 +20,8 @@ public class ForwardFunction extends MapHandler {
 
     public MessageList processMessage(String[] keys, Datum data) {
         return MessageList
-                .builder()
-                .addMessage(Message.builder().value(data.getValue()).build())
+                .newBuilder()
+                .addMessage(Message.newBuilder().value(data.getValue()).build())
                 .build();
     }
 }

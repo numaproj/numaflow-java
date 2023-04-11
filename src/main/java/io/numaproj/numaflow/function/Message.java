@@ -8,7 +8,7 @@ import lombok.Getter;
  */
 
 @Getter
-@Builder
+@Builder(builderMethodName = "newBuilder")
 public class Message {
     public static final String DROP = "U+005C__DROP__";
 
@@ -18,6 +18,6 @@ public class Message {
 
     // creates a Message to be dropped
     public static Message toDrop() {
-        return Message.builder().tags(new String[]{DROP}).build();
+        return Message.newBuilder().tags(new String[]{DROP}).build();
     }
 }

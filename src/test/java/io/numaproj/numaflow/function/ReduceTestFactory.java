@@ -27,9 +27,9 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
                     .map(c -> c + "-processed")
                     .toArray(String[]::new);
             return MessageList
-                    .builder()
+                    .newBuilder()
                     .addMessage(Message
-                            .builder()
+                            .newBuilder()
                             .keys(updatedKeys)
                             .value(String.valueOf(sum).getBytes())
                             .build())

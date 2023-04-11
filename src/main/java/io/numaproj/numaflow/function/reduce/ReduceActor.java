@@ -60,6 +60,7 @@ public class ReduceActor extends AbstractActor {
                     .addAllTags(message.getTags() == null ? new ArrayList<>() : List.of(
                             message.getTags()))
                     .build());
+
         });
         return new ActorResponse(this.keys, datumListBuilder.build());
     }

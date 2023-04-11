@@ -120,9 +120,9 @@ public class ReduceSupervisorActorTest {
             @Override
             public MessageList getOutput(String[] keys, Metadata md) {
                 return MessageList
-                        .builder()
+                        .newBuilder()
                         .addMessage(Message
-                                .builder()
+                                .newBuilder()
                                 .value(String.valueOf(count).getBytes())
                                 .build())
                         .build();

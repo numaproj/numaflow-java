@@ -29,14 +29,14 @@ public class EvenOddFunction extends MapHandler {
             value = Integer.parseInt(new String(data.getValue()));
         } catch (NumberFormatException e) {
             log.error("Error occurred while parsing int");
-            return MessageList.builder().addMessage(Message.toDrop()).build();
+            return MessageList.newBuilder().addMessage(Message.toDrop()).build();
         }
         String key = value % 2 == 0 ? "even" : "odd";
 
         return MessageList
-                .builder()
+                .newBuilder()
                 .addMessage(Message
-                        .builder()
+                        .newBuilder()
                         .value(data.getValue())
                         .keys(new String[]{key})
                         .build())

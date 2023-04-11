@@ -24,10 +24,10 @@ public class FlatMapFunction extends MapHandler {
     public MessageList processMessage(String[] keys, Datum data) {
         String msg = new String(data.getValue());
         String[] strs = msg.split(",");
-        MessageList.MessageListBuilder listBuilder = MessageList.builder();
+        MessageList.MessageListBuilder listBuilder = MessageList.newBuilder();
 
         for (int i = 0; i < strs.length; i++) {
-            listBuilder.addMessage(Message.builder().value(strs[i].getBytes()).build());
+            listBuilder.addMessage(Message.newBuilder().value(strs[i].getBytes()).build());
         }
         return listBuilder.build();
     }
