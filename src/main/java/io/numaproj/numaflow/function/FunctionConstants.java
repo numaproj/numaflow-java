@@ -3,8 +3,8 @@ package io.numaproj.numaflow.function;
 import io.grpc.Context;
 import io.grpc.Metadata;
 
-public class Function {
-    public static final String SOCKET_PATH = "/var/run/numaflow/function.sock";
+public class FunctionConstants {
+    public static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/function.sock";
 
     public static final int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 4;
 
@@ -19,26 +19,26 @@ public class Function {
     public static final String SUCCESS = "SUCCESS";
 
     public static final Metadata.Key<String> DATUM_METADATA_KEY = Metadata.Key.of(
-            Function.DATUM_KEY,
+            FunctionConstants.DATUM_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
 
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = Metadata.Key.of(
-            Function.WIN_START_KEY,
+            FunctionConstants.WIN_START_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
 
     public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
-            Function.WIN_END_KEY,
+            FunctionConstants.WIN_END_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
 
     public static final Context.Key<String> DATUM_CONTEXT_KEY = Context.keyWithDefault(
-            Function.DATUM_KEY,
+            FunctionConstants.DATUM_KEY,
             "");
 
     public static final Context.Key<String> WINDOW_START_TIME = Context.keyWithDefault(
-            Function.WIN_START_KEY,
+            FunctionConstants.WIN_START_KEY,
             "");
 
     public static final Context.Key<String> WINDOW_END_TIME = Context.keyWithDefault(
-            Function.WIN_END_KEY,
+            FunctionConstants.WIN_END_KEY,
             "");
 }

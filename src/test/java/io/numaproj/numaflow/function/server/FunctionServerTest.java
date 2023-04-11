@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function;
+package io.numaproj.numaflow.function.server;
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
@@ -9,6 +9,11 @@ import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GRPCServerConfig;
+import io.numaproj.numaflow.function.Datum;
+import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageT;
+import io.numaproj.numaflow.function.ReduceOutputStreamObserver;
+import io.numaproj.numaflow.function.ReduceTestFactory;
 import io.numaproj.numaflow.function.map.MapFunc;
 import io.numaproj.numaflow.function.mapt.MapTFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;
@@ -24,9 +29,9 @@ import org.junit.runners.JUnit4;
 import java.time.Instant;
 import java.util.function.BiFunction;
 
-import static io.numaproj.numaflow.function.Function.DATUM_KEY;
-import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
-import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
+import static io.numaproj.numaflow.function.FunctionConstants.DATUM_KEY;
+import static io.numaproj.numaflow.function.FunctionConstants.WIN_END_KEY;
+import static io.numaproj.numaflow.function.FunctionConstants.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnit4.class)
@@ -60,10 +65,9 @@ public class FunctionServerTest {
 
         server = new FunctionServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
-                new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+                new GRPCServerConfig());
 
-        server
-                .registerMapper(new MapFunc(testMapFn))
+        server.registerMapper(new MapFunc(testMapFn))
                 .registerMapperT(new MapTFunc(testMapTFn))
                 .registerReducerFactory(new ReduceTestFactory())
                 .start();
@@ -165,7 +169,7 @@ public class FunctionServerTest {
         String expectedKey = reduceKey + REDUCE_PROCESSED_KEY_SUFFIX;
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
-        while (!outputStreamObserver.completed.get());
+        while (!outputStreamObserver.completed.get()) ;
 
         assertEquals(1, outputStreamObserver.resultDatum.get().getElementsCount());
         assertEquals(expectedKey, outputStreamObserver.resultDatum.get().getElements(0).getKey());
@@ -211,7 +215,7 @@ public class FunctionServerTest {
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
-        while (!outputStreamObserver.completed.get());
+        while (!outputStreamObserver.completed.get()) ;
         Udfunction.DatumList result = outputStreamObserver.resultDatum.get();
         assertEquals(100, result.getElementsCount());
         for (int i = 0; i < keyCount; i++) {

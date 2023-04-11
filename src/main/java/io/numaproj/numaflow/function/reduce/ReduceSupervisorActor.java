@@ -9,7 +9,7 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.function.Function;
+import io.numaproj.numaflow.function.FunctionConstants;
 import io.numaproj.numaflow.function.FunctionService;
 import io.numaproj.numaflow.function.HandlerDatum;
 import io.numaproj.numaflow.function.metadata.Metadata;
@@ -55,7 +55,12 @@ public class ReduceSupervisorActor extends AbstractActor {
             Metadata md,
             ActorRef shutdownActor,
             StreamObserver<Udfunction.DatumList> responseObserver) {
-        return Props.create(ReduceSupervisorActor.class, reducerFactory, md, shutdownActor, responseObserver);
+        return Props.create(
+                ReduceSupervisorActor.class,
+                reducerFactory,
+                md,
+                shutdownActor,
+                responseObserver);
     }
 
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
@@ -75,7 +80,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     @Override
     public void postStop() {
         log.debug("post stop of supervisor executed - {}", getSelf().toString());
-        shutdownActor.tell(Function.SUCCESS, ActorRef.noSender());
+        shutdownActor.tell(FunctionConstants.SUCCESS, ActorRef.noSender());
     }
 
     @Override

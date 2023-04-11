@@ -2,9 +2,6 @@ package io.numaproj.numaflow.function;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.dispatch.Futures;
-import akka.dispatch.OnComplete;
-import akka.pattern.Patterns;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -23,17 +20,12 @@ import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import scala.concurrent.Await;
-import scala.concurrent.Future;
-import scala.concurrent.duration.Duration;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 
-import static io.numaproj.numaflow.function.Function.EOF;
+import static io.numaproj.numaflow.function.FunctionConstants.EOF;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
@@ -74,7 +66,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         }
 
         // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
+        String key = FunctionConstants.DATUM_CONTEXT_KEY.get();
 
         // get Datum from request
         HandlerDatum handlerDatum = new HandlerDatum(
@@ -108,7 +100,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         }
 
         // get key from gPRC metadata
-        String key = Function.DATUM_CONTEXT_KEY.get();
+        String key = FunctionConstants.DATUM_CONTEXT_KEY.get();
 
         // get Datum from request
         HandlerDatum handlerDatum = new HandlerDatum(
@@ -142,8 +134,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         }
 
         // get window start and end time from gPRC metadata
-        String winSt = Function.WINDOW_START_TIME.get();
-        String winEt = Function.WINDOW_END_TIME.get();
+        String winSt = FunctionConstants.WINDOW_START_TIME.get();
+        String winEt = FunctionConstants.WINDOW_END_TIME.get();
 
         // convert the start and end time to Instant
         Instant startTime = Instant.ofEpochMilli(Long.parseLong(winSt));
@@ -165,7 +157,11 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             we create a child actor for every key in a window.
         */
         ActorRef supervisorActor = actorSystem
-                .actorOf(ReduceSupervisorActor.props(reducerFactory, md, shutdownActorRef, responseObserver));
+                .actorOf(ReduceSupervisorActor.props(
+                        reducerFactory,
+                        md,
+                        shutdownActorRef,
+                        responseObserver));
 
 
         return new StreamObserver<Udfunction.Datum>() {

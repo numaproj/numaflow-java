@@ -24,7 +24,7 @@ public class SinkServer {
     private Server server;
 
     public SinkServer() {
-        this(new GRPCServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+        this(new GRPCServerConfig());
     }
 
     /**
@@ -59,15 +59,27 @@ public class SinkServer {
      * Start serving requests.
      */
     public void start() throws IOException {
+        String socketPath = grpcServerConfig.getSocketPath();
+        String infoFilePath = grpcServerConfig.getInfoFilePath();
         // cleanup socket path if it exists (unit test builder doesn't use one)
-        if (grpcServerConfig.getSocketPath() != null) {
-            Path path = Paths.get(grpcServerConfig.getSocketPath());
+        if (socketPath != null) {
+            Path path = Paths.get(socketPath);
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
-                log.error("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
-                        + "\". Exiting");
+                log.error("Failed to clean up socket path {}. Exiting", socketPath);
             }
         }
+
+        // clean up server info file if it exists
+        if (infoFilePath != null) {
+            Path path = Paths.get(infoFilePath);
+            Files.deleteIfExists(path);
+            if (Files.exists(path)) {
+                log.error("Failed to clean up server info file path {}. Exiting", infoFilePath);
+            }
+        }
+
+        // write server info to file
 
         // build server
         server = serverBuilder

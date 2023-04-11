@@ -1,11 +1,11 @@
 package io.numaproj.numaflow.examples.function.reduce.count;
 
 import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.Reducer;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.function.server.FunctionServer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

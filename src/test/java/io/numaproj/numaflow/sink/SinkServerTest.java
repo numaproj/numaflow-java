@@ -55,7 +55,7 @@ public class SinkServerTest {
         String serverName = InProcessServerBuilder.generateName();
         server = new SinkServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
-                new GRPCServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+                new GRPCServerConfig());
         server.registerSinker(new SinkFunc(testSinkFn)).start();
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
                 .forName(serverName)

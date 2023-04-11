@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function;
+package io.numaproj.numaflow.function.server;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -13,6 +13,8 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GRPCServerConfig;
+import io.numaproj.numaflow.function.FunctionConstants;
+import io.numaproj.numaflow.function.FunctionService;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.Reducer;
@@ -34,7 +36,7 @@ public class FunctionServer {
     private Server server;
 
     public FunctionServer() {
-        this(new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+        this(new GRPCServerConfig());
     }
 
     /**
@@ -99,12 +101,12 @@ public class FunctionServer {
 
                 final var context =
                         Context.current().withValues(
-                                Function.DATUM_CONTEXT_KEY,
-                                headers.get(Function.DATUM_METADATA_KEY),
-                                Function.WINDOW_START_TIME,
-                                headers.get(Function.DATUM_METADATA_WIN_START),
-                                Function.WINDOW_END_TIME,
-                                headers.get(Function.DATUM_METADATA_WIN_END));
+                                FunctionConstants.DATUM_CONTEXT_KEY,
+                                headers.get(FunctionConstants.DATUM_METADATA_KEY),
+                                FunctionConstants.WINDOW_START_TIME,
+                                headers.get(FunctionConstants.DATUM_METADATA_WIN_START),
+                                FunctionConstants.WINDOW_END_TIME,
+                                headers.get(FunctionConstants.DATUM_METADATA_WIN_END));
                 return Contexts.interceptCall(context, call, headers, next);
             }
         };

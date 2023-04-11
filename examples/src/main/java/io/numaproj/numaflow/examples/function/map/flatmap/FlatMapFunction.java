@@ -1,9 +1,9 @@
 package io.numaproj.numaflow.examples.function.map.flatmap;
 
 import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.map.MapFunc;
+import io.numaproj.numaflow.function.server.FunctionServer;
 
 import java.io.IOException;
 
