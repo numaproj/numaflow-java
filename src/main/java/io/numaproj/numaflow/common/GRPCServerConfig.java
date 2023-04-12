@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.common;
 
 import io.numaproj.numaflow.function.FunctionConstants;
-import io.numaproj.numaflow.function.server.info.ServerInfoConstants;
+import io.numaproj.numaflow.info.ServerInfoConstants;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

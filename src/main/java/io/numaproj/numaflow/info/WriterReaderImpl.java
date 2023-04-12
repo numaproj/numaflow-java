@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.server.info;
+package io.numaproj.numaflow.info;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -27,7 +27,7 @@ public class WriterReaderImpl implements WriterReader {
         if (file.exists()) {
             file.delete();
         }
-        FileWriter fileWriter = new FileWriter(filePath);
+        FileWriter fileWriter = new FileWriter(filePath, false);
         objectMapper.writeValue(fileWriter, serverInfo);
         FileWriter eofWriter = new FileWriter(filePath, true);
         eofWriter.append("\n");

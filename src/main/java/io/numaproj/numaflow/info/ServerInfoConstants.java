@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.server.info;
+package io.numaproj.numaflow.info;
 
 /**
  * ServerInfoConstants defines common server information like language, protocol and information file path etc.

@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.sink;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
@@ -7,12 +8,17 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GRPCServerConfig;
+import io.numaproj.numaflow.info.ServerInfo;
+import io.numaproj.numaflow.info.ServerInfoConstants;
+import io.numaproj.numaflow.info.WriterReader;
+import io.numaproj.numaflow.info.WriterReaderImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -21,6 +27,7 @@ public class SinkServer {
     private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final SinkService sinkService = new SinkService();
+    private final WriterReader writerReader = new WriterReaderImpl(new ObjectMapper());
     private Server server;
 
     public SinkServer() {
@@ -70,16 +77,13 @@ public class SinkServer {
             }
         }
 
-        // clean up server info file if it exists
-        if (infoFilePath != null) {
-            Path path = Paths.get(infoFilePath);
-            Files.deleteIfExists(path);
-            if (Files.exists(path)) {
-                log.error("Failed to clean up server info file path {}. Exiting", infoFilePath);
-            }
-        }
-
         // write server info to file
+        ServerInfo serverInfo = new ServerInfo(
+                ServerInfoConstants.UDS_PROTOCOL,
+                ServerInfoConstants.LANGUAGE_JAVA,
+                writerReader.getSDKVersion(),
+                new HashMap<>());
+        writerReader.write(serverInfo, grpcServerConfig.getInfoFilePath());
 
         // build server
         server = serverBuilder

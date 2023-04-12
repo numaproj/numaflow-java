@@ -1,9 +1,9 @@
 package io.numaproj.numaflow.examples.function.map.eventtimefilter;
 
 import io.numaproj.numaflow.function.Datum;
+import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.MessageT;
 import io.numaproj.numaflow.function.mapt.MapTFunc;
-import io.numaproj.numaflow.function.server.FunctionServer;
 
 import java.io.IOException;
 import java.time.Instant;

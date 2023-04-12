@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.server.info;
+package io.numaproj.numaflow.info;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
@@ -51,5 +51,11 @@ public class WriterReaderImplTest {
             System.out.println(e.getMessage());
             fail("Expected no exception.");
         }
+    }
+
+    @Test(expected = IOException.class)
+    public void given_fileNotExist_when_read_then_throwIOException() throws IOException {
+        String testFilePath = "/var/tmp/test-no-existing-path";
+        this.underTest.read(testFilePath);
     }
 }

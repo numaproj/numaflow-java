@@ -1,5 +1,6 @@
-package io.numaproj.numaflow.function.server;
+package io.numaproj.numaflow.function;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
@@ -13,18 +14,21 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GRPCServerConfig;
-import io.numaproj.numaflow.function.FunctionConstants;
-import io.numaproj.numaflow.function.FunctionService;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.Reducer;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.info.ServerInfo;
+import io.numaproj.numaflow.info.ServerInfoConstants;
+import io.numaproj.numaflow.info.WriterReader;
+import io.numaproj.numaflow.info.WriterReaderImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -33,6 +37,7 @@ public class FunctionServer {
     private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final FunctionService functionService = new FunctionService();
+    private final WriterReader writerReader = new WriterReaderImpl(new ObjectMapper());
     private Server server;
 
     public FunctionServer() {
@@ -90,6 +95,14 @@ public class FunctionServer {
                         + "\". Exiting");
             }
         }
+
+        // write server info to file
+        ServerInfo serverInfo = new ServerInfo(
+                ServerInfoConstants.UDS_PROTOCOL,
+                ServerInfoConstants.LANGUAGE_JAVA,
+                writerReader.getSDKVersion(),
+                new HashMap<>());
+        writerReader.write(serverInfo, grpcServerConfig.getInfoFilePath());
 
         // build server
         ServerInterceptor interceptor = new ServerInterceptor() {

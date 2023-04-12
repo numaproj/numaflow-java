@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.server.info;
+package io.numaproj.numaflow.info;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

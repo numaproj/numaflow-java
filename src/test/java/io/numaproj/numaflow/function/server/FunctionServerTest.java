@@ -10,6 +10,7 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.function.Datum;
+import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.MessageT;
 import io.numaproj.numaflow.function.ReduceOutputStreamObserver;
@@ -63,9 +64,11 @@ public class FunctionServerTest {
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
+        GRPCServerConfig grpcServerConfig = new GRPCServerConfig();
+        grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
         server = new FunctionServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
-                new GRPCServerConfig());
+                grpcServerConfig);
 
         server.registerMapper(new MapFunc(testMapFn))
                 .registerMapperT(new MapTFunc(testMapTFn))
