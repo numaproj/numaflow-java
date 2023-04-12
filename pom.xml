@@ -102,6 +102,7 @@
             <version>1.7.25</version>
         </dependency>
 
+        <!-- jackson-databind for converting POJOs to JSON and back -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>

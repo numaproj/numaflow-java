@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.server;
+package io.numaproj.numaflow.function;
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
@@ -9,12 +9,6 @@ import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.common.GRPCServerConfig;
-import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.Message;
-import io.numaproj.numaflow.function.MessageT;
-import io.numaproj.numaflow.function.ReduceOutputStreamObserver;
-import io.numaproj.numaflow.function.ReduceTestFactory;
 import io.numaproj.numaflow.function.map.MapFunc;
 import io.numaproj.numaflow.function.mapt.MapTFunc;
 import io.numaproj.numaflow.function.v1.Udfunction;

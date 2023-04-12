@@ -13,8 +13,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
-public class WriterReaderImplTest {
-    private WriterReader underTest = new WriterReaderImpl(new ObjectMapper());
+public class ServerInfoAccessorImplTest {
+    private ServerInfoAccessor underTest = new ServerInfoAccessorImpl(new ObjectMapper());
 
     @Test
     public void given_localEnvironment_when_getJavaSDKVersion_then_returnAValidVersion() {
@@ -30,8 +30,8 @@ public class WriterReaderImplTest {
     @Test
     public void given_writeServerInfo_when_read_then_returnExactSame() {
         ServerInfo testServerInfo = new ServerInfo(
-                ServerInfoConstants.TCP_PROTOCOL,
-                ServerInfoConstants.LANGUAGE_JAVA,
+                Protocol.TCP_PROTOCOL,
+                Language.JAVA,
                 "11",
                 new HashMap<>() {{
                     put("key1", "value1");

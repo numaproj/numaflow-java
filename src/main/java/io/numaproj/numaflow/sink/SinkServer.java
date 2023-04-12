@@ -8,10 +8,11 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GRPCServerConfig;
+import io.numaproj.numaflow.info.Language;
+import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
-import io.numaproj.numaflow.info.ServerInfoConstants;
-import io.numaproj.numaflow.info.WriterReader;
-import io.numaproj.numaflow.info.WriterReaderImpl;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
+import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ public class SinkServer {
     private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final SinkService sinkService = new SinkService();
-    private final WriterReader writerReader = new WriterReaderImpl(new ObjectMapper());
+    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
     public SinkServer() {
@@ -79,11 +80,11 @@ public class SinkServer {
 
         // write server info to file
         ServerInfo serverInfo = new ServerInfo(
-                ServerInfoConstants.UDS_PROTOCOL,
-                ServerInfoConstants.LANGUAGE_JAVA,
-                writerReader.getSDKVersion(),
+                Protocol.UDS_PROTOCOL,
+                Language.JAVA,
+                serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
-        writerReader.write(serverInfo, grpcServerConfig.getInfoFilePath());
+        serverInfoAccessor.write(serverInfo, grpcServerConfig.getInfoFilePath());
 
         // build server
         server = serverBuilder

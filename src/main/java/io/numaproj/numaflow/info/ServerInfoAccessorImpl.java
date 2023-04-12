@@ -9,9 +9,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-// TODO - DOC
 @AllArgsConstructor
-public class WriterReaderImpl implements WriterReader {
+public class ServerInfoAccessorImpl implements ServerInfoAccessor {
     private ObjectMapper objectMapper;
 
     @Override

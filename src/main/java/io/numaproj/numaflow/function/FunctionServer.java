@@ -18,10 +18,11 @@ import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.Reducer;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.info.Language;
+import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
-import io.numaproj.numaflow.info.ServerInfoConstants;
-import io.numaproj.numaflow.info.WriterReader;
-import io.numaproj.numaflow.info.WriterReaderImpl;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
+import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class FunctionServer {
     private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final FunctionService functionService = new FunctionService();
-    private final WriterReader writerReader = new WriterReaderImpl(new ObjectMapper());
+    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
     public FunctionServer() {
@@ -98,11 +99,11 @@ public class FunctionServer {
 
         // write server info to file
         ServerInfo serverInfo = new ServerInfo(
-                ServerInfoConstants.UDS_PROTOCOL,
-                ServerInfoConstants.LANGUAGE_JAVA,
-                writerReader.getSDKVersion(),
+                Protocol.UDS_PROTOCOL,
+                Language.JAVA,
+                serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
-        writerReader.write(serverInfo, grpcServerConfig.getInfoFilePath());
+        serverInfoAccessor.write(serverInfo, grpcServerConfig.getInfoFilePath());
 
         // build server
         ServerInterceptor interceptor = new ServerInterceptor() {

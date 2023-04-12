@@ -8,16 +8,22 @@ import lombok.Setter;
 
 import java.util.Map;
 
+/**
+ * Server Information to be used by client to determine:
+ * - protocol: what is right protocol to use (UDS or TCP)
+ * - language: what is language used by the server
+ * - version: what is the numaflow sdk version used by the server
+ * - metadata: other information
+ */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-// TODO - doc
 public class ServerInfo {
     @JsonProperty("protocol")
-    private String protocol;
+    private Protocol protocol;
     @JsonProperty("language")
-    private String language;
+    private Language language;
     @JsonProperty("version")
     private String version;
     @JsonProperty("metadata")
