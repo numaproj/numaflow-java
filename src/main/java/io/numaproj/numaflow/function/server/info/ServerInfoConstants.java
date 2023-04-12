@@ -15,4 +15,6 @@ public class ServerInfoConstants {
 
     public static final String UDS_PROTOCOL = "uds";
     public static final String TCP_PROTOCOL = "tcp";
+
+    public static final String EOF = "U+005C__END__";
 }
