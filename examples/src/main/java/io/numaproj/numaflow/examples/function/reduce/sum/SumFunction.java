@@ -26,7 +26,7 @@ public class SumFunction extends ReduceHandler {
     public MessageList getOutput(String[] keys, Metadata md) {
         return MessageList
                 .newBuilder()
-                .addMessage(Message.newBuilder().value(String.valueOf(sum).getBytes()).build())
+                .addMessage(new Message(String.valueOf(sum).getBytes()))
                 .build();
     }
 }

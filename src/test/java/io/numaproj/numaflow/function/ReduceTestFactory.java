@@ -28,11 +28,7 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
                     .toArray(String[]::new);
             return MessageList
                     .newBuilder()
-                    .addMessage(Message
-                            .newBuilder()
-                            .keys(updatedKeys)
-                            .value(String.valueOf(sum).getBytes())
-                            .build())
+                    .addMessage(new Message(String.valueOf(sum).getBytes(), updatedKeys))
                     .build();
         }
     }

@@ -71,7 +71,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
             }
             return MessageList
                     .newBuilder()
-                    .addMessage(Message.newBuilder().keys(keys).value(val).build())
+                    .addMessage(new Message(val))
                     .build();
         }
     }

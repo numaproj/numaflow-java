@@ -207,8 +207,10 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         messageList.getMessages().forEach(message -> {
             datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
                     .setValue(ByteString.copyFrom(message.getValue()))
-                    .addAllKeys(message.getKeys() == null? new ArrayList<>(): List.of(message.getKeys()))
-                    .addAllTags(message.getTags() == null? new ArrayList<>(): List.of(message.getTags()))
+                    .addAllKeys(message.getKeys()
+                            == null ? new ArrayList<>() : List.of(message.getKeys()))
+                    .addAllTags(message.getTags()
+                            == null ? new ArrayList<>() : List.of(message.getTags()))
                     .build());
         });
         return datumListBuilder.build();
@@ -223,8 +225,10 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                                     .setSeconds(messageT.getEventTime().getEpochSecond())
                                     .setNanos(messageT.getEventTime().getNano()))
                     )
-                    .addAllKeys(messageT.getKeys() == null? new ArrayList<>(): List.of(messageT.getKeys()))
-                    .addAllTags(messageT.getTags() == null? new ArrayList<>(): List.of(messageT.getTags()))
+                    .addAllKeys(messageT.getKeys()
+                            == null ? new ArrayList<>() : List.of(messageT.getKeys()))
+                    .addAllTags(messageT.getTags()
+                            == null ? new ArrayList<>() : List.of(messageT.getTags()))
                     .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });

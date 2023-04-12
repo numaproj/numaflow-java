@@ -21,7 +21,7 @@ public class ForwardFunction extends MapHandler {
     public MessageList processMessage(String[] keys, Datum data) {
         return MessageList
                 .newBuilder()
-                .addMessage(Message.newBuilder().value(data.getValue()).build())
+                .addMessage(new Message(data.getValue()))
                 .build();
     }
 }

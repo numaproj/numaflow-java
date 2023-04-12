@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * MessageList is used to return the list of Message from UDF
@@ -15,11 +15,11 @@ import java.util.List;
 public class MessageList {
 
     @Singular("addMessage")
-    private List<Message> messages;
+    private Iterable<Message> messages;
 
     public static class MessageListBuilder {
-        public MessageListBuilder addMessages(List<Message> messages) {
-            this.messages.addAll(messages);
+        public MessageListBuilder addMessages(Iterable<Message> messages) {
+            this.messages.addAll((Collection<? extends Message>) messages);
             return this;
         }
     }

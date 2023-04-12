@@ -35,33 +35,21 @@ public class EventTimeFilterFunction extends MapTHandler {
         if (eventTime.isBefore(januaryFirst2022)) {
             return MessageTList.newBuilder().addMessage(MessageT.toDrop()).build();
         } else if (eventTime.isBefore(januaryFirst2023)) {
-            MessageTList
-                    .newBuilder()
-                    .addMessage(MessageT
-                            .newBuilder()
-                            .eventTime(januaryFirst2022)
-                            .keys(new String[]{"within_year_2022"})
-                            .value(data.getValue())
-                            .build())
-                    .build();
             return MessageTList
                     .newBuilder()
-                    .addMessage(MessageT
-                            .newBuilder()
-                            .eventTime(januaryFirst2022)
-                            .keys(new String[]{"within_year_2022"})
-                            .value(data.getValue())
-                            .build())
+                    .addMessage(
+                            new MessageT(
+                                    data.getValue(),
+                                    januaryFirst2022,
+                                    new String[]{"within_year_2022"}))
                     .build();
         } else {
             return MessageTList
                     .newBuilder()
-                    .addMessage(MessageT
-                            .newBuilder()
-                            .eventTime(januaryFirst2023)
-                            .keys(new String[]{"after_year_2022"})
-                            .value(data.getValue())
-                            .build())
+                    .addMessage(new MessageT(
+                            data.getValue(),
+                            januaryFirst2023,
+                            new String[]{"after_year_2022"}))
                     .build();
         }
     }

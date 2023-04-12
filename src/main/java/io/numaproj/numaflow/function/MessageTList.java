@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * MessageTList is used to return the list of MessageT from UDF
@@ -15,11 +15,11 @@ import java.util.List;
 public class MessageTList {
 
     @Singular("addMessage")
-    private List<MessageT> messages;
+    private Iterable<MessageT> messages;
 
     public static class MessageTListBuilder {
-        public MessageTListBuilder addAllMessages(List<MessageT> messages) {
-            this.messages.addAll(messages);
+        public MessageTListBuilder addAllMessages(Iterable<MessageT> messages) {
+            this.messages.addAll((Collection<? extends MessageT>) messages);
             return this;
         }
     }

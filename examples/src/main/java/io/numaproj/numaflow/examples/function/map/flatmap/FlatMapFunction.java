@@ -26,9 +26,10 @@ public class FlatMapFunction extends MapHandler {
         String[] strs = msg.split(",");
         MessageList.MessageListBuilder listBuilder = MessageList.newBuilder();
 
-        for (int i = 0; i < strs.length; i++) {
-            listBuilder.addMessage(Message.newBuilder().value(strs[i].getBytes()).build());
+        for (String str : strs) {
+            listBuilder.addMessage(new Message(str.getBytes()));
         }
+
         return listBuilder.build();
     }
 }

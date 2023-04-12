@@ -31,15 +31,15 @@ public class EvenOddFunction extends MapHandler {
             log.error("Error occurred while parsing int");
             return MessageList.newBuilder().addMessage(Message.toDrop()).build();
         }
-        String key = value % 2 == 0 ? "even" : "odd";
+
+        String[] outputKeys = value % 2 == 0 ? new String[]{"even"} : new String[]{"odd"};
+
+        // tags will be used for conditional forwarding
+        String[] tags = value % 2 == 0 ? new String[]{"even-tag"} : new String[]{"odd-tag"};
 
         return MessageList
                 .newBuilder()
-                .addMessage(Message
-                        .newBuilder()
-                        .value(data.getValue())
-                        .keys(new String[]{key})
-                        .build())
+                .addMessage(new Message(data.getValue(), outputKeys, tags))
                 .build();
     }
 }

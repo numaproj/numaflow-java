@@ -89,7 +89,9 @@ public class FunctionServerTest {
                 expectedKeys,
                 actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
-        assertEquals(expectedTags, actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
+        assertEquals(
+                expectedTags,
+                actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
     }
 
     @Test
@@ -120,7 +122,9 @@ public class FunctionServerTest {
                 expectedKey,
                 actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
-        assertEquals(expectedTags, actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
+        assertEquals(
+                expectedTags,
+                actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
     }
 
     @Test
@@ -218,13 +222,11 @@ public class FunctionServerTest {
                     .toArray(String[]::new);
             return MessageList
                     .newBuilder()
-                    .addMessage(Message
-                            .newBuilder()
-                            .keys(updatedKeys)
-                            .tags(new String[]{"test-tag"})
-                            .value((new String(datum.getValue())
-                                    + PROCESSED_VALUE_SUFFIX).getBytes())
-                            .build())
+                    .addMessage(new Message(
+                            (new String(datum.getValue())
+                                    + PROCESSED_VALUE_SUFFIX).getBytes(),
+                            updatedKeys,
+                            new String[]{"test-tag"}))
                     .build();
         }
     }
@@ -238,14 +240,12 @@ public class FunctionServerTest {
                     .toArray(String[]::new);
             return MessageTList
                     .newBuilder()
-                    .addMessage(MessageT
-                            .newBuilder()
-                            .eventTime(TEST_EVENT_TIME)
-                            .keys(updatedKeys)
-                            .tags(new String[]{"test-tag"})
-                            .value((new String(datum.getValue())
-                                    + PROCESSED_VALUE_SUFFIX).getBytes())
-                            .build())
+                    .addMessage(new MessageT(
+                            (new String(datum.getValue())
+                                    + PROCESSED_VALUE_SUFFIX).getBytes(),
+                            TEST_EVENT_TIME,
+                            updatedKeys,
+                            new String[]{"test-tag"}))
                     .build();
         }
     }
