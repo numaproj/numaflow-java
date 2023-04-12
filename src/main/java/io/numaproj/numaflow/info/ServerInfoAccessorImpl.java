@@ -29,8 +29,7 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
         FileWriter fileWriter = new FileWriter(filePath, false);
         objectMapper.writeValue(fileWriter, serverInfo);
         FileWriter eofWriter = new FileWriter(filePath, true);
-        eofWriter.append("\n");
-        eofWriter.append(ServerInfoConstants.EOF);
+        eofWriter.append("\n").append(ServerInfoConstants.EOF);
         eofWriter.close();
         fileWriter.close();
     }
@@ -40,10 +39,10 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
         File file = new File(filePath);
         BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
         StringBuilder stringBuilder = new StringBuilder();
-        String line = bufferedReader.readLine();
-        while (line != null && !line.equals(ServerInfoConstants.EOF)) {
+        String line;
+        while ((line = bufferedReader.readLine()) != null
+                && !line.equals(ServerInfoConstants.EOF)) {
             stringBuilder.append(line);
-            line = bufferedReader.readLine();
         }
         ServerInfo serverInfo = objectMapper.readValue(stringBuilder.toString(), ServerInfo.class);
         bufferedReader.close();
