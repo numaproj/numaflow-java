@@ -7,6 +7,7 @@ import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.ReduceOutputStreamObserver;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.function.metadata.Metadata;
@@ -29,7 +30,7 @@ public class ShutDownActorTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
 
         String reduceKey = "reduce-key";
-        Udfunction.Datum.Builder inDatumBuilder = Udfunction.Datum.
+        Udfunction.DatumRequest.Builder inDatumBuilder = Udfunction.DatumRequest.
                 newBuilder().addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
@@ -49,7 +50,7 @@ public class ShutDownActorTest {
                                 shutdownActor,
                                 new ReduceOutputStreamObserver()));
 
-        Udfunction.Datum inputDatum = inDatumBuilder
+        Udfunction.DatumRequest inputDatum = inDatumBuilder
                 .addKeys("reduce-test")
                 .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                 .build();
@@ -117,8 +118,11 @@ public class ShutDownActorTest {
             }
 
             @Override
-            public Message[] getOutput(String[] keys, Metadata md) {
-                return new Message[]{Message.toAll(String.valueOf(count).getBytes())};
+            public MessageList getOutput(String[] keys, Metadata md) {
+                return MessageList
+                        .newBuilder()
+                        .addMessage(new Message(String.valueOf(count).getBytes()))
+                        .build();
             }
         }
     }

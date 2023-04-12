@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.function.map;
 
 import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 
 /**
  * MapHandler exposes method for performing map operation.
@@ -14,5 +14,5 @@ public abstract class MapHandler {
         processMessage will be invoked for each input message.
         this method will be used for processing messages
      */
-    public abstract Message[] processMessage(String[] key, Datum datum);
+    public abstract MessageList processMessage(String[] key, Datum datum);
 }

@@ -2,6 +2,7 @@ package io.numaproj.numaflow.examples.function.reduce.sum;
 
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,10 @@ public class SumFunction extends ReduceHandler {
     }
 
     @Override
-    public Message[] getOutput(String[] keys, Metadata md) {
-        return new Message[]{Message.toAll(String.valueOf(sum).getBytes())};
+    public MessageList getOutput(String[] keys, Metadata md) {
+        return MessageList
+                .newBuilder()
+                .addMessage(new Message(String.valueOf(sum).getBytes()))
+                .build();
     }
 }

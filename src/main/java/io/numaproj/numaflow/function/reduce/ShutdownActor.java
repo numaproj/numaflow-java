@@ -2,7 +2,6 @@ package io.numaproj.numaflow.function.reduce;
 
 import akka.actor.AbstractActor;
 import akka.actor.AllDeadLetters;
-import akka.actor.DeadLetter;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.grpc.stub.StreamObserver;
@@ -21,11 +20,11 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @AllArgsConstructor
 public class ShutdownActor extends AbstractActor {
-    private StreamObserver<Udfunction.DatumList> responseObserver;
+    private StreamObserver<Udfunction.DatumResponseList> responseObserver;
     private final CompletableFuture<Void> failureFuture;
 
     public static Props props(
-            StreamObserver<Udfunction.DatumList> responseObserver,
+            StreamObserver<Udfunction.DatumResponseList> responseObserver,
             CompletableFuture<Void> failureFuture) {
         return Props.create(ShutdownActor.class, responseObserver, failureFuture);
     }

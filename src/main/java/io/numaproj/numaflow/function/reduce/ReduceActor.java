@@ -5,12 +5,13 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.function.HandlerDatum;
-import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,18 +45,22 @@ public class ReduceActor extends AbstractActor {
     }
 
     private void getResult(String eof) {
-        Message[] resultMessages = this.groupBy.getOutput(keys, md);
+        MessageList resultMessages = this.groupBy.getOutput(keys, md);
         // send the result back to sender(parent actor)
         getSender().tell(buildDatumListResponse(resultMessages), getSelf());
     }
 
-    private ActorResponse buildDatumListResponse(Message[] messages) {
-        Udfunction.DatumList.Builder datumListBuilder = Udfunction.DatumList.newBuilder();
-        Arrays.stream(messages).forEach(message -> {
-            datumListBuilder.addElements(Udfunction.Datum.newBuilder()
-                    .addAllKeys(List.of(message.getKeys()))
+    private ActorResponse buildDatumListResponse(MessageList messageList) {
+        Udfunction.DatumResponseList.Builder datumListBuilder = Udfunction.DatumResponseList.newBuilder();
+        messageList.getMessages().forEach(message -> {
+            datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
                     .setValue(ByteString.copyFrom(message.getValue()))
+                    .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(
+                            message.getKeys()))
+                    .addAllTags(message.getTags() == null ? new ArrayList<>() : List.of(
+                            message.getTags()))
                     .build());
+
         });
         return new ActorResponse(this.keys, datumListBuilder.build());
     }

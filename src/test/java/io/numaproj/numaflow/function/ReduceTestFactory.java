@@ -21,11 +21,15 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
         }
 
         @Override
-        public Message[] getOutput(String[] keys, Metadata md) {
-            String[] updatedKeys = Arrays.stream(keys).map(c -> c+"-processed").toArray(String[]::new);
-            return new Message[]{Message.to(
-                    updatedKeys,
-                    String.valueOf(sum).getBytes())};
+        public MessageList getOutput(String[] keys, Metadata md) {
+            String[] updatedKeys = Arrays
+                    .stream(keys)
+                    .map(c -> c + "-processed")
+                    .toArray(String[]::new);
+            return MessageList
+                    .newBuilder()
+                    .addMessage(new Message(String.valueOf(sum).getBytes(), updatedKeys))
+                    .build();
         }
     }
 }

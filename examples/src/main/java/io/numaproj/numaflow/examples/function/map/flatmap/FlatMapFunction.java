@@ -3,6 +3,7 @@ package io.numaproj.numaflow.examples.function.map.flatmap;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.map.MapHandler;
 
 import java.io.IOException;
@@ -16,18 +17,19 @@ import java.io.IOException;
 
 public class FlatMapFunction extends MapHandler {
 
-    public Message[] processMessage(String[] keys, Datum data) {
-        String msg = new String(data.getValue());
-        String[] strs = msg.split(",");
-        Message[] results = new Message[strs.length];
-
-        for (int i = 0; i < strs.length; i++) {
-            results[i] = Message.toAll(strs[i].getBytes());
-        }
-        return results;
-    }
-
     public static void main(String[] args) throws IOException {
         new FunctionServer().registerMapHandler(new FlatMapFunction()).start();
+    }
+
+    public MessageList processMessage(String[] keys, Datum data) {
+        String msg = new String(data.getValue());
+        String[] strs = msg.split(",");
+        MessageList.MessageListBuilder listBuilder = MessageList.newBuilder();
+
+        for (String str : strs) {
+            listBuilder.addMessage(new Message(str.getBytes()));
+        }
+
+        return listBuilder.build();
     }
 }

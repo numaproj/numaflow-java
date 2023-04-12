@@ -19,11 +19,9 @@ import scala.PartialFunction;
 import scala.collection.Iterable;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 /**
  * Supervisor actor distributes the messages to actors and handles failure.
@@ -34,14 +32,14 @@ public class ReduceSupervisorActor extends AbstractActor {
     private final ReducerFactory<? extends ReduceHandler> reducerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
-    private final StreamObserver<Udfunction.DatumList> responseObserver;
+    private final StreamObserver<Udfunction.DatumResponseList> responseObserver;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
     public ReduceSupervisorActor(
             ReducerFactory<? extends ReduceHandler> reducerFactory,
             Metadata md,
             ActorRef shutdownActor,
-            StreamObserver<Udfunction.DatumList> responseObserver) {
+            StreamObserver<Udfunction.DatumResponseList> responseObserver) {
         this.reducerFactory = reducerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
@@ -52,8 +50,13 @@ public class ReduceSupervisorActor extends AbstractActor {
             ReducerFactory<? extends ReduceHandler> reducerFactory,
             Metadata md,
             ActorRef shutdownActor,
-            StreamObserver<Udfunction.DatumList> responseObserver) {
-        return Props.create(ReduceSupervisorActor.class, reducerFactory, md, shutdownActor, responseObserver);
+            StreamObserver<Udfunction.DatumResponseList> responseObserver) {
+        return Props.create(
+                ReduceSupervisorActor.class,
+                reducerFactory,
+                md,
+                shutdownActor,
+                responseObserver);
     }
 
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
@@ -80,7 +83,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     public Receive createReceive() {
         return ReceiveBuilder
                 .create()
-                .match(Udfunction.Datum.class, this::invokeActors)
+                .match(Udfunction.DatumRequest.class, this::invokeActors)
                 .match(String.class, this::sendEOF)
                 .match(ActorResponse.class, this::responseListener)
                 .build();
@@ -91,8 +94,8 @@ public class ReduceSupervisorActor extends AbstractActor {
         if there is no actor for an incoming set of keys, create a new actor
         track all the child actors using actors map
      */
-    private void invokeActors(Udfunction.Datum datum) {
-        String[] keys = datum.getKeysList().toArray(new String[0]);
+    private void invokeActors(Udfunction.DatumRequest datumRequest) {
+        String[] keys = datumRequest.getKeysList().toArray(new String[0]);
         String keyStr = String.join(Function.DELIMITTER, keys);
         if (!actorsMap.containsKey(keyStr)) {
             ReduceHandler reduceHandler = reducerFactory.createReducer();
@@ -101,7 +104,7 @@ public class ReduceSupervisorActor extends AbstractActor {
 
             actorsMap.put(keyStr, actorRef);
         }
-        HandlerDatum handlerDatum = constructHandlerDatum(datum);
+        HandlerDatum handlerDatum = constructHandlerDatum(datumRequest);
         actorsMap.get(keyStr).tell(handlerDatum, getSelf());
     }
 
@@ -128,15 +131,15 @@ public class ReduceSupervisorActor extends AbstractActor {
         }
     }
 
-    private HandlerDatum constructHandlerDatum(Udfunction.Datum datum) {
+    private HandlerDatum constructHandlerDatum(Udfunction.DatumRequest datumRequest) {
         return new HandlerDatum(
-                datum.getValue().toByteArray(),
+                datumRequest.getValue().toByteArray(),
                 Instant.ofEpochSecond(
-                        datum.getWatermark().getWatermark().getSeconds(),
-                        datum.getWatermark().getWatermark().getNanos()),
+                        datumRequest.getWatermark().getWatermark().getSeconds(),
+                        datumRequest.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
-                        datum.getEventTime().getEventTime().getSeconds(),
-                        datum.getEventTime().getEventTime().getNanos()));
+                        datumRequest.getEventTime().getEventTime().getSeconds(),
+                        datumRequest.getEventTime().getEventTime().getNanos()));
     }
 
     /*

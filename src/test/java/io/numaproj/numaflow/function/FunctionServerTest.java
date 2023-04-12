@@ -38,30 +38,6 @@ public class FunctionServerTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-
-    private static class TestMapFn extends MapHandler {
-        @Override
-        public Message[] processMessage(String[] keys, Datum datum) {
-            String[] updatedKeys = Arrays.stream(keys).map(c -> c+PROCESSED_KEY_SUFFIX).toArray(String[]::new);
-            return new Message[]{Message.to(
-                   updatedKeys,
-                    (new String(datum.getValue())
-                            + PROCESSED_VALUE_SUFFIX).getBytes())};
-        }
-    }
-
-    private static class TestMapTFn extends MapTHandler {
-        @Override
-        public MessageT[] processMessage(String[] keys, Datum datum) {
-            String[] updatedKeys = Arrays.stream(keys).map(c -> c+PROCESSED_KEY_SUFFIX).toArray(String[]::new);
-            return new MessageT[]{MessageT.to(
-                    TEST_EVENT_TIME,
-                    updatedKeys,
-                    (new String(datum.getValue())
-                            + PROCESSED_VALUE_SUFFIX).getBytes())};
-        }
-    }
-
     private FunctionServer server;
     private ManagedChannel inProcessChannel;
 
@@ -93,13 +69,14 @@ public class FunctionServerTest {
     @Test
     public void mapper() {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Udfunction.Datum inDatum = Udfunction.Datum
+        Udfunction.DatumRequest inDatum = Udfunction.DatumRequest
                 .newBuilder()
                 .addAllKeys(List.of("test-map-key"))
                 .setValue(inValue)
                 .build();
 
-        String[] expectedKey = new String[]{"test-map-key" + PROCESSED_KEY_SUFFIX};
+        String[] expectedKeys = new String[]{"test-map-key" + PROCESSED_KEY_SUFFIX};
+        String[] expectedTags = new String[]{"test-tag"};
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
 
@@ -108,20 +85,26 @@ public class FunctionServerTest {
                 .mapFn(inDatum);
 
         assertEquals(1, actualDatumList.getElementsCount());
-        assertEquals(expectedKey, actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
+        assertEquals(
+                expectedKeys,
+                actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
+        assertEquals(
+                expectedTags,
+                actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
     }
 
     @Test
     public void mapperT() {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Udfunction.Datum inDatum = Udfunction.Datum
+        Udfunction.DatumRequest inDatum = Udfunction.DatumRequest
                 .newBuilder()
                 .addKeys("test-map-key")
                 .setValue(inValue)
                 .build();
 
         String[] expectedKey = new String[]{"test-map-key" + PROCESSED_KEY_SUFFIX};
+        String[] expectedTags = new String[]{"test-tag"};
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
         var stub = UserDefinedFunctionGrpc.newBlockingStub(inProcessChannel);
@@ -135,8 +118,13 @@ public class FunctionServerTest {
                                 .setSeconds(TEST_EVENT_TIME.getEpochSecond())
                                 .setNanos(TEST_EVENT_TIME.getNano())).build(),
                 actualDatumList.getElements(0).getEventTime());
-        assertEquals(expectedKey, actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
+        assertEquals(
+                expectedKey,
+                actualDatumList.getElements(0).getKeysList().toArray(new String[0]));
         assertEquals(expectedValue, actualDatumList.getElements(0).getValue());
+        assertEquals(
+                expectedTags,
+                actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
     }
 
     @Test
@@ -150,13 +138,13 @@ public class FunctionServerTest {
         //create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        StreamObserver<Udfunction.Datum> inputStreamObserver = UserDefinedFunctionGrpc
+        StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
                 .newStub(inProcessChannel)
                 .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
         for (int i = 1; i <= 10; i++) {
-            Udfunction.Datum inputDatum = Udfunction.Datum.newBuilder()
+            Udfunction.DatumRequest inputDatum = Udfunction.DatumRequest.newBuilder()
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .addKeys(reduceKey)
                     .build();
@@ -171,8 +159,13 @@ public class FunctionServerTest {
         while (!outputStreamObserver.completed.get()) ;
 
         assertEquals(1, outputStreamObserver.resultDatum.get().getElementsCount());
-        assertEquals(expectedKeys, outputStreamObserver.resultDatum.get().getElements(0).getKeysList().toArray(new String[0]));
-        ;
+        assertEquals(
+                expectedKeys,
+                outputStreamObserver.resultDatum
+                        .get()
+                        .getElements(0)
+                        .getKeysList()
+                        .toArray(new String[0]));
         assertEquals(
                 expectedValue,
                 outputStreamObserver.resultDatum.get().getElements(0).getValue());
@@ -191,7 +184,7 @@ public class FunctionServerTest {
         //create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        StreamObserver<Udfunction.Datum> inputStreamObserver = UserDefinedFunctionGrpc
+        StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
                 .newStub(inProcessChannel)
                 .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
@@ -199,7 +192,7 @@ public class FunctionServerTest {
         // send messages with 100 different keys
         for (int j = 0; j < keyCount; j++) {
             for (int i = 1; i <= 10; i++) {
-                Udfunction.Datum inputDatum = Udfunction.Datum.newBuilder()
+                Udfunction.DatumRequest inputDatum = Udfunction.DatumRequest.newBuilder()
                         .addKeys(reduceKey + j)
                         .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                         .build();
@@ -213,10 +206,47 @@ public class FunctionServerTest {
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
         while (!outputStreamObserver.completed.get()) ;
-        Udfunction.DatumList result = outputStreamObserver.resultDatum.get();
+        Udfunction.DatumResponseList result = outputStreamObserver.resultDatum.get();
         assertEquals(100, result.getElementsCount());
         for (int i = 0; i < keyCount; i++) {
             assertEquals(expectedValue, result.getElements(0).getValue());
+        }
+    }
+
+    private static class TestMapFn extends MapHandler {
+        @Override
+        public MessageList processMessage(String[] keys, Datum datum) {
+            String[] updatedKeys = Arrays
+                    .stream(keys)
+                    .map(c -> c + PROCESSED_KEY_SUFFIX)
+                    .toArray(String[]::new);
+            return MessageList
+                    .newBuilder()
+                    .addMessage(new Message(
+                            (new String(datum.getValue())
+                                    + PROCESSED_VALUE_SUFFIX).getBytes(),
+                            updatedKeys,
+                            new String[]{"test-tag"}))
+                    .build();
+        }
+    }
+
+    private static class TestMapTFn extends MapTHandler {
+        @Override
+        public MessageTList processMessage(String[] keys, Datum datum) {
+            String[] updatedKeys = Arrays
+                    .stream(keys)
+                    .map(c -> c + PROCESSED_KEY_SUFFIX)
+                    .toArray(String[]::new);
+            return MessageTList
+                    .newBuilder()
+                    .addMessage(new MessageT(
+                            (new String(datum.getValue())
+                                    + PROCESSED_VALUE_SUFFIX).getBytes(),
+                            TEST_EVENT_TIME,
+                            updatedKeys,
+                            new String[]{"test-tag"}))
+                    .build();
         }
     }
 }

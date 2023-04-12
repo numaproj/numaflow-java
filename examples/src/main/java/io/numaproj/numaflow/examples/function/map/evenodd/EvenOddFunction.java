@@ -3,6 +3,7 @@ package io.numaproj.numaflow.examples.function.map.evenodd;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.map.MapHandler;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,21 +19,27 @@ import java.io.IOException;
 @Slf4j
 public class EvenOddFunction extends MapHandler {
 
-    public Message[] processMessage(String[] keys, Datum data) {
+    public static void main(String[] args) throws IOException {
+        new FunctionServer().registerMapHandler(new EvenOddFunction()).start();
+    }
+
+    public MessageList processMessage(String[] keys, Datum data) {
         int value = 0;
         try {
             value = Integer.parseInt(new String(data.getValue()));
         } catch (NumberFormatException e) {
             log.error("Error occurred while parsing int");
-            return new Message[]{Message.toDrop()};
+            return MessageList.newBuilder().addMessage(Message.toDrop()).build();
         }
-        if (value % 2 == 0) {
-            return new Message[]{Message.to(new String[]{"even"}, data.getValue())};
-        }
-        return new Message[]{Message.to(new String[]{"odd"}, data.getValue())};
-    }
 
-    public static void main(String[] args) throws IOException {
-        new FunctionServer().registerMapHandler(new EvenOddFunction()).start();
+        String[] outputKeys = value % 2 == 0 ? new String[]{"even"} : new String[]{"odd"};
+
+        // tags will be used for conditional forwarding
+        String[] tags = value % 2 == 0 ? new String[]{"even-tag"} : new String[]{"odd-tag"};
+
+        return MessageList
+                .newBuilder()
+                .addMessage(new Message(data.getValue(), outputKeys, tags))
+                .build();
     }
 }

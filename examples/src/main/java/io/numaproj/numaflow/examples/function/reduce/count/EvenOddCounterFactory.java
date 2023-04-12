@@ -3,6 +3,7 @@ package io.numaproj.numaflow.examples.function.reduce.count;
 import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.Message;
+import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
@@ -11,12 +12,17 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Objects;
 
 @Slf4j
 @AllArgsConstructor
 public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.EvenOddCounter> {
     private Config config;
+
+    public static void main(String[] args) throws IOException {
+        log.info("counter udf was invoked");
+        Config config = new Config(1, 2);
+        new FunctionServer().registerReducerFactory(new EvenOddCounterFactory(config)).start();
+    }
 
     @Override
     public EvenOddCounter createReducer() {
@@ -49,7 +55,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
         }
 
         @Override
-        public Message[] getOutput(String[] keys, Metadata md) {
+        public MessageList getOutput(String[] keys, Metadata md) {
             log.info(
                     "even and odd count - {} {}, window - {} {}",
                     evenCount,
@@ -57,17 +63,16 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
                     md.getIntervalWindow().getStartTime().toString(),
                     md.getIntervalWindow().getEndTime().toString());
 
+            byte[] val;
             if (Arrays.equals(keys, new String[]{"even"})) {
-                return new Message[]{Message.to(keys, String.valueOf(evenCount).getBytes())};
+                val = String.valueOf(evenCount).getBytes();
             } else {
-                return new Message[]{Message.to(keys, String.valueOf(oddCount).getBytes())};
+                val = String.valueOf(oddCount).getBytes();
             }
+            return MessageList
+                    .newBuilder()
+                    .addMessage(new Message(val))
+                    .build();
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        log.info("counter udf was invoked");
-        Config config = new Config(1, 2);
-        new FunctionServer().registerReducerFactory(new EvenOddCounterFactory(config)).start();
     }
 }
