@@ -35,9 +35,11 @@ public class SinkServerTest {
     @Before
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
+        GRPCServerConfig grpcServerConfig = new GRPCServerConfig();
+        grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
         server = new SinkServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
-                new GRPCServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+                grpcServerConfig);
         server.registerSinker(new TestSinkFn()).start();
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
                 .forName(serverName)

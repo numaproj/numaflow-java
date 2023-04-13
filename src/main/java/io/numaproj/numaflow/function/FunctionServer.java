@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.function;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
@@ -17,12 +18,18 @@ import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.info.Language;
+import io.numaproj.numaflow.info.Protocol;
+import io.numaproj.numaflow.info.ServerInfo;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
+import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -31,10 +38,11 @@ public class FunctionServer {
     private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final FunctionService functionService = new FunctionService();
+    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
     public FunctionServer() {
-        this(new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+        this(new GRPCServerConfig());
     }
 
     /**
@@ -89,6 +97,14 @@ public class FunctionServer {
             }
         }
 
+        // write server info to file
+        ServerInfo serverInfo = new ServerInfo(
+                Protocol.UDS_PROTOCOL,
+                Language.JAVA,
+                serverInfoAccessor.getSDKVersion(),
+                new HashMap<>());
+        serverInfoAccessor.write(serverInfo, grpcServerConfig.getInfoFilePath());
+
         // build server
         ServerInterceptor interceptor = new ServerInterceptor() {
             @Override
@@ -99,10 +115,10 @@ public class FunctionServer {
 
                 final var context =
                         Context.current().withValues(
-                                Function.WINDOW_START_TIME,
-                                headers.get(Function.DATUM_METADATA_WIN_START),
-                                Function.WINDOW_END_TIME,
-                                headers.get(Function.DATUM_METADATA_WIN_END));
+                                FunctionConstants.WINDOW_START_TIME,
+                                headers.get(FunctionConstants.DATUM_METADATA_WIN_START),
+                                FunctionConstants.WINDOW_END_TIME,
+                                headers.get(FunctionConstants.DATUM_METADATA_WIN_END));
                 return Contexts.interceptCall(context, call, headers, next);
             }
         };

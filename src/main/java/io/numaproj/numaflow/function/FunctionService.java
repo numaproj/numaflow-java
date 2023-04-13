@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static io.numaproj.numaflow.function.Function.EOF;
+import static io.numaproj.numaflow.function.FunctionConstants.EOF;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
@@ -144,8 +144,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         }
 
         // get window start and end time from gPRC metadata
-        String winSt = Function.WINDOW_START_TIME.get();
-        String winEt = Function.WINDOW_END_TIME.get();
+        String winSt = FunctionConstants.WINDOW_START_TIME.get();
+        String winEt = FunctionConstants.WINDOW_END_TIME.get();
 
         // convert the start and end time to Instant
         Instant startTime = Instant.ofEpochMilli(Long.parseLong(winSt));
@@ -218,9 +218,9 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
                     .setValue(ByteString.copyFrom(message.getValue()))
                     .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>() : List.of(message.getKeys()))
+                            == null ? new ArrayList<>():List.of(message.getKeys()))
                     .addAllTags(message.getTags()
-                            == null ? new ArrayList<>() : List.of(message.getTags()))
+                            == null ? new ArrayList<>():List.of(message.getTags()))
                     .build());
         });
         return datumListBuilder.build();
@@ -236,9 +236,9 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                                     .setNanos(messageT.getEventTime().getNano()))
                     )
                     .addAllKeys(messageT.getKeys()
-                            == null ? new ArrayList<>() : List.of(messageT.getKeys()))
+                            == null ? new ArrayList<>():List.of(messageT.getKeys()))
                     .addAllTags(messageT.getTags()
-                            == null ? new ArrayList<>() : List.of(messageT.getTags()))
+                            == null ? new ArrayList<>():List.of(messageT.getTags()))
                     .setValue(ByteString.copyFrom(messageT.getValue()))
                     .build());
         });

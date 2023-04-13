@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.sink;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
@@ -7,12 +8,18 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.common.GRPCServerConfig;
+import io.numaproj.numaflow.info.Language;
+import io.numaproj.numaflow.info.Protocol;
+import io.numaproj.numaflow.info.ServerInfo;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
+import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -21,10 +28,11 @@ public class SinkServer {
     private final GRPCServerConfig grpcServerConfig;
     private final ServerBuilder<?> serverBuilder;
     private final SinkService sinkService = new SinkService();
+    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
     public SinkServer() {
-        this(new GRPCServerConfig(Sink.SOCKET_PATH, Sink.DEFAULT_MESSAGE_SIZE));
+        this(new GRPCServerConfig());
     }
 
     /**
@@ -59,15 +67,24 @@ public class SinkServer {
      * Start serving requests.
      */
     public void start() throws IOException {
+        String socketPath = grpcServerConfig.getSocketPath();
+        String infoFilePath = grpcServerConfig.getInfoFilePath();
         // cleanup socket path if it exists (unit test builder doesn't use one)
-        if (grpcServerConfig.getSocketPath() != null) {
-            Path path = Paths.get(grpcServerConfig.getSocketPath());
+        if (socketPath != null) {
+            Path path = Paths.get(socketPath);
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
-                log.error("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
-                        + "\". Exiting");
+                log.error("Failed to clean up socket path {}. Exiting", socketPath);
             }
         }
+
+        // write server info to file
+        ServerInfo serverInfo = new ServerInfo(
+                Protocol.UDS_PROTOCOL,
+                Language.JAVA,
+                serverInfoAccessor.getSDKVersion(),
+                new HashMap<>());
+        serverInfoAccessor.write(serverInfo, grpcServerConfig.getInfoFilePath());
 
         // build server
         server = serverBuilder

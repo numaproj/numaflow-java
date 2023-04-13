@@ -103,6 +103,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- jackson-databind for converting POJOs to JSON and back -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.14.2</version>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>

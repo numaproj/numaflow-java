@@ -25,8 +25,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.numaproj.numaflow.function.Function.WIN_END_KEY;
-import static io.numaproj.numaflow.function.Function.WIN_START_KEY;
+import static io.numaproj.numaflow.function.FunctionConstants.WIN_END_KEY;
+import static io.numaproj.numaflow.function.FunctionConstants.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnit4.class)
@@ -45,12 +45,13 @@ public class FunctionServerTest {
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
+        GRPCServerConfig grpcServerConfig = new GRPCServerConfig();
+        grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
         server = new FunctionServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),
-                new GRPCServerConfig(Function.SOCKET_PATH, Function.DEFAULT_MESSAGE_SIZE));
+                grpcServerConfig);
 
-        server
-                .registerMapHandler(new TestMapFn())
+        server.registerMapHandler(new TestMapFn())
                 .registerMapTHandler(new TestMapTFn())
                 .registerReducerFactory(new ReduceTestFactory())
                 .start();
