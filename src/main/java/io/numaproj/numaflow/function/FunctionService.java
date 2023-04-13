@@ -68,6 +68,10 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         }
 
         // get Datum from request
+        HandlerDatumMetadata handlerDatumMetadata = new HandlerDatumMetadata(
+                request.getMetadata().getId(),
+                request.getMetadata().getNumDelivered()
+        );
         HandlerDatum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
                 Instant.ofEpochSecond(
@@ -75,7 +79,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos())
+                        request.getEventTime().getEventTime().getNanos()),
+                handlerDatumMetadata
         );
 
         // process Datum
@@ -101,6 +106,10 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         }
 
         // get Datum from request
+        HandlerDatumMetadata handlerDatumMetadata = new HandlerDatumMetadata(
+                request.getMetadata().getId(),
+                request.getMetadata().getNumDelivered()
+        );
         HandlerDatum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
                 Instant.ofEpochSecond(
@@ -108,7 +117,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                         request.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getEventTime().getSeconds(),
-                        request.getEventTime().getEventTime().getNanos())
+                        request.getEventTime().getEventTime().getNanos()),
+                handlerDatumMetadata
         );
 
         // process Datum

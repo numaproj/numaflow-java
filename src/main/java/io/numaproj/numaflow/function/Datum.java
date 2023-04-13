@@ -8,4 +8,6 @@ public interface Datum {
     public Instant getEventTime();
 
     public Instant getWatermark();
+
+    public DatumMetadata getDatumMetadata();
 }

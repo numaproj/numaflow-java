@@ -12,6 +12,8 @@ public class HandlerDatum implements Datum {
     private Instant watermark;
     private Instant eventTime;
 
+    private DatumMetadata datumMetadata;
+
     @Override
     public Instant getWatermark() {
         return this.watermark;
@@ -25,5 +27,10 @@ public class HandlerDatum implements Datum {
     @Override
     public Instant getEventTime() {
         return this.eventTime;
+    }
+
+    @Override
+    public DatumMetadata getDatumMetadata() {
+        return this.datumMetadata;
     }
 }

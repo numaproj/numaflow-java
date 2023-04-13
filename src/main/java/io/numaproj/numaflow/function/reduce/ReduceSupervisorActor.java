@@ -12,6 +12,7 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.Function;
 import io.numaproj.numaflow.function.FunctionService;
 import io.numaproj.numaflow.function.HandlerDatum;
+import io.numaproj.numaflow.function.HandlerDatumMetadata;
 import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.extern.slf4j.Slf4j;
@@ -132,6 +133,10 @@ public class ReduceSupervisorActor extends AbstractActor {
     }
 
     private HandlerDatum constructHandlerDatum(Udfunction.DatumRequest datumRequest) {
+        HandlerDatumMetadata handlerDatumMetadata = new HandlerDatumMetadata(
+                datumRequest.getMetadata().getId(),
+                datumRequest.getMetadata().getNumDelivered()
+        );
         return new HandlerDatum(
                 datumRequest.getValue().toByteArray(),
                 Instant.ofEpochSecond(
@@ -139,7 +144,9 @@ public class ReduceSupervisorActor extends AbstractActor {
                         datumRequest.getWatermark().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         datumRequest.getEventTime().getEventTime().getSeconds(),
-                        datumRequest.getEventTime().getEventTime().getNanos()));
+                        datumRequest.getEventTime().getEventTime().getNanos()),
+                handlerDatumMetadata
+        );
     }
 
     /*
