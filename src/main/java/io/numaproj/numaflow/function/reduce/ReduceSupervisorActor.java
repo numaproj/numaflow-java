@@ -9,7 +9,7 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.function.Function;
+import io.numaproj.numaflow.function.FunctionConstants;
 import io.numaproj.numaflow.function.FunctionService;
 import io.numaproj.numaflow.function.HandlerDatum;
 import io.numaproj.numaflow.function.HandlerDatumMetadata;
@@ -77,7 +77,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     @Override
     public void postStop() {
         log.debug("post stop of supervisor executed - {}", getSelf().toString());
-        shutdownActor.tell(Function.SUCCESS, ActorRef.noSender());
+        shutdownActor.tell(FunctionConstants.SUCCESS, ActorRef.noSender());
     }
 
     @Override
@@ -97,7 +97,7 @@ public class ReduceSupervisorActor extends AbstractActor {
      */
     private void invokeActors(Udfunction.DatumRequest datumRequest) {
         String[] keys = datumRequest.getKeysList().toArray(new String[0]);
-        String keyStr = String.join(Function.DELIMITTER, keys);
+        String keyStr = String.join(FunctionConstants.DELIMITTER, keys);
         if (!actorsMap.containsKey(keyStr)) {
             ReduceHandler reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
@@ -125,7 +125,7 @@ public class ReduceSupervisorActor extends AbstractActor {
          */
 
         responseObserver.onNext(actorResponse.getDatumList());
-        actorsMap.remove(String.join(Function.DELIMITTER, actorResponse.getKeys()));
+        actorsMap.remove(String.join(FunctionConstants.DELIMITTER, actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();
             getContext().getSystem().stop(getSelf());

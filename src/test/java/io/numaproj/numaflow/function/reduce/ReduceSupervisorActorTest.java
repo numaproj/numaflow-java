@@ -17,7 +17,7 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static io.numaproj.numaflow.function.Function.EOF;
+import static io.numaproj.numaflow.function.FunctionConstants.EOF;
 import static org.junit.Assert.fail;
 
 public class ReduceSupervisorActorTest {
