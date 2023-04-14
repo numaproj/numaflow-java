@@ -47,7 +47,7 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
     private String verifyEOFAtEndAndTrim(String content) throws Exception {
         int eofIndex = content.lastIndexOf(ServerInfoConstants.EOF);
         if (eofIndex == -1) {
-            throw new Exception("EOF marker not found int the file content");
+            throw new Exception("EOF marker not found in the file content");
         }
         if (eofIndex != content.length() - ServerInfoConstants.EOF.length()) {
             throw new Exception("EOF marker is not at the end of the file content");
