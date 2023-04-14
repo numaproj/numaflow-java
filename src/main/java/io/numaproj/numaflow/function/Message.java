@@ -33,6 +33,6 @@ public class Message {
 
     // creates a Message to be dropped
     public static Message toDrop() {
-        return new Message(null, null, new String[]{DROP});
+        return new Message(new byte[0], null, new String[]{DROP});
     }
 }
