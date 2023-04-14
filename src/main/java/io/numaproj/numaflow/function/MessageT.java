@@ -37,6 +37,6 @@ public class MessageT {
 
     // creates a MessageT to be dropped
     public static MessageT toDrop() {
-        return new MessageT(null, null, null, new String[]{DROP});
+        return new MessageT(new byte[0], Instant.MIN, null, new String[]{DROP});
     }
 }
