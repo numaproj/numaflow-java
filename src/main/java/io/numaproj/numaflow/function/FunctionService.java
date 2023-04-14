@@ -5,6 +5,7 @@ import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
@@ -216,7 +217,8 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         Udfunction.DatumResponseList.Builder datumListBuilder = Udfunction.DatumResponseList.newBuilder();
         messageList.getMessages().forEach(message -> {
             datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
-                    .setValue(ByteString.copyFrom(message.getValue()))
+                    .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
+                            message.getValue()))
                     .addAllKeys(message.getKeys()
                             == null ? new ArrayList<>() : List.of(message.getKeys()))
                     .addAllTags(message.getTags()
@@ -230,16 +232,23 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         Udfunction.DatumResponseList.Builder datumListBuilder = Udfunction.DatumResponseList.newBuilder();
         messageTList.getMessages().forEach(messageT -> {
             datumListBuilder.addElements(Udfunction.DatumResponse.newBuilder()
-                    .setEventTime(EventTime.newBuilder().setEventTime
-                            (com.google.protobuf.Timestamp.newBuilder()
-                                    .setSeconds(messageT.getEventTime().getEpochSecond())
-                                    .setNanos(messageT.getEventTime().getNano()))
+                    .setEventTime(
+                            messageT.getEventTime() == null ? EventTime.newBuilder().setEventTime(
+                                    Timestamp.getDefaultInstance()) : EventTime
+                                    .newBuilder()
+                                    .setEventTime
+                                            (Timestamp.newBuilder()
+                                                    .setSeconds(messageT
+                                                            .getEventTime()
+                                                            .getEpochSecond())
+                                                    .setNanos(messageT.getEventTime().getNano()))
                     )
                     .addAllKeys(messageT.getKeys()
                             == null ? new ArrayList<>() : List.of(messageT.getKeys()))
                     .addAllTags(messageT.getTags()
                             == null ? new ArrayList<>() : List.of(messageT.getTags()))
-                    .setValue(ByteString.copyFrom(messageT.getValue()))
+                    .setValue(messageT.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
+                            messageT.getValue()))
                     .build());
         });
         return datumListBuilder.build();
