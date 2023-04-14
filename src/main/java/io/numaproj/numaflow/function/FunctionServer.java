@@ -25,7 +25,6 @@ import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -86,14 +85,15 @@ public class FunctionServer {
     /**
      * Start serving requests.
      */
-    public void start() throws IOException {
+    public void start() throws Exception {
+        String socketPath = grpcServerConfig.getSocketPath();
+        String infoFilePath = grpcServerConfig.getInfoFilePath();
         // cleanup socket path if it exists (unit test builder doesn't use one)
-        if (grpcServerConfig.getSocketPath() != null) {
-            Path path = Paths.get(grpcServerConfig.getSocketPath());
+        if (socketPath != null) {
+            Path path = Paths.get(socketPath);
             Files.deleteIfExists(path);
             if (Files.exists(path)) {
-                log.error("Failed to clean up socket path \"" + grpcServerConfig.getSocketPath()
-                        + "\". Exiting");
+                log.error("Failed to clean up socket path {}. Exiting", socketPath);
             }
         }
 
@@ -103,7 +103,7 @@ public class FunctionServer {
                 Language.JAVA,
                 serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
-        serverInfoAccessor.write(serverInfo, grpcServerConfig.getInfoFilePath());
+        serverInfoAccessor.write(serverInfo, infoFilePath);
 
         // build server
         ServerInterceptor interceptor = new ServerInterceptor() {

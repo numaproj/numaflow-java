@@ -15,7 +15,6 @@ import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,7 +65,7 @@ public class SinkServer {
     /**
      * Start serving requests.
      */
-    public void start() throws IOException {
+    public void start() throws Exception {
         String socketPath = grpcServerConfig.getSocketPath();
         String infoFilePath = grpcServerConfig.getInfoFilePath();
         // cleanup socket path if it exists (unit test builder doesn't use one)
@@ -84,7 +83,7 @@ public class SinkServer {
                 Language.JAVA,
                 serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
-        serverInfoAccessor.write(serverInfo, grpcServerConfig.getInfoFilePath());
+        serverInfoAccessor.write(serverInfo, infoFilePath);
 
         // build server
         server = serverBuilder

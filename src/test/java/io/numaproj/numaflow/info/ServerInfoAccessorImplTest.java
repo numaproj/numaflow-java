@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -46,15 +45,13 @@ public class ServerInfoAccessorImplTest {
             assertEquals(testServerInfo.getProtocol(), got.getProtocol());
             assertEquals(testServerInfo.getVersion(), got.getVersion());
             assertEquals(testServerInfo.getMetadata(), got.getMetadata());
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
             fail("Expected no exception.");
         }
     }
 
-    @Test(expected = IOException.class)
-    public void given_fileNotExist_when_read_then_throwIOException() throws IOException {
+    @Test(expected = Exception.class)
+    public void given_fileNotExist_when_read_then_throwIOException() throws Exception {
         String testFilePath = "/var/tmp/test-no-existing-path";
         this.underTest.read(testFilePath);
     }

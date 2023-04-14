@@ -1,7 +1,5 @@
 package io.numaproj.numaflow.info;
 
-import java.io.IOException;
-
 public interface ServerInfoAccessor {
     /**
      * Get runtime Java SDK version.
@@ -16,9 +14,9 @@ public interface ServerInfoAccessor {
      * @param serverInfo server information POJO
      * @param filePath file path to write to
      *
-     * @throws IOException any IO exceptions are thrown to the caller.
+     * @throws Exception any exceptions are thrown to the caller.
      */
-    void write(ServerInfo serverInfo, String filePath) throws IOException;
+    void write(ServerInfo serverInfo, String filePath) throws Exception;
 
     /**
      * Read from filePath to retrieve server information POJO.
@@ -28,7 +26,7 @@ public interface ServerInfoAccessor {
      *
      * @return server information POJO
      *
-     * @throws IOException any IO exceptions are thrown to the caller.
+     * @throws Exception any exceptions are thrown to the caller.
      */
-    ServerInfo read(String filePath) throws IOException;
+    ServerInfo read(String filePath) throws Exception;
 }
