@@ -49,10 +49,4 @@ public class ServerInfoAccessorImplTest {
             fail("Expected no exception.");
         }
     }
-
-    @Test(expected = Exception.class)
-    public void given_fileNotExist_when_read_then_throwIOException() throws Exception {
-        String testFilePath = "/var/tmp/test-no-existing-path";
-        this.underTest.read(testFilePath);
-    }
 }

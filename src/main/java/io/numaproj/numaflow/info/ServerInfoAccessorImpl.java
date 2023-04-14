@@ -3,10 +3,10 @@ package io.numaproj.numaflow.info;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @AllArgsConstructor
 public class ServerInfoAccessorImpl implements ServerInfoAccessor {
@@ -29,7 +29,7 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
         FileWriter eofWriter = new FileWriter(filePath, true);
         try {
             objectMapper.writeValue(fileWriter, serverInfo);
-            eofWriter.append("\n").append(ServerInfoConstants.EOF);
+            eofWriter.append(ServerInfoConstants.EOF);
         } finally {
             eofWriter.close();
             fileWriter.close();
@@ -38,21 +38,20 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
 
     @Override
     public ServerInfo read(String filePath) throws Exception {
-        FileReader fileReader = new FileReader(filePath);
-        BufferedReader bufferedReader = new BufferedReader(fileReader);
-        StringBuilder stringBuilder = new StringBuilder();
-        String line;
-        ServerInfo serverInfo;
-        try {
-            while ((line = bufferedReader.readLine()) != null
-                    && !line.equals(ServerInfoConstants.EOF)) {
-                stringBuilder.append(line);
-            }
-            serverInfo = objectMapper.readValue(stringBuilder.toString(), ServerInfo.class);
-        } finally {
-            fileReader.close();
-            bufferedReader.close();
-        }
+        String content = Files.readString(Path.of(filePath));
+        String trimmedContent = verifyEOFAtEndAndTrim(content);
+        ServerInfo serverInfo = objectMapper.readValue(trimmedContent, ServerInfo.class);
         return serverInfo;
+    }
+
+    private String verifyEOFAtEndAndTrim(String content) throws Exception {
+        int eofIndex = content.lastIndexOf(ServerInfoConstants.EOF);
+        if (eofIndex == -1) {
+            throw new Exception("EOF marker not found int the file content");
+        }
+        if (eofIndex != content.length() - ServerInfoConstants.EOF.length()) {
+            throw new Exception("EOF marker is not at the end of the file content");
+        }
+        return content.substring(0, eofIndex);
     }
 }
