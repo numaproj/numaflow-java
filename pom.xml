@@ -6,10 +6,19 @@
 
     <groupId>io.numaproj.numaflow</groupId>
     <artifactId>numaflow-java</artifactId>
-    <version>0.4.0</version>
+    <version>0.4.3</version>
     <packaging>jar</packaging>
 
     <name>numaflow-java</name>
+    <description>SDK to implement Numaflow User Defined Functions or Sinks in Java.</description>
+    <url>https://numaflow.numaproj.io/</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
