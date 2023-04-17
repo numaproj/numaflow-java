@@ -7,7 +7,7 @@ import lombok.Singular;
 import java.util.Collection;
 
 /**
- * MessageList is used to return the list of Message from UDF
+ * MessageList is used to return the list of Messages returned from UDF
  */
 
 @Getter

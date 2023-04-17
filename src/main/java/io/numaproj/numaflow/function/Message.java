@@ -3,7 +3,7 @@ package io.numaproj.numaflow.function;
 import lombok.Getter;
 
 /**
- * Message is used to wrap the data return by UDF functions.
+ * Message is used to wrap the data returned by UDF functions.
  */
 
 @Getter
@@ -14,24 +14,44 @@ public class Message {
     private final byte[] value;
     private final String[] tags;
 
-    // used to create message with keys, value and tags(used for conditional forwarding)
+
+    /**
+     * used to create message with keys, value and tags(used for conditional forwarding)
+     *
+     * @param value message value
+     * @param keys message keys
+     * @param tags message tags which will be used for conditional forwarding
+     */
     public Message(byte[] value, String[] keys, String[] tags) {
         this.keys = keys;
         this.value = value;
         this.tags = tags;
     }
 
-    // used to create Message with value.
+    /**
+     * used to create Message with value.
+     *
+     * @param value message value
+     */
     public Message(byte[] value) {
         this(value, null, null);
     }
 
-    // used to create Message with keys and value.
+    /**
+     *  used to create Message with keys and value.
+     *
+     * @param value message value
+     * @param keys message keys
+     */
     public Message(byte[] value, String[] keys) {
         this(value, keys, null);
     }
 
-    // creates a Message to be dropped
+    /**
+     *   creates a Message which will be dropped
+     *
+     * @return Message
+     */
     public static Message toDrop() {
         return new Message(new byte[0], null, new String[]{DROP});
     }
