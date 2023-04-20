@@ -86,8 +86,8 @@ public class SinkServerTest {
     private static class TestSinkFn extends SinkHandler {
 
         @Override
-        public List<Response> processMessage(SinkDatumStream datumStream) {
-            List<Response> responses = new ArrayList<>();
+        public ResponseList processMessage(SinkDatumStream datumStream) {
+            ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
             while (true) {
                 Datum datum = datumStream.ReadMessage();
                 // null indicates the end of the input
@@ -96,9 +96,9 @@ public class SinkServerTest {
                 }
 
                 logger.info(Arrays.toString(datum.getValue()));
-                responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
+                builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
             }
-            return responses;
+            return builder.build();
         }
     }
 }
