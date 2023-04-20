@@ -128,9 +128,9 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         var responseListBuilder = Udsink.ResponseList.newBuilder();
         responses.getResponses().forEach(response -> {
             responseListBuilder.addResponses(Udsink.Response.newBuilder()
-                    .setId(response.getId())
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
                     .setSuccess(response.getSuccess())
-                    .setErrMsg(response.getErr())
                     .build());
         });
         return responseListBuilder.build();
