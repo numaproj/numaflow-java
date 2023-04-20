@@ -2,7 +2,7 @@ package io.numaproj.numaflow.info;
 
 public interface ServerInfoAccessor {
     /**
-     * Get runtime Java SDK version.
+     * Get current runtime numaflow-java SDK version.
      */
     String getSDKVersion();
 

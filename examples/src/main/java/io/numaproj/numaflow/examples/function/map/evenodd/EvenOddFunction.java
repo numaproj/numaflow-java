@@ -30,10 +30,10 @@ public class EvenOddFunction extends MapHandler {
             return MessageList.newBuilder().addMessage(Message.toDrop()).build();
         }
 
-        String[] outputKeys = value % 2 == 0 ? new String[]{"even"} : new String[]{"odd"};
+        String[] outputKeys = value % 2 == 0 ? new String[]{"even"}:new String[]{"odd"};
 
         // tags will be used for conditional forwarding
-        String[] tags = value % 2 == 0 ? new String[]{"even-tag"} : new String[]{"odd-tag"};
+        String[] tags = value % 2 == 0 ? new String[]{"even-tag"}:new String[]{"odd-tag"};
 
         return MessageList
                 .newBuilder()

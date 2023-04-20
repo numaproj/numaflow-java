@@ -5,8 +5,11 @@ import lombok.AllArgsConstructor;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 
 @AllArgsConstructor
 public class ServerInfoAccessorImpl implements ServerInfoAccessor {
@@ -14,9 +17,19 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
 
     @Override
     public String getSDKVersion() {
-        // This only works for Java 9 and above.
-        // Since we already use 11+ for numaflow SDK, it's safe to apply this approach.
-        return String.valueOf(Runtime.version().version().get(0));
+        String version = "";
+        try (InputStream in = getClass()
+                .getClassLoader()
+                .getResourceAsStream("version.properties")) {
+            if (in != null) {
+                Properties properties = new Properties();
+                properties.load(in);
+                version = properties.getProperty("sdk.version");
+            }
+        } catch (IOException e) {
+            return version;
+        }
+        return version;
     }
 
     @Override

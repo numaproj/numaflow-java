@@ -249,5 +249,11 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <resources>
+            <resource>
+                <directory>src/main/java/io/numaproj/numaflow/info</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 </project>
