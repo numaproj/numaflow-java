@@ -26,7 +26,7 @@ public class ServerInfoAccessorImplTest {
         ServerInfo testServerInfo = new ServerInfo(
                 Protocol.TCP_PROTOCOL,
                 Language.JAVA,
-                "11",
+                "0.4.3",
                 new HashMap<>() {{
                     put("key1", "value1");
                     put("key2", "value2");
