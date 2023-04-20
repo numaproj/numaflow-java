@@ -18,7 +18,7 @@ public class ServerInfoAccessorImplTest {
     @Test
     public void given_localEnvironment_when_getNumaflowJavaSDKVersion_then_returnAValidVersion() {
         String got = this.underTest.getSDKVersion();
-        assertTrue(got.contains("0."));
+        assertTrue(got.matches("^\\d+\\.\\d+\\.\\d+$"));
     }
 
     @Test
