@@ -220,9 +220,9 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
                     .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                             message.getValue()))
                     .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>():List.of(message.getKeys()))
+                            == null ? new ArrayList<>() : List.of(message.getKeys()))
                     .addAllTags(message.getTags()
-                            == null ? new ArrayList<>():List.of(message.getTags()))
+                            == null ? new ArrayList<>() : List.of(message.getTags()))
                     .build());
         });
         return datumListBuilder.build();

@@ -43,7 +43,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         }
         SinkDatumStreamImpl sinkDatumStream = new SinkDatumStreamImpl();
 
-        Future<List<Response>> result = sinkTaskExecutor.submit(() -> sinkHandler.processMessage(
+        Future<ResponseList> result = sinkTaskExecutor.submit(() -> sinkHandler.processMessage(
                 sinkDatumStream));
 
         return new StreamObserver<Udsink.DatumRequest>() {
@@ -84,7 +84,7 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
                 try {
                     sinkDatumStream.WriteMessage(SinkDatumStream.EOF);
                     // wait until the sink handler returns, result.get() is a blocking call
-                    List<Response> responses = result.get();
+                    ResponseList responses = result.get();
                     // construct responseList from responses
                     response = buildResponseList(responses);
 
@@ -124,13 +124,13 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         responseObserver.onCompleted();
     }
 
-    public Udsink.ResponseList buildResponseList(List<Response> responses) {
+    public Udsink.ResponseList buildResponseList(ResponseList responses) {
         var responseListBuilder = Udsink.ResponseList.newBuilder();
-        responses.stream().forEach(response -> {
+        responses.getResponses().forEach(response -> {
             responseListBuilder.addResponses(Udsink.Response.newBuilder()
-                    .setId(response.getId())
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
                     .setSuccess(response.getSuccess())
-                    .setErrMsg(response.getErr())
                     .build());
         });
         return responseListBuilder.build();

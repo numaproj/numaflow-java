@@ -4,12 +4,10 @@ import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-
 @Slf4j
 public class SumFactory extends ReducerFactory<SumFunction> {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         log.info("sum udf was invoked");
         new FunctionServer().registerReducerFactory(new SumFactory()).start();
     }

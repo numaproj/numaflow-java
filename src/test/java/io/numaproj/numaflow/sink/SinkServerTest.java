@@ -16,7 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
@@ -53,7 +52,7 @@ public class SinkServerTest {
     }
 
     @Test
-    public void sinker() {
+    public void sinkerSuccess() {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
@@ -61,16 +60,20 @@ public class SinkServerTest {
                 .newStub(inProcessChannel)
                 .sinkFn(outputStreamObserver);
 
-        Udsink.DatumRequest.Builder inDatumBuilder = Udsink.DatumRequest
-                .newBuilder()
-                .addKeys("sink");
         String actualId = "sink_test_id";
         String expectedId = actualId + processedIdSuffix;
 
         for (int i = 1; i <= 10; i++) {
-            Udsink.DatumRequest inputDatum = inDatumBuilder
+            String[] keys;
+            if (i < 10) {
+                keys = new String[]{"valid-key"};
+            } else {
+                keys = new String[]{"invalid-key"};
+            }
+            Udsink.DatumRequest inputDatum = Udsink.DatumRequest.newBuilder()
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .setId(actualId)
+                    .addAllKeys(List.of(keys))
                     .build();
             inputStreamObserver.onNext(inputDatum);
         }
@@ -79,26 +82,37 @@ public class SinkServerTest {
 
         Udsink.ResponseList responseList = outputStreamObserver.getResultDatum();
         assertEquals(10, responseList.getResponsesCount());
-        responseList.getResponsesList()
-                .forEach(response -> assertEquals(response.getId(), expectedId));
+        responseList.getResponsesList().forEach((response -> {
+            assertEquals(response.getId(), expectedId);
+        }));
+
+        assertEquals(
+                responseList.getResponses(responseList.getResponsesCount() - 1).getErrMsg(),
+                "error message");
     }
 
     private static class TestSinkFn extends SinkHandler {
 
         @Override
-        public List<Response> processMessage(SinkDatumStream datumStream) {
-            List<Response> responses = new ArrayList<>();
+        public ResponseList processMessage(SinkDatumStream datumStream) {
+            ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
             while (true) {
                 Datum datum = datumStream.ReadMessage();
                 // null indicates the end of the input
                 if (datum == SinkDatumStream.EOF) {
                     break;
                 }
+                if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
+                    builder.addResponse(Response.responseFailure(
+                            datum.getId() + processedIdSuffix,
+                            "error message"));
+                    continue;
+                }
 
                 logger.info(Arrays.toString(datum.getValue()));
-                responses.add(new Response(datum.getId() + processedIdSuffix, true, ""));
+                builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
             }
-            return responses;
+            return builder.build();
         }
     }
 }

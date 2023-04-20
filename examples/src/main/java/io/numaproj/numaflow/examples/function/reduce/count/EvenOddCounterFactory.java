@@ -10,7 +10,6 @@ import io.numaproj.numaflow.function.reduce.ReducerFactory;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 @Slf4j
@@ -18,7 +17,7 @@ import java.util.Arrays;
 public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.EvenOddCounter> {
     private Config config;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         log.info("counter udf was invoked");
         Config config = new Config(1, 2);
         new FunctionServer().registerReducerFactory(new EvenOddCounterFactory(config)).start();
