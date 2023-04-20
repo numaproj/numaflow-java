@@ -6,8 +6,6 @@ import io.numaproj.numaflow.function.Message;
 import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.map.MapHandler;
 
-import java.io.IOException;
-
 /**
  * This is a simple User Defined Function example which processes the input message
  * and produces more than one output messages(flatMap)
@@ -17,7 +15,7 @@ import java.io.IOException;
 
 public class FlatMapFunction extends MapHandler {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         new FunctionServer().registerMapHandler(new FlatMapFunction()).start();
     }
 

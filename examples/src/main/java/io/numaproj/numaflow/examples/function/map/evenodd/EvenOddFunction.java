@@ -7,8 +7,6 @@ import io.numaproj.numaflow.function.MessageList;
 import io.numaproj.numaflow.function.map.MapHandler;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-
 /**
  * This is a simple User Defined Function example which receives a message,
  * and attaches keys to the message based on the value, if the value is even
@@ -19,7 +17,7 @@ import java.io.IOException;
 @Slf4j
 public class EvenOddFunction extends MapHandler {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         new FunctionServer().registerMapHandler(new EvenOddFunction()).start();
     }
 

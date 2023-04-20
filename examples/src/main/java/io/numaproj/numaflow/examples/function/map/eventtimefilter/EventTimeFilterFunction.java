@@ -6,7 +6,6 @@ import io.numaproj.numaflow.function.MessageT;
 import io.numaproj.numaflow.function.MessageTList;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 
-import java.io.IOException;
 import java.time.Instant;
 
 /**
@@ -23,7 +22,7 @@ public class EventTimeFilterFunction extends MapTHandler {
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         new FunctionServer()
                 .registerMapTHandler(new EventTimeFilterFunction())
                 .start();

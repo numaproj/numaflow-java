@@ -1,7 +1,5 @@
 package io.numaproj.numaflow.sink;
 
-import java.util.List;
-
 /**
  * SinkHandler exposes method for publishing messages to sink
  * Implementations should override the processMessage method
