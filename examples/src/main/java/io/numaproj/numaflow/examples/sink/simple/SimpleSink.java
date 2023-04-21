@@ -8,7 +8,6 @@ import io.numaproj.numaflow.sink.SinkHandler;
 import io.numaproj.numaflow.sink.SinkServer;
 import lombok.extern.slf4j.Slf4j;
 
-
 /**
  * This is a simple User Defined Sink example which logs the input message
  */

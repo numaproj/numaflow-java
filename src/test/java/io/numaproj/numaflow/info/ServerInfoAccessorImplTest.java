@@ -8,7 +8,7 @@ import org.junit.runners.JUnit4;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
@@ -16,14 +16,9 @@ public class ServerInfoAccessorImplTest {
     private ServerInfoAccessor underTest = new ServerInfoAccessorImpl(new ObjectMapper());
 
     @Test
-    public void given_localEnvironment_when_getJavaSDKVersion_then_returnAValidVersion() {
+    public void given_localEnvironment_when_getNumaflowJavaSDKVersion_then_returnAValidVersion() {
         String got = this.underTest.getSDKVersion();
-        assertNotEquals("", got);
-        try {
-            Integer.parseInt(got);
-        } catch (NumberFormatException e) {
-            fail("Expected java SDK version to be a valid integer.");
-        }
+        assertTrue(got.matches("^\\d+\\.\\d+\\.\\d+$"));
     }
 
     @Test
@@ -31,7 +26,7 @@ public class ServerInfoAccessorImplTest {
         ServerInfo testServerInfo = new ServerInfo(
                 Protocol.TCP_PROTOCOL,
                 Language.JAVA,
-                "11",
+                "0.4.3",
                 new HashMap<>() {{
                     put("key1", "value1");
                     put("key2", "value2");
