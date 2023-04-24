@@ -31,7 +31,7 @@ public class SinkServer {
     private Server server;
 
     public SinkServer() {
-        this(new GRPCServerConfig());
+        this(new GRPCServerConfig(SinkConstants.DEFAULT_SOCKET_PATH));
     }
 
     /**
@@ -45,7 +45,7 @@ public class SinkServer {
 
     public SinkServer(GRPCServerConfig grpcServerConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
-                .forAddress(new DomainSocketAddress(grpcServerConfig.getSocketPath()))
+                .forAddress(new DomainSocketAddress(SinkConstants.DEFAULT_SOCKET_PATH))
                 .channelType(EpollServerDomainSocketChannel.class)
                 .maxInboundMessageSize(grpcServerConfig.getMaxMessageSize())
                 .workerEventLoopGroup(group)
