@@ -6,7 +6,6 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import org.junit.After;
@@ -34,7 +33,7 @@ public class SinkServerTest {
     @Before
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
-        GRPCServerConfig grpcServerConfig = new GRPCServerConfig();
+        SinkGRPCConfig grpcServerConfig = new SinkGRPCConfig(SinkConstants.DEFAULT_MESSAGE_SIZE);
         grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
         server = new SinkServer(
                 InProcessServerBuilder.forName(serverName).directExecutor(),

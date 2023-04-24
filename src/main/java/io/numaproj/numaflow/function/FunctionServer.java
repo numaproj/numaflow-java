@@ -13,7 +13,6 @@ import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.numaproj.numaflow.common.GRPCServerConfig;
 import io.numaproj.numaflow.function.map.MapHandler;
 import io.numaproj.numaflow.function.mapt.MapTHandler;
 import io.numaproj.numaflow.function.reduce.ReduceHandler;
@@ -34,36 +33,36 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class FunctionServer {
 
-    private final GRPCServerConfig grpcServerConfig;
+    private final FunctionGRPCConfig grpcConfig;
     private final ServerBuilder<?> serverBuilder;
     private final FunctionService functionService = new FunctionService();
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
     public FunctionServer() {
-        this(new GRPCServerConfig());
+        this(new FunctionGRPCConfig(FunctionConstants.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
      * GRPC server constructor
      *
-     * @param grpcServerConfig to configure the socket path and max message size for grpc
+     * @param FunctionGRPCConfig to configure max message size for grpc
      */
-    public FunctionServer(GRPCServerConfig grpcServerConfig) {
-        this(grpcServerConfig, new EpollEventLoopGroup());
+    public FunctionServer(FunctionGRPCConfig grpcConfig) {
+        this(grpcConfig, new EpollEventLoopGroup());
     }
 
-    public FunctionServer(GRPCServerConfig grpcServerConfig, EpollEventLoopGroup group) {
+    public FunctionServer(FunctionGRPCConfig grpcConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
-                .forAddress(new DomainSocketAddress(grpcServerConfig.getSocketPath()))
+                .forAddress(new DomainSocketAddress(grpcConfig.getSocketPath()))
                 .channelType(EpollServerDomainSocketChannel.class)
-                .maxInboundMessageSize(grpcServerConfig.getMaxMessageSize())
+                .maxInboundMessageSize(grpcConfig.getMaxMessageSize())
                 .workerEventLoopGroup(group)
-                .bossEventLoopGroup(group), grpcServerConfig);
+                .bossEventLoopGroup(group), grpcConfig);
     }
 
-    public FunctionServer(ServerBuilder<?> serverBuilder, GRPCServerConfig grpcServerConfig) {
-        this.grpcServerConfig = grpcServerConfig;
+    public FunctionServer(ServerBuilder<?> serverBuilder, FunctionGRPCConfig grpcConfig) {
+        this.grpcConfig = grpcConfig;
         this.serverBuilder = serverBuilder;
     }
 
@@ -86,8 +85,8 @@ public class FunctionServer {
      * Start serving requests.
      */
     public void start() throws Exception {
-        String socketPath = grpcServerConfig.getSocketPath();
-        String infoFilePath = grpcServerConfig.getInfoFilePath();
+        String socketPath = grpcConfig.getSocketPath();
+        String infoFilePath = grpcConfig.getInfoFilePath();
         // cleanup socket path if it exists (unit test builder doesn't use one)
         if (socketPath != null) {
             Path path = Paths.get(socketPath);
@@ -130,7 +129,7 @@ public class FunctionServer {
         // start server
         server.start();
         log.info(
-                "Server started, listening on socket path: " + grpcServerConfig.getSocketPath());
+                "Server started, listening on socket path: " + grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
