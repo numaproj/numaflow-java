@@ -102,6 +102,7 @@ public class FunctionServer {
                 Language.JAVA,
                 serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
+        log.info("Writing server info {} to %s", serverInfo, infoFilePath);
         serverInfoAccessor.write(serverInfo, infoFilePath);
 
         // build server
