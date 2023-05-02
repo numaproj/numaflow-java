@@ -17,5 +17,10 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+      - name: Import GPG Key
+        uses: crazy-max/ghaction-import-gpg@v1
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       - name: Build with Maven, run unit tests and the coverage check
         run: mvn clean install
