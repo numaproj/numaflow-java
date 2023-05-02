@@ -9,7 +9,6 @@ import io.numaproj.numaflow.sink.types.ResponseList;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @hidden
  * Sink actor invokes the user defined sink and returns the response back on EOF.
  */
 

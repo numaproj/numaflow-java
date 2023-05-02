@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @hidden
  * Reduce actor invokes the user defined code and returns the result.
  */
 

@@ -330,11 +330,8 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.0.1</version>
                 <configuration>
-                    <doclint>all,-missing</doclint>
+<!--                    <doclint>all,-missing</doclint>-->
                     <detectJavaApiLink>false</detectJavaApiLink>
-                    <sourceFileExcludes>
-                        <exclude>**Actor*.java</exclude>
-                    </sourceFileExcludes>
                     <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.function.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.function.metadata</excludePackageNames>
                 </configuration>
                 <executions>
