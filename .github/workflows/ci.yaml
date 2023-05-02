@@ -20,6 +20,6 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }} # Value of the GPG private key to import
           gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
       - name: Build with Maven, run unit tests and the coverage check
-        run: mvn clean install
+        run: mvn clean install -s $GITHUB_WORKSPACE/settings.xml
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
