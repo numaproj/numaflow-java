@@ -2,38 +2,17 @@
 <settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
-    <activeProfiles>
-        <activeProfile>github</activeProfile>
-    </activeProfiles>
-
-    <profiles>
-        <profile>
-            <id>github</id>
-            <repositories>
-                <repository>
-                    <id>central</id>
-                    <url>https://repo1.maven.org/maven2</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-                <repository>
-                    <id>github</id>
-                    <name>GitHub numaproj Apache Maven Packages</name>
-                    <url>https://maven.pkg.github.com/numaproj/numaflow-java</url>
-                </repository>
-            </repositories>
-        </profile>
-    </profiles>
 
     <servers>
         <server>
             <id>github</id>
             <username>${env.JAVA_SDK_MAVEN_USER}</username>
             <password>${env.JAVA_SDK_MAVEN_PASSWORD}</password>
+        </server>
+        <server>
+            <id>ossrh</id>
+            <username>${env.OSSRH_USERNAME}</username>
+            <password>${env.OSSRH_PASSWORD}</password>
         </server>
     </servers>
 </settings>

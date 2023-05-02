@@ -6,7 +6,7 @@
 
     <groupId>io.numaproj.numaflow</groupId>
     <artifactId>numaflow-java</artifactId>
-    <version>0.4.5</version>
+    <version>0.4.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>numaflow-java</name>
@@ -30,7 +30,23 @@
 
     <profiles>
         <profile>
+            <id>github</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <distributionManagement>
+                <repository>
+                    <id>github</id>
+                    <name>Numaflow Java SDK</name>
+                    <url>https://maven.pkg.github.com/numaproj/numaflow-java</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+        <profile>
             <id>ossrh</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <distributionManagement>
                 <snapshotRepository>
                     <id>ossrh</id>
@@ -39,16 +55,6 @@
                 <repository>
                     <id>ossrh</id>
                     <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
-        </profile>
-        <profile>
-            <id>github</id>
-            <distributionManagement>
-                <repository>
-                    <id>github</id>
-                    <name>Numaflow Java SDK</name>
-                    <url>https://maven.pkg.github.com/numaproj/numaflow-java</url>
                 </repository>
             </distributionManagement>
         </profile>
@@ -298,7 +304,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>3.0.1</version>
+                <configuration>
+                    <doclint>all,-missing</doclint>
+                    <detectJavaApiLink>false</detectJavaApiLink>
+                    <sourceFileExcludes>
+                        <exclude>**Actor*.java</exclude>
+                    </sourceFileExcludes>
+                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.function.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.function.metadata</excludePackageNames>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>

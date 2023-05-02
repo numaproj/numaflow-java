@@ -7,16 +7,16 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.function.map.MapHandler;
-import io.numaproj.numaflow.function.mapt.MapTHandler;
-import io.numaproj.numaflow.function.metadata.IntervalWindow;
+import io.numaproj.numaflow.function.handlers.MapHandler;
+import io.numaproj.numaflow.function.handlers.MapTHandler;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.handlers.ReducerFactory;
+import io.numaproj.numaflow.function.interfaces.IntervalWindow;
+import io.numaproj.numaflow.function.interfaces.Metadata;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
-import io.numaproj.numaflow.function.reduce.ReduceSupervisorActor;
-import io.numaproj.numaflow.function.reduce.ReducerFactory;
-import io.numaproj.numaflow.function.reduce.ShutdownActor;
+import io.numaproj.numaflow.function.types.MessageList;
+import io.numaproj.numaflow.function.types.MessageTList;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
@@ -34,9 +34,9 @@ import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduce
 
 @Slf4j
 @NoArgsConstructor
-public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
+class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBase {
 
-    public static final ActorSystem actorSystem = ActorSystem.create("reduce");
+    public static final ActorSystem functionActorSystem = ActorSystem.create("reduce");
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
@@ -159,18 +159,18 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
         CompletableFuture<Void> failureFuture = new CompletableFuture<>();
 
         // create a shutdown actor that listens to exceptions.
-        ActorRef shutdownActorRef = actorSystem.
-                actorOf(ShutdownActor.props(responseObserver, failureFuture));
+        ActorRef shutdownActorRef = functionActorSystem.
+                actorOf(ReduceShutdownActor.props(responseObserver, failureFuture));
 
         // subscribe for dead letters
-        actorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
+        functionActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
         handleFailure(failureFuture);
         /*
             create a supervisor actor which assign the tasks to child actors.
             we create a child actor for every unique set of keys in a window
         */
-        ActorRef supervisorActor = actorSystem
+        ActorRef supervisorActor = functionActorSystem
                 .actorOf(ReduceSupervisorActor.props(
                         reducerFactory,
                         md,
@@ -183,7 +183,7 @@ public class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunction
             public void onNext(Udfunction.DatumRequest datum) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
-                    supervisorActor.tell(datum, supervisorActor);
+                    supervisorActor.tell(datum, ActorRef.noSender());
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }

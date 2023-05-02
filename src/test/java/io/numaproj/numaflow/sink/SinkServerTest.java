@@ -6,6 +6,10 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.sink.handler.SinkHandler;
+import io.numaproj.numaflow.sink.interfaces.Datum;
+import io.numaproj.numaflow.sink.types.Response;
+import io.numaproj.numaflow.sink.types.ResponseList;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import org.junit.After;
@@ -51,7 +55,7 @@ public class SinkServerTest {
     }
 
     @Test
-    public void sinkerSuccess() {
+    public void sinkerSuccess() throws InterruptedException {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
@@ -79,6 +83,7 @@ public class SinkServerTest {
 
         inputStreamObserver.onCompleted();
 
+        while(!outputStreamObserver.completed.get());
         Udsink.ResponseList responseList = outputStreamObserver.getResultDatum();
         assertEquals(10, responseList.getResponsesCount());
         responseList.getResponsesList().forEach((response -> {
@@ -93,25 +98,16 @@ public class SinkServerTest {
     private static class TestSinkFn extends SinkHandler {
 
         @Override
-        public ResponseList processMessage(SinkDatumStream datumStream) {
+        public Response processMessage(Datum datum) {
             ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
-            while (true) {
-                Datum datum = datumStream.ReadMessage();
-                // null indicates the end of the input
-                if (datum == SinkDatumStream.EOF) {
-                    break;
-                }
-                if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
-                    builder.addResponse(Response.responseFailure(
-                            datum.getId() + processedIdSuffix,
-                            "error message"));
-                    continue;
-                }
-
-                logger.info(Arrays.toString(datum.getValue()));
-                builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
+            if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
+                return Response.responseFailure(
+                        datum.getId() + processedIdSuffix,
+                        "error message");
             }
-            return builder.build();
+
+            logger.info(Arrays.toString(datum.getValue()));
+            return Response.responseOK(datum.getId() + processedIdSuffix);
         }
     }
 }

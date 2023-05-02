@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function;
+package io.numaproj.numaflow.function.types;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +17,15 @@ public class MessageTList {
     @Singular("addMessage")
     private Iterable<MessageT> messages;
 
+    /**
+     * Builder to build MessageTList
+     */
     public static class MessageTListBuilder {
+        /**
+         *
+         * @param messages to append all the messages to MessageTList
+         * @return returns the builder
+         */
         public MessageTListBuilder addAllMessages(Iterable<MessageT> messages) {
             this.messages.addAll((Collection<? extends MessageT>) messages);
             return this;

@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.examples.function.map.evenodd;
 
-import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.Message;
-import io.numaproj.numaflow.function.MessageList;
-import io.numaproj.numaflow.function.map.MapHandler;
+import io.numaproj.numaflow.function.handlers.MapHandler;
+import io.numaproj.numaflow.function.interfaces.Datum;
+import io.numaproj.numaflow.function.types.Message;
+import io.numaproj.numaflow.function.types.MessageList;
 import lombok.extern.slf4j.Slf4j;
 
 /**

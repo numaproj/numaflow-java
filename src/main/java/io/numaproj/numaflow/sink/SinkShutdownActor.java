@@ -1,11 +1,11 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.sink;
 
 import akka.actor.AbstractActor;
 import akka.actor.AllDeadLetters;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.function.v1.Udfunction;
+import io.numaproj.numaflow.sink.v1.Udsink;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,14 +19,14 @@ import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @AllArgsConstructor
-public class ShutdownActor extends AbstractActor {
-    private StreamObserver<Udfunction.DatumResponseList> responseObserver;
+class SinkShutdownActor extends AbstractActor {
+    private StreamObserver<Udsink.ResponseList> responseObserver;
     private final CompletableFuture<Void> failureFuture;
 
     public static Props props(
-            StreamObserver<Udfunction.DatumResponseList> responseObserver,
+            StreamObserver<Udsink.ResponseList> responseObserver,
             CompletableFuture<Void> failureFuture) {
-        return Props.create(ShutdownActor.class, responseObserver, failureFuture);
+        return Props.create(SinkShutdownActor.class, responseObserver, failureFuture);
     }
 
     @Override
@@ -58,7 +58,6 @@ public class ShutdownActor extends AbstractActor {
     private void completedSuccessfully(String eof) {
         log.debug("completed successfully of shutdown executed");
         failureFuture.complete(null);
-        // if all the actors completed successfully, we can stop the shutdown actor.
         getContext().getSystem().stop(getSelf());
     }
 

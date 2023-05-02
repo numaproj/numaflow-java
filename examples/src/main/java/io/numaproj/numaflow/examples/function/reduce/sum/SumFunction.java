@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.examples.function.reduce.sum;
 
-import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.Message;
-import io.numaproj.numaflow.function.MessageList;
-import io.numaproj.numaflow.function.metadata.Metadata;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.interfaces.Datum;
+import io.numaproj.numaflow.function.interfaces.Metadata;
+import io.numaproj.numaflow.function.types.Message;
+import io.numaproj.numaflow.function.types.MessageList;
 import lombok.extern.slf4j.Slf4j;
 
 

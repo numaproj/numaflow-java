@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
@@ -13,10 +14,10 @@ import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.numaproj.numaflow.function.map.MapHandler;
-import io.numaproj.numaflow.function.mapt.MapTHandler;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
-import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.function.handlers.MapHandler;
+import io.numaproj.numaflow.function.handlers.MapTHandler;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.handlers.ReducerFactory;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
@@ -39,20 +40,22 @@ public class FunctionServer {
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
+    /**
+     * constructor to create function gRPC server.
+     */
     public FunctionServer() {
         this(new FunctionGRPCConfig(FunctionConstants.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
-     * GRPC server constructor
+     * constructor to create function gRPC server with gRPC config.
      *
-     * @param FunctionGRPCConfig to configure max message size for grpc
      */
     public FunctionServer(FunctionGRPCConfig grpcConfig) {
         this(grpcConfig, new EpollEventLoopGroup());
     }
 
-    public FunctionServer(FunctionGRPCConfig grpcConfig, EpollEventLoopGroup group) {
+    private FunctionServer(FunctionGRPCConfig grpcConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
                 .forAddress(new DomainSocketAddress(grpcConfig.getSocketPath()))
                 .channelType(EpollServerDomainSocketChannel.class)
@@ -61,28 +64,46 @@ public class FunctionServer {
                 .bossEventLoopGroup(group), grpcConfig);
     }
 
+    @VisibleForTesting
     public FunctionServer(ServerBuilder<?> serverBuilder, FunctionGRPCConfig grpcConfig) {
         this.grpcConfig = grpcConfig;
         this.serverBuilder = serverBuilder;
     }
 
+    /**
+     * registers the map handler to the server.
+     * @param mapHandler handler to process the message.
+     * @return returns a new Function gRPC server.
+     */
     public FunctionServer registerMapHandler(MapHandler mapHandler) {
         this.functionService.setMapHandler(mapHandler);
         return this;
     }
 
+    /**
+     * registers the mapT handler to the server.
+     * @param mapTHandler handler to process the message and assign event time.
+     * @return returns a new Function gRPC server.
+     */
     public FunctionServer registerMapTHandler(MapTHandler mapTHandler) {
         this.functionService.setMapTHandler(mapTHandler);
         return this;
     }
 
+    /**
+     * registers the reducer factory to the server.
+     * @param reducerFactory which produces reduce handlers to perform reduce operation.
+     * @return returns a new Function gRPC server.
+     */
     public FunctionServer registerReducerFactory(ReducerFactory<? extends ReduceHandler> reducerFactory) {
         this.functionService.setReduceHandler(reducerFactory);
         return this;
     }
 
+
     /**
-     * Start serving requests.
+     * Starts the function server.
+     * @throws Exception
      */
     public void start() throws Exception {
         String socketPath = grpcConfig.getSocketPath();
@@ -102,7 +123,7 @@ public class FunctionServer {
                 Language.JAVA,
                 serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
-        log.info("Writing server info {} to %s", serverInfo, infoFilePath);
+        log.info("Writing server info {} to {}", serverInfo, infoFilePath);
         serverInfoAccessor.write(serverInfo, infoFilePath);
 
         // build server

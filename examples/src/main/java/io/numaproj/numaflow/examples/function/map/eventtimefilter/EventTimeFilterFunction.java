@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.examples.function.map.eventtimefilter;
 
-import io.numaproj.numaflow.function.Datum;
 import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.MessageT;
-import io.numaproj.numaflow.function.MessageTList;
-import io.numaproj.numaflow.function.mapt.MapTHandler;
+import io.numaproj.numaflow.function.handlers.MapTHandler;
+import io.numaproj.numaflow.function.interfaces.Datum;
+import io.numaproj.numaflow.function.types.MessageT;
+import io.numaproj.numaflow.function.types.MessageTList;
 
 import java.time.Instant;
 

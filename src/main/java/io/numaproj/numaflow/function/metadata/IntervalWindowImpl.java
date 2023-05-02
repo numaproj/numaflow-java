@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.function.metadata;
 
+import io.numaproj.numaflow.function.interfaces.IntervalWindow;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;

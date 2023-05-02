@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.function;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
@@ -9,11 +9,9 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.function.FunctionConstants;
-import io.numaproj.numaflow.function.FunctionService;
-import io.numaproj.numaflow.function.HandlerDatum;
-import io.numaproj.numaflow.function.HandlerDatumMetadata;
-import io.numaproj.numaflow.function.metadata.Metadata;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.handlers.ReducerFactory;
+import io.numaproj.numaflow.function.interfaces.Metadata;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
@@ -29,7 +27,7 @@ import java.util.Optional;
  */
 
 @Slf4j
-public class ReduceSupervisorActor extends AbstractActor {
+class ReduceSupervisorActor extends AbstractActor {
     private final ReducerFactory<? extends ReduceHandler> reducerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
@@ -65,7 +63,7 @@ public class ReduceSupervisorActor extends AbstractActor {
     public void preRestart(Throwable reason, Optional<Object> message) {
         log.debug("supervisor pre restart was executed");
         shutdownActor.tell(reason, ActorRef.noSender());
-        FunctionService.actorSystem.stop(getSelf());
+        FunctionService.functionActorSystem.stop(getSelf());
     }
 
     @Override

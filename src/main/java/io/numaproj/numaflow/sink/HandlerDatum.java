@@ -1,11 +1,12 @@
 package io.numaproj.numaflow.sink;
 
+import io.numaproj.numaflow.sink.interfaces.Datum;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
 
 @AllArgsConstructor
-public class HandlerDatum implements Datum {
+class HandlerDatum implements Datum {
 
     private String[] keys;
     private byte[] value;

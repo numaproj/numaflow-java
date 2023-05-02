@@ -1,11 +1,9 @@
 package io.numaproj.numaflow.examples.sink.simple;
 
-import io.numaproj.numaflow.sink.Datum;
-import io.numaproj.numaflow.sink.Response;
-import io.numaproj.numaflow.sink.ResponseList;
-import io.numaproj.numaflow.sink.SinkDatumStream;
-import io.numaproj.numaflow.sink.SinkHandler;
 import io.numaproj.numaflow.sink.SinkServer;
+import io.numaproj.numaflow.sink.handler.SinkHandler;
+import io.numaproj.numaflow.sink.interfaces.Datum;
+import io.numaproj.numaflow.sink.types.Response;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,18 +18,8 @@ public class SimpleSink extends SinkHandler {
     }
 
     @Override
-    public ResponseList processMessage(SinkDatumStream datumStream) {
-        ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
-
-        while (true) {
-            Datum datum = datumStream.ReadMessage();
-            // EOF indicates the end of the input
-            if (datum == SinkDatumStream.EOF) {
-                break;
-            }
-            log.info(new String(datum.getValue()));
-            responseListBuilder.addResponse(Response.responseOK(datum.getId()));
-        }
-        return responseListBuilder.build();
+    public Response processMessage(Datum datum) {
+        log.info(new String(datum.getValue()));
+        return Response.responseOK(datum.getId());
     }
 }

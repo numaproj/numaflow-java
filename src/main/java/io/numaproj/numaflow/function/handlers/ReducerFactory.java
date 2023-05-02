@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.function.handlers;
 
 /**
  * ReducerFactory is used to create Reducer object.

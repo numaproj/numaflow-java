@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function;
+package io.numaproj.numaflow.function.types;
 
 import lombok.Getter;
 
@@ -16,7 +16,7 @@ public class Message {
 
 
     /**
-     * used to create message with keys, value and tags(used for conditional forwarding)
+     * used to create message with value, keys and tags(used for conditional forwarding)
      *
      * @param value message value
      * @param keys message keys
@@ -38,7 +38,7 @@ public class Message {
     }
 
     /**
-     *  used to create Message with keys and value.
+     *  used to create Message with value and keys.
      *
      * @param value message value
      * @param keys message keys
@@ -48,9 +48,9 @@ public class Message {
     }
 
     /**
-     *   creates a Message which will be dropped
+     *  creates a Message which will be dropped
      *
-     * @return Message
+     * @return returns the Message which will be dropped
      */
     public static Message toDrop() {
         return new Message(new byte[0], null, new String[]{DROP});

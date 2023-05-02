@@ -3,7 +3,7 @@ package io.numaproj.numaflow.function;
 import io.grpc.Context;
 import io.grpc.Metadata;
 
-public class FunctionConstants {
+class FunctionConstants {
     public static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/function.sock";
 
     public static final int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 4;

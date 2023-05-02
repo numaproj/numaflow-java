@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.examples.function.reduce.sum;
 
 import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.function.handlers.ReducerFactory;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

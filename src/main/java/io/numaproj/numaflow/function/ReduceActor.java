@@ -1,12 +1,12 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.function;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.ByteString;
-import io.numaproj.numaflow.function.HandlerDatum;
-import io.numaproj.numaflow.function.MessageList;
-import io.numaproj.numaflow.function.metadata.Metadata;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.interfaces.Metadata;
+import io.numaproj.numaflow.function.types.MessageList;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +16,13 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
+ * @hidden
  * Reduce actor invokes the user defined code and returns the result.
  */
 
 @Slf4j
 @AllArgsConstructor
-public class ReduceActor extends AbstractActor {
+class ReduceActor extends AbstractActor {
 
     private String[] keys;
     private Metadata md;
