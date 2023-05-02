@@ -17,8 +17,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-      - name: print-secret
-        run: echo ${{ secrets.GPG_PRIVATE_KEY }}
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v5
