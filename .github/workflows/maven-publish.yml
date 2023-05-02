@@ -5,6 +5,8 @@ name: Publish package to the Maven Central Repository and GitHub Packages
 on:
   release:
     types: [created]
+  pull_request:
+    branches: [ main ]
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -39,6 +41,6 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
       - name: Publish to GitHub Packages
-        run: mvn -DgithubRelease=true deploy -P github
+        run: mvn clean install
         env:
           GITHUB_TOKEN: ${{ github.token }}
