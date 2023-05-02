@@ -38,7 +38,7 @@ public class ServerInfoAccessorImplTest {
             ServerInfo got = this.underTest.read(testFilePath);
             assertEquals(testServerInfo.getLanguage(), got.getLanguage());
             assertEquals(testServerInfo.getProtocol(), got.getProtocol());
-//            assertEquals(testServerInfo.getVersion(), got.getVersion());
+            assertEquals(testServerInfo.getVersion(), got.getVersion());
             assertEquals(testServerInfo.getMetadata(), got.getMetadata());
         } catch (Exception e) {
             fail("Expected no exception.");
