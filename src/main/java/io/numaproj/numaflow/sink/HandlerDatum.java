@@ -1,23 +1,18 @@
 package io.numaproj.numaflow.sink;
 
+import io.numaproj.numaflow.sink.interfaces.Datum;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
 
 @AllArgsConstructor
-public class HandlerDatum implements Datum {
+class HandlerDatum implements Datum {
 
     private String[] keys;
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
     private String id;
-    private Boolean eof;
-
-    // poison packet for reduce stream, to indicate EOF
-    public static HandlerDatum EOF() {
-        return new HandlerDatum(null, null, null, null, null, true);
-    }
 
     @Override
     public String[] getKeys() {

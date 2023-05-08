@@ -1,15 +1,16 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.function;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.google.protobuf.ByteString;
-import io.numaproj.numaflow.function.Datum;
-import io.numaproj.numaflow.function.Message;
-import io.numaproj.numaflow.function.MessageList;
-import io.numaproj.numaflow.function.ReduceOutputStreamObserver;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.handlers.ReducerFactory;
+import io.numaproj.numaflow.function.interfaces.Datum;
+import io.numaproj.numaflow.function.interfaces.Metadata;
 import io.numaproj.numaflow.function.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.function.metadata.Metadata;
 import io.numaproj.numaflow.function.metadata.MetadataImpl;
+import io.numaproj.numaflow.function.types.Message;
+import io.numaproj.numaflow.function.types.MessageList;
 import io.numaproj.numaflow.function.v1.Udfunction;
 import org.junit.Test;
 
@@ -32,7 +33,7 @@ public class ReduceSupervisorActorTest {
                 newBuilder().addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(ShutdownActor
+                .actorOf(ReduceShutdownActor
                         .props(
                                 new ReduceOutputStreamObserver(),
                                 completableFuture));
@@ -69,7 +70,7 @@ public class ReduceSupervisorActorTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(ShutdownActor
+                .actorOf(ReduceShutdownActor
                         .props(
                                 new ReduceOutputStreamObserver(),
                                 completableFuture));

@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sink;
+package io.numaproj.numaflow.sink.types;
 
 import lombok.Builder;
 import lombok.Getter;

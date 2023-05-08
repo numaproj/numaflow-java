@@ -1,12 +1,14 @@
 package io.numaproj.numaflow.function;
 
 
+import io.numaproj.numaflow.function.interfaces.Datum;
+import io.numaproj.numaflow.function.interfaces.DatumMetadata;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
 
 @AllArgsConstructor
-public class HandlerDatum implements Datum {
+class HandlerDatum implements Datum {
 
     private byte[] value;
     private Instant watermark;

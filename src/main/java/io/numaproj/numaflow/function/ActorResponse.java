@@ -1,15 +1,15 @@
-package io.numaproj.numaflow.function.reduce;
+package io.numaproj.numaflow.function;
 
 import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/*
-    used to store the reduced result from the handler
-*/
+/**
+ * ActorResponse is to store the response from ReduceActors.
+ */
 @Getter
 @AllArgsConstructor
-public class ActorResponse {
+class ActorResponse {
     String[] keys;
     Udfunction.DatumResponseList datumList;
 }

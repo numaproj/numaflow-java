@@ -1,8 +1,11 @@
 package io.numaproj.numaflow.function;
 
-import io.numaproj.numaflow.function.metadata.Metadata;
-import io.numaproj.numaflow.function.reduce.ReduceHandler;
-import io.numaproj.numaflow.function.reduce.ReducerFactory;
+import io.numaproj.numaflow.function.handlers.ReduceHandler;
+import io.numaproj.numaflow.function.handlers.ReducerFactory;
+import io.numaproj.numaflow.function.interfaces.Datum;
+import io.numaproj.numaflow.function.interfaces.Metadata;
+import io.numaproj.numaflow.function.types.Message;
+import io.numaproj.numaflow.function.types.MessageList;
 
 import java.util.Arrays;
 

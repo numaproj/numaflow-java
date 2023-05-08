@@ -3,8 +3,12 @@ package io.numaproj.numaflow.sink;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.Udsink;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class SinkOutputStreamObserver implements StreamObserver<Udsink.ResponseList> {
     private Udsink.ResponseList resultDatum;
+    public AtomicReference<Boolean> completed = new AtomicReference<>(false);
+
 
     public Udsink.ResponseList getResultDatum() {
         return resultDatum;
@@ -22,5 +26,6 @@ public class SinkOutputStreamObserver implements StreamObserver<Udsink.ResponseL
 
     @Override
     public void onCompleted() {
+        this.completed.set(true);
     }
 }

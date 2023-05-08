@@ -1,27 +1,24 @@
 package io.numaproj.numaflow.sink;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.AllDeadLetters;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.sink.handler.SinkHandler;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
+import static io.numaproj.numaflow.sink.SinkConstants.EOF;
 
 @Slf4j
 class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
-    // it will never be smaller than one
-    private final ExecutorService sinkTaskExecutor = Executors
-            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-    private final long SHUTDOWN_TIME = 30;
+    public static final ActorSystem sinkActorSystem = ActorSystem.create("sink");
+
     private SinkHandler sinkHandler;
 
     public SinkService() {
@@ -41,78 +38,45 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
                     getMapFnMethod(),
                     responseObserver);
         }
-        SinkDatumStreamImpl sinkDatumStream = new SinkDatumStreamImpl();
 
-        Future<ResponseList> result = sinkTaskExecutor.submit(() -> sinkHandler.processMessage(
-                sinkDatumStream));
+        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
+
+        // create a shutdown actor that listens to exceptions.
+        ActorRef shutdownActorRef = sinkActorSystem.
+                actorOf(SinkShutdownActor.props(responseObserver, failureFuture));
+
+        // subscribe for dead letters
+        sinkActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
+
+        handleFailure(failureFuture);
+
+        /*
+            supervisor actor to create and manage the sink actor which invokes the handlers.
+        */
+        ActorRef supervisorActor = sinkActorSystem
+                .actorOf(SinkSupervisorActor.props(
+                        sinkHandler,
+                        shutdownActorRef,
+                        responseObserver
+                ));
 
         return new StreamObserver<Udsink.DatumRequest>() {
             @Override
             public void onNext(Udsink.DatumRequest d) {
-                // get Datum from request
-                HandlerDatum handlerDatum = new HandlerDatum(
-                        d.getKeysList().toArray(new String[0]),
-                        d.getValue().toByteArray(),
-                        Instant.ofEpochSecond(
-                                d.getWatermark().getWatermark().getSeconds(),
-                                d.getWatermark().getWatermark().getNanos()),
-                        Instant.ofEpochSecond(
-                                d.getEventTime().getEventTime().getSeconds(),
-                                d.getEventTime().getEventTime().getNanos()),
-                        d.getId(),
-                        false);
-
-                try {
-                    sinkDatumStream.WriteMessage(handlerDatum);
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    onError(e);
-                }
+                supervisorActor.tell(d, ActorRef.noSender());
             }
 
             @Override
             public void onError(Throwable throwable) {
-                log.warn("Encountered error in sinkFn - {}", throwable.getMessage());
+                log.error("Encountered error in sinkFn - {}", throwable.getMessage());
                 responseObserver.onError(throwable);
             }
 
             @Override
             public void onCompleted() {
-                Udsink.ResponseList response = Udsink.ResponseList
-                        .newBuilder()
-                        .getDefaultInstanceForType();
-                try {
-                    sinkDatumStream.WriteMessage(SinkDatumStream.EOF);
-                    // wait until the sink handler returns, result.get() is a blocking call
-                    ResponseList responses = result.get();
-                    // construct responseList from responses
-                    response = buildResponseList(responses);
-
-                } catch (InterruptedException | ExecutionException e) {
-                    onError(e);
-                }
-                responseObserver.onNext(response);
-                responseObserver.onCompleted();
+                supervisorActor.tell(EOF, ActorRef.noSender());
             }
         };
-    }
-
-    // shuts down the executor service which is used for reduce
-    public void shutDown() {
-        this.sinkTaskExecutor.shutdown();
-        try {
-            if (!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-                System.err.println("Sink executor did not terminate in the specified time.");
-                List<Runnable> droppedTasks = sinkTaskExecutor.shutdownNow();
-                System.err.println("Sink executor was abruptly shut down. " + droppedTasks.size()
-                        + " tasks will not be executed.");
-            } else {
-                System.err.println("Sink executor was terminated.");
-            }
-        } catch (InterruptedException e) {
-            Thread.interrupted();
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -124,15 +88,17 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         responseObserver.onCompleted();
     }
 
-    public Udsink.ResponseList buildResponseList(ResponseList responses) {
-        var responseListBuilder = Udsink.ResponseList.newBuilder();
-        responses.getResponses().forEach(response -> {
-            responseListBuilder.addResponses(Udsink.Response.newBuilder()
-                    .setId(response.getId() == null ? "" : response.getId())
-                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                    .setSuccess(response.getSuccess())
-                    .build());
-        });
-        return responseListBuilder.build();
+
+
+    // log the exception and exit if there are any uncaught exceptions.
+    private void handleFailure(CompletableFuture<Void> failureFuture) {
+        new Thread(() -> {
+            try {
+                failureFuture.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }).start();
     }
 }

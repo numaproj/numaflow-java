@@ -12,6 +12,7 @@ import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
+import io.numaproj.numaflow.sink.handler.SinkHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Files;
@@ -29,14 +30,17 @@ public class SinkServer {
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private Server server;
 
+    /**
+     * constructor to create sink gRPC server.
+     */
     public SinkServer() {
         this(new SinkGRPCConfig(SinkConstants.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
-     * GRPC server constructor
+     * constructor to create sink gRPC server with gRPC config.
      *
-     * @param SinkGRPCConfig to configure the max message size for grpc
+     * @param grpcConfig to configure the max message size for grpc
      */
     public SinkServer(SinkGRPCConfig grpcConfig) {
         this(grpcConfig, new EpollEventLoopGroup());
@@ -56,6 +60,11 @@ public class SinkServer {
         this.serverBuilder = serverBuilder;
     }
 
+    /**
+     * registers the sink handler to the gRPC server.
+     * @param sinkHandler handler to process the message
+     * @return returns the server.
+     */
     public SinkServer registerSinker(SinkHandler sinkHandler) {
         this.sinkService.setSinkHandler(sinkHandler);
         return this;
@@ -82,7 +91,7 @@ public class SinkServer {
                 Language.JAVA,
                 serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
-        log.info("Writing server info {} to %s", serverInfo, infoFilePath);
+        log.info("Writing server info {} to {}", serverInfo, infoFilePath);
         serverInfoAccessor.write(serverInfo, infoFilePath);
 
         // build server
@@ -105,8 +114,6 @@ public class SinkServer {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
             }
-            System.err.println("*** server shut down");
-            this.sinkService.shutDown();
         }));
     }
 

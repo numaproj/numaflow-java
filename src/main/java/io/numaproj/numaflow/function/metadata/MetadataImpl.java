@@ -1,5 +1,7 @@
 package io.numaproj.numaflow.function.metadata;
 
+import io.numaproj.numaflow.function.interfaces.IntervalWindow;
+import io.numaproj.numaflow.function.interfaces.Metadata;
 import lombok.AllArgsConstructor;
 
 /**

@@ -1,9 +1,10 @@
 package io.numaproj.numaflow.function;
 
+import io.numaproj.numaflow.function.interfaces.DatumMetadata;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class HandlerDatumMetadata implements DatumMetadata {
+class HandlerDatumMetadata implements DatumMetadata {
     private String id;
     private long numDelivered;
 
