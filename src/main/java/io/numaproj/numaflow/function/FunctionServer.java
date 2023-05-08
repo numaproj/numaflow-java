@@ -103,7 +103,7 @@ public class FunctionServer {
 
     /**
      * Starts the function server.
-     * @throws Exception
+     * @throws Exception if there are any exceptions while processing the request.
      */
     public void start() throws Exception {
         String socketPath = grpcConfig.getSocketPath();

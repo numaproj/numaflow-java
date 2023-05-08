@@ -12,6 +12,7 @@ import io.numaproj.numaflow.sink.types.Response;
 import io.numaproj.numaflow.sink.types.ResponseList;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -21,13 +22,12 @@ import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 
+@Slf4j
 @RunWith(JUnit4.class)
 public class SinkServerTest {
-    private static final Logger logger = Logger.getLogger(SinkServerTest.class.getName());
     private final static String processedIdSuffix = "-id-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
@@ -66,9 +66,9 @@ public class SinkServerTest {
         String actualId = "sink_test_id";
         String expectedId = actualId + processedIdSuffix;
 
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 100; i++) {
             String[] keys;
-            if (i < 10) {
+            if (i < 100) {
                 keys = new String[]{"valid-key"};
             } else {
                 keys = new String[]{"invalid-key"};
@@ -85,7 +85,7 @@ public class SinkServerTest {
 
         while(!outputStreamObserver.completed.get());
         Udsink.ResponseList responseList = outputStreamObserver.getResultDatum();
-        assertEquals(10, responseList.getResponsesCount());
+        assertEquals(100, responseList.getResponsesCount());
         responseList.getResponsesList().forEach((response -> {
             assertEquals(response.getId(), expectedId);
         }));
@@ -95,6 +95,7 @@ public class SinkServerTest {
                 "error message");
     }
 
+    @Slf4j
     private static class TestSinkFn extends SinkHandler {
 
         @Override
@@ -105,8 +106,7 @@ public class SinkServerTest {
                         datum.getId() + processedIdSuffix,
                         "error message");
             }
-
-            logger.info(Arrays.toString(datum.getValue()));
+            log.info(new String(datum.getValue()));
             return Response.responseOK(datum.getId() + processedIdSuffix);
         }
     }

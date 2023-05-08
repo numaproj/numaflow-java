@@ -25,18 +25,17 @@ import java.util.Optional;
 
 @Slf4j
 class SinkSupervisorActor extends AbstractActor {
-    private final SinkHandler sinkHandler;
     private final ActorRef shutdownActor;
-    private ActorRef sinkActor;
+    private final ActorRef sinkActor;
     private final StreamObserver<Udsink.ResponseList> responseObserver;
 
     public SinkSupervisorActor(
             SinkHandler sinkHandler,
             ActorRef shutdownActor,
             StreamObserver<Udsink.ResponseList> responseObserver) {
-        this.sinkHandler = sinkHandler;
         this.shutdownActor = shutdownActor;
         this.responseObserver = responseObserver;
+        this.sinkActor = getContext().actorOf(SinkActor.props(sinkHandler));
     }
 
     public static Props props(
@@ -81,9 +80,6 @@ class SinkSupervisorActor extends AbstractActor {
     }
 
     private void invokeActor(Udsink.DatumRequest datumRequest) {
-        if (sinkActor == null) {
-            sinkActor = getContext().actorOf(SinkActor.props(sinkHandler));
-        }
         sinkActor.tell(constructHandlerDatum(datumRequest), getSelf());
     }
 
@@ -150,8 +146,7 @@ class SinkSupervisorActor extends AbstractActor {
                 Instant.ofEpochSecond(
                         d.getEventTime().getEventTime().getSeconds(),
                         d.getEventTime().getEventTime().getNanos()),
-                d.getId(),
-                false);
+                d.getId());
     }
 
     public Udsink.ResponseList buildResponseList(ResponseList responses) {
