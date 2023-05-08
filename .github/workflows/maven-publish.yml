@@ -1,6 +1,6 @@
 # This workflow will build a package using Maven and then publish it to Maven Central and GitHub packages when a release is created
 
-name: Publish package to the Maven Central Repository and GitHub Packages
+name: Publish to Maven Central and Github Packages
 on:
   release:
     types: [created]
