@@ -41,6 +41,8 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
+          server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+          settings-path: ${{ github.workspace }} #location for the settings.xml file
       - name: Publish to GitHub Packages
         run: mvn -DgithubRelease=true -P github deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
