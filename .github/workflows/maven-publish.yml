@@ -33,7 +33,7 @@ jobs:
           settings-path: ${{ github.workspace }} # location for the settings.xml file
 
       - name: Publish to the Maven Central Repository
-        run: mvn clean install
+        run: mvn -DcentralRelease=true -P ossrh deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
