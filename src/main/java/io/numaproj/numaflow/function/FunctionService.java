@@ -8,6 +8,7 @@ import com.google.protobuf.Empty;
 import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.handlers.MapHandler;
+import io.numaproj.numaflow.function.handlers.MapStreamHandler;
 import io.numaproj.numaflow.function.handlers.MapTHandler;
 import io.numaproj.numaflow.function.handlers.ReduceHandler;
 import io.numaproj.numaflow.function.handlers.ReducerFactory;
@@ -30,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.function.FunctionConstants.EOF;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapFnMethod;
+import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getMapStreamFnMethod;
 import static io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc.getReduceFnMethod;
 
 @Slf4j
@@ -40,6 +42,7 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     private MapHandler mapHandler;
     private MapTHandler mapTHandler;
+    private MapStreamHandler mapStreamHandler;
     private ReducerFactory<? extends ReduceHandler> reducerFactory;
 
     public void setMapHandler(MapHandler mapHandler) {
@@ -48,6 +51,10 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
     public void setMapTHandler(MapTHandler mapTHandler) {
         this.mapTHandler = mapTHandler;
+    }
+
+    public void setMapStreamHandler(MapStreamHandler mapStreamHandler) {
+        this.mapStreamHandler = mapStreamHandler;
     }
 
     public void setReduceHandler(ReducerFactory<? extends ReduceHandler> reducerFactory) {
@@ -129,6 +136,41 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
         // set response
         responseObserver.onNext(buildDatumListResponse(messageTList));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void mapStreamFn(
+            Udfunction.DatumRequest request,
+            StreamObserver<Udfunction.DatumResponse> responseObserver) {
+        if (this.mapStreamHandler == null) {
+            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+                    getMapStreamFnMethod(),
+                    responseObserver);
+            return;
+        }
+
+        // get Datum from request
+        HandlerDatumMetadata handlerDatumMetadata = new HandlerDatumMetadata(
+                request.getMetadata().getId(),
+                request.getMetadata().getNumDelivered()
+        );
+        HandlerDatum handlerDatum = new HandlerDatum(
+                request.getValue().toByteArray(),
+                Instant.ofEpochSecond(
+                        request.getWatermark().getWatermark().getSeconds(),
+                        request.getWatermark().getWatermark().getNanos()),
+                Instant.ofEpochSecond(
+                        request.getEventTime().getEventTime().getSeconds(),
+                        request.getEventTime().getEventTime().getNanos()),
+                handlerDatumMetadata
+        );
+
+        // process Datum
+        mapStreamHandler.processMessage(request
+                .getKeysList()
+                .toArray(new String[0]), handlerDatum, responseObserver);
+
         responseObserver.onCompleted();
     }
 
