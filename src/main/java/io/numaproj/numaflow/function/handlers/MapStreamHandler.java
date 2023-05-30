@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MapHandler exposes method for performing map streaming operation.
+ * MapStreamHandler exposes method for performing map streaming operation.
  * Implementations should override the processMessage method
  * which will be used for processing the input messages
  */

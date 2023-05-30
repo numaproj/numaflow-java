@@ -9,6 +9,7 @@ import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.function.handlers.MapHandler;
+import io.numaproj.numaflow.function.handlers.MapStreamHandler;
 import io.numaproj.numaflow.function.handlers.MapTHandler;
 import io.numaproj.numaflow.function.interfaces.Datum;
 import io.numaproj.numaflow.function.types.Message;
@@ -56,6 +57,7 @@ public class FunctionServerTest {
                 grpcServerConfig);
 
         server.registerMapHandler(new TestMapFn())
+                .registerMapStreamHandler(new TestMapStreamFn())
                 .registerMapTHandler(new TestMapTFn())
                 .registerReducerFactory(new ReduceTestFactory())
                 .start();
@@ -97,6 +99,38 @@ public class FunctionServerTest {
         assertEquals(
                 expectedTags,
                 actualDatumList.getElements(0).getTagsList().toArray(new String[0]));
+    }
+
+    @Test
+    public void mapperStream() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        Udfunction.DatumRequest inDatum = Udfunction.DatumRequest
+                .newBuilder()
+                .addAllKeys(List.of("test-map-key"))
+                .setValue(inValue)
+                .build();
+
+        String[] expectedKeys = new String[]{"test-map-key" + PROCESSED_KEY_SUFFIX};
+        String[] expectedTags = new String[]{"test-tag"};
+        ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
+
+        var stub = UserDefinedFunctionGrpc.newBlockingStub(inProcessChannel);
+        var actualDatumList = stub
+                .mapStreamFn(inDatum);
+
+        int count = 0;
+        while (actualDatumList.hasNext()) {
+            Udfunction.DatumResponse d = actualDatumList.next();
+            assertEquals(
+                    expectedKeys,
+                    d.getKeysList().toArray(new String[0]));
+            assertEquals(expectedValue, d.getValue());
+            assertEquals(
+                    expectedTags,
+                    d.getTagsList().toArray(new String[0]));
+            count++;
+        }
+        assertEquals(10, count);
     }
 
     @Test
@@ -233,6 +267,24 @@ public class FunctionServerTest {
                             updatedKeys,
                             new String[]{"test-tag"}))
                     .build();
+        }
+    }
+
+    private static class TestMapStreamFn extends MapStreamHandler {
+        @Override
+        public void processMessage(String[] keys, Datum datum, StreamObserver<Udfunction.DatumResponse> streamObserver) {
+            String[] updatedKeys = Arrays
+                    .stream(keys)
+                    .map(c -> c + PROCESSED_KEY_SUFFIX)
+                    .toArray(String[]::new);
+            for (int i = 0; i < 10; i++) {
+                Message msg = new Message(
+                                (new String(datum.getValue())
+                                        + PROCESSED_VALUE_SUFFIX).getBytes(),
+                                updatedKeys,
+                                new String[]{"test-tag"});
+                onNext(msg, streamObserver);
+            }
         }
     }
 
