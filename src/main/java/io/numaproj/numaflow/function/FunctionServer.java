@@ -15,6 +15,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.function.handlers.MapHandler;
+import io.numaproj.numaflow.function.handlers.MapStreamHandler;
 import io.numaproj.numaflow.function.handlers.MapTHandler;
 import io.numaproj.numaflow.function.handlers.ReduceHandler;
 import io.numaproj.numaflow.function.handlers.ReducerFactory;
@@ -87,6 +88,16 @@ public class FunctionServer {
      */
     public FunctionServer registerMapTHandler(MapTHandler mapTHandler) {
         this.functionService.setMapTHandler(mapTHandler);
+        return this;
+    }
+
+    /**
+     * registers the map stream handler to the server.
+     * @param mapStreamHandler handler to process the message and assign event time.
+     * @return returns a new Function gRPC server.
+     */
+    public FunctionServer registerMapStreamHandler(MapStreamHandler mapStreamHandler) {
+        this.functionService.setMapStreamHandler(mapStreamHandler);
         return this;
     }
 
