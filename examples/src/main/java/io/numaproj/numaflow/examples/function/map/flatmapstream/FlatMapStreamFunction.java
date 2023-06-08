@@ -1,5 +1,8 @@
 package io.numaproj.numaflow.examples.function.map.flatmapstream;
 
+import io.grpc.stub.StreamObserver;
+
+import io.numaproj.numaflow.function.v1.Udfunction;
 import io.numaproj.numaflow.function.FunctionServer;
 import io.numaproj.numaflow.function.handlers.MapStreamHandler;
 import io.numaproj.numaflow.function.interfaces.Datum;
@@ -18,7 +21,7 @@ public class FlatMapStreamFunction extends MapStreamHandler {
         new FunctionServer().registerMapStreamHandler(new FlatMapStreamFunction()).start();
     }
 
-    public void processMessage(String[] keys, Datum datum, StreamObserver<Udfunction.DatumResponse> streamObserver) {
+    public void processMessage(String[] keys, Datum data, StreamObserver<Udfunction.DatumResponse> streamObserver) {
         String msg = new String(data.getValue());
         String[] strs = msg.split(",");
 
