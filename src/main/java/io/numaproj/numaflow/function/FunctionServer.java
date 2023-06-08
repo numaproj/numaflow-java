@@ -2,15 +2,19 @@ package io.numaproj.numaflow.function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.Any;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
+import io.grpc.Status;
 import io.grpc.netty.NettyServerBuilder;
+import io.grpc.protobuf.StatusProto;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
@@ -151,7 +155,23 @@ public class FunctionServer {
                                 headers.get(FunctionConstants.DATUM_METADATA_WIN_START),
                                 FunctionConstants.WINDOW_END_TIME,
                                 headers.get(FunctionConstants.DATUM_METADATA_WIN_END));
-                return Contexts.interceptCall(context, call, headers, next);
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
+                    @Override
+                    public void onHalfClose() {
+                        try {
+                            super.onHalfClose();
+                        } catch (RuntimeException ex) {
+                            handleException(ex, call, headers);
+                            throw ex;
+                        }
+                    }
+                    private void handleException(RuntimeException exception, ServerCall<ReqT, RespT> serverCall, Metadata headers) {
+                        // Currently, we only have application level exceptions.
+                        // Translate it to UNKNOWN status.
+                        serverCall.close(Status.UNKNOWN, headers);
+                    }
+                };
             }
         };
         server = serverBuilder

@@ -296,14 +296,13 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
         return datumListBuilder.build();
     }
 
-    // log the exception and exit if there are any uncaught exceptions.
+    // wrap the exception and let it be handled in the central error handling logic.
     private void handleFailure(CompletableFuture<Void> failureFuture) {
         new Thread(() -> {
             try {
                 failureFuture.get();
             } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(1);
+                throw new RuntimeException("error in reduce fn", e);
             }
         }).start();
     }
