@@ -85,7 +85,6 @@ class SinkSupervisorActor extends AbstractActor {
 
     private void processResponse(ResponseList responseList) {
         responseObserver.onNext(buildResponseList(responseList));
-        responseObserver.onCompleted();
         // after the stream is processed stop the actor.
         getContext().getSystem().stop(getSelf());
     }

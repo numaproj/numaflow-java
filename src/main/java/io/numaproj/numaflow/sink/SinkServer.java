@@ -101,33 +101,8 @@ public class SinkServer {
         serverInfoAccessor.write(serverInfo, infoFilePath);
 
         // build server
-        ServerInterceptor interceptor = new ServerInterceptor() {
-            @Override
-            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
-                    ServerCall<ReqT, RespT> call,
-                    Metadata headers,
-                    ServerCallHandler<ReqT, RespT> next) {
-                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(next.startCall(call, headers)) {
-                    @Override
-                    public void onHalfClose() {
-                        try {
-                            super.onHalfClose();
-                        } catch (RuntimeException ex) {
-                            handleException(ex, call, headers);
-                            throw ex;
-                        }
-                    }
-                    private void handleException(RuntimeException exception, ServerCall<ReqT, RespT> serverCall, Metadata headers) {
-                        // Currently, we only have application level exceptions.
-                        // Translate it to UNKNOWN status.
-                        serverCall.close(Status.UNKNOWN, headers);
-                    }
-                };
-            }
-        };
         server = serverBuilder
                 .addService(this.sinkService)
-                .intercept(interceptor)
                 .build();
 
         // start server

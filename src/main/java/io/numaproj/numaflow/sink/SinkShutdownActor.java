@@ -51,7 +51,6 @@ class SinkShutdownActor extends AbstractActor {
     private void shutdown(Throwable throwable) {
         log.debug("got a shut down exception");
         failureFuture.completeExceptionally(throwable);
-        responseObserver.onError(throwable);
     }
 
     // if there are no exceptions, complete the future without exception.

@@ -6,6 +6,7 @@ import akka.actor.AllDeadLetters;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.Timestamp;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.function.handlers.MapHandler;
 import io.numaproj.numaflow.function.handlers.MapStreamHandler;
@@ -202,12 +203,12 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
 
         // create a shutdown actor that listens to exceptions.
         ActorRef shutdownActorRef = functionActorSystem.
-                actorOf(ReduceShutdownActor.props(responseObserver, failureFuture));
+                actorOf(ReduceShutdownActor.props(failureFuture));
 
         // subscribe for dead letters
         functionActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
-        handleFailure(failureFuture);
+        handleFailure(failureFuture, responseObserver);
         /*
             create a supervisor actor which assign the tasks to child actors.
             we create a child actor for every unique set of keys in a window
@@ -297,12 +298,14 @@ class FunctionService extends UserDefinedFunctionGrpc.UserDefinedFunctionImplBas
     }
 
     // wrap the exception and let it be handled in the central error handling logic.
-    private void handleFailure(CompletableFuture<Void> failureFuture) {
+    private void handleFailure(CompletableFuture<Void> failureFuture, StreamObserver<Udfunction.DatumResponseList> responseObserver) {
         new Thread(() -> {
             try {
                 failureFuture.get();
+                responseObserver.onCompleted();
             } catch (Exception e) {
-                throw new RuntimeException("error in reduce fn", e);
+                Status status = Status.UNKNOWN.withDescription(e.getMessage());
+                responseObserver.onError(status.asException());
             }
         }).start();
     }

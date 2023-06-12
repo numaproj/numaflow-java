@@ -125,7 +125,6 @@ class ReduceSupervisorActor extends AbstractActor {
         responseObserver.onNext(actorResponse.getDatumList());
         actorsMap.remove(String.join(FunctionConstants.DELIMITTER, actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
-            responseObserver.onCompleted();
             getContext().getSystem().stop(getSelf());
         }
     }
