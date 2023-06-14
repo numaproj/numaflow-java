@@ -57,14 +57,18 @@ public class SinkServerTestErr {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
-        try {
-            new Thread(() -> {
-                while (outputStreamObserver.t == null);
-                assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
-            }).join();
-        } catch (InterruptedException e) {
-            fail("Thread interrupted");
-        }
+        Thread t = new Thread(() -> {
+            while (outputStreamObserver.t == null){
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+        });
+        t.start();
+
         StreamObserver<Udsink.DatumRequest> inputStreamObserver = UserDefinedSinkGrpc
                 .newStub(inProcessChannel)
                 .sinkFn(outputStreamObserver);
@@ -86,6 +90,12 @@ public class SinkServerTestErr {
         }
 
         inputStreamObserver.onCompleted();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            fail("Thread interrupted");
+        }
     }
 
     @Slf4j

@@ -2,7 +2,6 @@ package io.numaproj.numaflow.function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.Any;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ForwardingServerCallListener;
@@ -14,7 +13,6 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.grpc.netty.NettyServerBuilder;
-import io.grpc.protobuf.StatusProto;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
@@ -166,10 +164,12 @@ public class FunctionServer {
                             throw ex;
                         }
                     }
-                    private void handleException(RuntimeException exception, ServerCall<ReqT, RespT> serverCall, Metadata headers) {
+                    private void handleException(RuntimeException e, ServerCall<ReqT, RespT> serverCall, Metadata headers) {
                         // Currently, we only have application level exceptions.
                         // Translate it to UNKNOWN status.
-                        serverCall.close(Status.UNKNOWN, headers);
+                        var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                        var newStatus = Status.fromThrowable(status.asException());
+                        serverCall.close(newStatus, headers);
                     }
                 };
             }

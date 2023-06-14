@@ -3,7 +3,6 @@ package io.numaproj.numaflow.function;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
-import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.MetadataUtils;
@@ -79,7 +78,7 @@ public class FunctionServerTestErr {
             stub.mapFn(inDatum);
             fail("Expected the mapperErr to complete with exception");
         } catch (Exception e) {
-            assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
+            assertEquals("UNKNOWN: unknown exception", e.getMessage());
         }
     }
 
@@ -96,7 +95,7 @@ public class FunctionServerTestErr {
         try {
             stub.mapStreamFn(inDatum);
         } catch (Exception e) {
-            assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
+            assertEquals("UNKNOWN: unknown exception", e.getMessage());
         }
     }
 
@@ -113,7 +112,7 @@ public class FunctionServerTestErr {
         try {
             stub.mapTFn(inDatum);
         } catch (Exception e) {
-            assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
+            assertEquals("UNKNOWN: unknown exception", e.getMessage());
         }
     }
 
@@ -128,14 +127,17 @@ public class FunctionServerTestErr {
         //create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        try {
-            new Thread(() -> {
-                while (outputStreamObserver.t == null);
-                assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
-            }).join();
-        } catch (InterruptedException e) {
-            fail("Thread interrupted");
-        }
+        Thread t = new Thread(() -> {
+            while (outputStreamObserver.t == null){
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+        });
+        t.start();
 
         StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
                 .newStub(inProcessChannel)
@@ -151,6 +153,12 @@ public class FunctionServerTestErr {
         }
 
         inputStreamObserver.onCompleted();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            fail("Thread interrupted");
+        }
     }
 
     @Test
@@ -164,14 +172,17 @@ public class FunctionServerTestErr {
         //create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        try {
-            new Thread(() -> {
-                while (outputStreamObserver.t == null);
-                assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
-            }).join();
-        } catch (InterruptedException e) {
-            fail("Thread interrupted");
-        }
+        Thread t = new Thread(() -> {
+            while (outputStreamObserver.t == null){
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+        });
+        t.start();
 
         StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
                 .newStub(inProcessChannel)
@@ -186,6 +197,12 @@ public class FunctionServerTestErr {
         }
 
         inputStreamObserver.onCompleted();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            fail("Thread interrupted");
+        }
     }
 
     private static class TestMapFnErr extends MapHandler {
