@@ -2,7 +2,6 @@ package io.numaproj.numaflow.sink;
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
-import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -10,7 +9,6 @@ import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.sink.handler.SinkHandler;
 import io.numaproj.numaflow.sink.interfaces.Datum;
 import io.numaproj.numaflow.sink.types.Response;
-import io.numaproj.numaflow.sink.types.ResponseList;
 import io.numaproj.numaflow.sink.v1.Udsink;
 import io.numaproj.numaflow.sink.v1.UserDefinedSinkGrpc;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +19,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Slf4j
 @RunWith(JUnit4.class)
 public class SinkServerTestErr {
-    private final static String processedIdSuffix = "-id-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private SinkServer server;
@@ -56,36 +53,39 @@ public class SinkServerTestErr {
     }
 
     @Test
-    public void sinkerSuccess() throws InterruptedException {
+    public void sinkerSuccess() {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
         try {
-            StreamObserver<Udsink.DatumRequest> inputStreamObserver = UserDefinedSinkGrpc
-                    .newStub(inProcessChannel)
-                    .sinkFn(outputStreamObserver);
-            String actualId = "sink_test_id";
-            String expectedId = actualId + processedIdSuffix;
-
-            for (int i = 1; i <= 100; i++) {
-                String[] keys;
-                if (i < 100) {
-                    keys = new String[]{"valid-key"};
-                } else {
-                    keys = new String[]{"invalid-key"};
-                }
-                Udsink.DatumRequest inputDatum = Udsink.DatumRequest.newBuilder()
-                        .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                        .setId(actualId)
-                        .addAllKeys(List.of(keys))
-                        .build();
-                inputStreamObserver.onNext(inputDatum);
-            }
-
-            inputStreamObserver.onCompleted();
-        } catch (Exception e) {
-            assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
+            new Thread(() -> {
+                while (outputStreamObserver.t == null);
+                assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+            }).join();
+        } catch (InterruptedException e) {
+            fail("Thread interrupted");
         }
+        StreamObserver<Udsink.DatumRequest> inputStreamObserver = UserDefinedSinkGrpc
+                .newStub(inProcessChannel)
+                .sinkFn(outputStreamObserver);
+        String actualId = "sink_test_id";
+
+        for (int i = 1; i <= 100; i++) {
+            String[] keys;
+            if (i < 100) {
+                keys = new String[]{"valid-key"};
+            } else {
+                keys = new String[]{"invalid-key"};
+            }
+            Udsink.DatumRequest inputDatum = Udsink.DatumRequest.newBuilder()
+                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                    .setId(actualId)
+                    .addAllKeys(List.of(keys))
+                    .build();
+            inputStreamObserver.onNext(inputDatum);
+        }
+
+        inputStreamObserver.onCompleted();
     }
 
     @Slf4j

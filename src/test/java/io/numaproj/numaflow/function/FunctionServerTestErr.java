@@ -16,7 +16,6 @@ import io.numaproj.numaflow.function.interfaces.Datum;
 import io.numaproj.numaflow.function.types.MessageList;
 import io.numaproj.numaflow.function.types.MessageTList;
 import io.numaproj.numaflow.function.v1.Udfunction;
-import io.numaproj.numaflow.function.v1.Udfunction.EventTime;
 import io.numaproj.numaflow.function.v1.UserDefinedFunctionGrpc;
 import org.junit.After;
 import org.junit.Before;
@@ -25,12 +24,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.time.Instant;
 import java.util.List;
 
 import static io.numaproj.numaflow.function.FunctionConstants.WIN_END_KEY;
 import static io.numaproj.numaflow.function.FunctionConstants.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
 public class FunctionServerTestErr {
@@ -78,6 +77,7 @@ public class FunctionServerTestErr {
         var stub = UserDefinedFunctionGrpc.newBlockingStub(inProcessChannel);
         try {
             stub.mapFn(inDatum);
+            fail("Expected the mapperErr to complete with exception");
         } catch (Exception e) {
             assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
         }
@@ -118,7 +118,7 @@ public class FunctionServerTestErr {
     }
 
     @Test
-    public void reducerWithOneKey() {
+    public void reducerWithOneKey()  {
         String reduceKey = "reduce-key";
 
         Metadata metadata = new Metadata();
@@ -129,24 +129,28 @@ public class FunctionServerTestErr {
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         try {
-            StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
-                    .newStub(inProcessChannel)
-                    .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
-                    .reduceFn(outputStreamObserver);
-
-            for (int i = 1; i <= 10; i++) {
-                Udfunction.DatumRequest inputDatum = Udfunction.DatumRequest.newBuilder()
-                        .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                        .addKeys(reduceKey)
-                        .build();
-                inputStreamObserver.onNext(inputDatum);
-            }
-
-            inputStreamObserver.onCompleted();
-
-        } catch (Exception e) {
-            assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
+            new Thread(() -> {
+                while (outputStreamObserver.t == null);
+                assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+            }).join();
+        } catch (InterruptedException e) {
+            fail("Thread interrupted");
         }
+
+        StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
+                .newStub(inProcessChannel)
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
+                .reduceFn(outputStreamObserver);
+
+        for (int i = 1; i <= 10; i++) {
+            Udfunction.DatumRequest inputDatum = Udfunction.DatumRequest.newBuilder()
+                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                    .addKeys(reduceKey)
+                    .build();
+            inputStreamObserver.onNext(inputDatum);
+        }
+
+        inputStreamObserver.onCompleted();
     }
 
     @Test
@@ -161,22 +165,27 @@ public class FunctionServerTestErr {
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         try {
-            StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
-                    .newStub(inProcessChannel)
-                    .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
-                    .reduceFn(outputStreamObserver);
-            for (int i = 1; i <= 10; i++) {
-                Udfunction.DatumRequest inputDatum = Udfunction.DatumRequest.newBuilder()
-                        .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                        .addKeys(reduceKey)
-                        .build();
-                inputStreamObserver.onNext(inputDatum);
-            }
-
-            inputStreamObserver.onCompleted();
-        } catch (Exception e) {
-            assertEquals(Status.UNKNOWN.getCode().toString(), e.getMessage());
+            new Thread(() -> {
+                while (outputStreamObserver.t == null);
+                assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+            }).join();
+        } catch (InterruptedException e) {
+            fail("Thread interrupted");
         }
+
+        StreamObserver<Udfunction.DatumRequest> inputStreamObserver = UserDefinedFunctionGrpc
+                .newStub(inProcessChannel)
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
+                .reduceFn(outputStreamObserver);
+        for (int i = 1; i <= 10; i++) {
+            Udfunction.DatumRequest inputDatum = Udfunction.DatumRequest.newBuilder()
+                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                    .addKeys(reduceKey)
+                    .build();
+            inputStreamObserver.onNext(inputDatum);
+        }
+
+        inputStreamObserver.onCompleted();
     }
 
     private static class TestMapFnErr extends MapHandler {

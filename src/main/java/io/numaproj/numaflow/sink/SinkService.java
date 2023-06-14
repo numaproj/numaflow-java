@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.handler.SinkHandler;
 import io.numaproj.numaflow.sink.v1.Udsink;
@@ -43,12 +44,12 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
 
         // create a shutdown actor that listens to exceptions.
         ActorRef shutdownActorRef = sinkActorSystem.
-                actorOf(SinkShutdownActor.props(responseObserver, failureFuture));
+                actorOf(SinkShutdownActor.props(failureFuture));
 
         // subscribe for dead letters
         sinkActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
-        handleFailure(failureFuture);
+        handleFailure(failureFuture, responseObserver);
 
         /*
             supervisor actor to create and manage the sink actor which invokes the handlers.
@@ -88,13 +89,15 @@ class SinkService extends UserDefinedSinkGrpc.UserDefinedSinkImplBase {
         responseObserver.onCompleted();
     }
 
-    // wrap the exception and let it be handled in the central error handling logic.
-    private void handleFailure(CompletableFuture<Void> failureFuture) {
+    // handle the exception with corresponding response status code.
+    private void handleFailure(CompletableFuture<Void> failureFuture, StreamObserver<Udsink.ResponseList> responseObserver) {
         new Thread(() -> {
             try {
                 failureFuture.get();
             } catch (Exception e) {
-                throw new RuntimeException("error in sinker fn", e);
+                e.printStackTrace();
+                var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                responseObserver.onError(status.asException());
             }
         }).start();
     }
