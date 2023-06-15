@@ -9,6 +9,7 @@ public class SinkOutputStreamObserver implements StreamObserver<Udsink.ResponseL
     private Udsink.ResponseList resultDatum;
     public AtomicReference<Boolean> completed = new AtomicReference<>(false);
 
+    public Throwable t;
 
     public Udsink.ResponseList getResultDatum() {
         return resultDatum;
@@ -21,7 +22,7 @@ public class SinkOutputStreamObserver implements StreamObserver<Udsink.ResponseL
 
     @Override
     public void onError(Throwable throwable) {
-        throwable.printStackTrace();
+        t = throwable;
     }
 
     @Override

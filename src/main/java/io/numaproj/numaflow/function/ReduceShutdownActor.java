@@ -4,8 +4,6 @@ import akka.actor.AbstractActor;
 import akka.actor.AllDeadLetters;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.function.v1.Udfunction;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,13 +18,11 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @AllArgsConstructor
 class ReduceShutdownActor extends AbstractActor {
-    private StreamObserver<Udfunction.DatumResponseList> responseObserver;
     private final CompletableFuture<Void> failureFuture;
 
     public static Props props(
-            StreamObserver<Udfunction.DatumResponseList> responseObserver,
             CompletableFuture<Void> failureFuture) {
-        return Props.create(ReduceShutdownActor.class, responseObserver, failureFuture);
+        return Props.create(ReduceShutdownActor.class, failureFuture);
     }
 
     @Override
@@ -51,7 +47,6 @@ class ReduceShutdownActor extends AbstractActor {
     private void shutdown(Throwable throwable) {
         log.debug("got a shut down exception");
         failureFuture.completeExceptionally(throwable);
-        responseObserver.onError(throwable);
     }
 
     // if there are no exceptions, complete the future without exception.

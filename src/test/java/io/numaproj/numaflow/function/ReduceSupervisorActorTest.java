@@ -34,9 +34,7 @@ public class ReduceSupervisorActorTest {
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ReduceShutdownActor
-                        .props(
-                                new ReduceOutputStreamObserver(),
-                                completableFuture));
+                        .props(completableFuture));
 
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
@@ -71,9 +69,7 @@ public class ReduceSupervisorActorTest {
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ReduceShutdownActor
-                        .props(
-                                new ReduceOutputStreamObserver(),
-                                completableFuture));
+                        .props(completableFuture));
 
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));

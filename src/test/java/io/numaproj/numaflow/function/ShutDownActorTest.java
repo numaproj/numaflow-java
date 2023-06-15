@@ -36,9 +36,7 @@ public class ShutDownActorTest {
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ReduceShutdownActor
-                        .props(
-                                new ReduceOutputStreamObserver(),
-                                completableFuture));
+                        .props(completableFuture));
 
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
@@ -72,9 +70,7 @@ public class ShutDownActorTest {
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ReduceShutdownActor
-                        .props(
-                                new ReduceOutputStreamObserver(),
-                                completableFuture));
+                        .props(completableFuture));
 
         actorSystem.eventStream().subscribe(shutdownActor, AllDeadLetters.class);
 

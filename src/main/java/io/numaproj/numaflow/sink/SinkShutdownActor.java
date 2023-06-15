@@ -4,8 +4,6 @@ import akka.actor.AbstractActor;
 import akka.actor.AllDeadLetters;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.sink.v1.Udsink;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,13 +18,10 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @AllArgsConstructor
 class SinkShutdownActor extends AbstractActor {
-    private StreamObserver<Udsink.ResponseList> responseObserver;
     private final CompletableFuture<Void> failureFuture;
 
-    public static Props props(
-            StreamObserver<Udsink.ResponseList> responseObserver,
-            CompletableFuture<Void> failureFuture) {
-        return Props.create(SinkShutdownActor.class, responseObserver, failureFuture);
+    public static Props props(CompletableFuture<Void> failureFuture) {
+        return Props.create(SinkShutdownActor.class, failureFuture);
     }
 
     @Override
@@ -51,7 +46,6 @@ class SinkShutdownActor extends AbstractActor {
     private void shutdown(Throwable throwable) {
         log.debug("got a shut down exception");
         failureFuture.completeExceptionally(throwable);
-        responseObserver.onError(throwable);
     }
 
     // if there are no exceptions, complete the future without exception.
