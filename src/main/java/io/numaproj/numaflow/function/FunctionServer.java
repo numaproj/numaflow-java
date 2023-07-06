@@ -13,14 +13,14 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.grpc.netty.NettyServerBuilder;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.function.handlers.MapHandler;
 import io.numaproj.numaflow.function.handlers.MapStreamHandler;
 import io.numaproj.numaflow.function.handlers.MapTHandler;
 import io.numaproj.numaflow.function.handlers.ReduceHandler;
 import io.numaproj.numaflow.function.handlers.ReducerFactory;
+import io.numaproj.numaflow.function.utils.GrpcServerUtils;
+import io.numaproj.numaflow.function.utils.ThreadUtils;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
@@ -55,16 +55,13 @@ public class FunctionServer {
      *
      */
     public FunctionServer(FunctionGRPCConfig grpcConfig) {
-        this(grpcConfig, new EpollEventLoopGroup());
-    }
-
-    private FunctionServer(FunctionGRPCConfig grpcConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
                 .forAddress(new DomainSocketAddress(grpcConfig.getSocketPath()))
-                .channelType(EpollServerDomainSocketChannel.class)
+                .channelType(GrpcServerUtils.getChannelTypeClass())
                 .maxInboundMessageSize(grpcConfig.getMaxMessageSize())
-                .workerEventLoopGroup(group)
-                .bossEventLoopGroup(group), grpcConfig);
+                .bossEventLoopGroup(GrpcServerUtils.createEventLoopGroup(1, "netty-boss"))
+                .workerEventLoopGroup(GrpcServerUtils.createEventLoopGroup(ThreadUtils.INSTANCE.availableProcessors(), "netty-worker"))
+                , grpcConfig);
     }
 
     @VisibleForTesting
