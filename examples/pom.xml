@@ -42,7 +42,7 @@
                         <configuration>
                             <container>
                                 <mainClass>
-                                    io.numaproj.numaflow.examples.function.forward.ForwardFunction
+                                    io.numaproj.numaflow.examples.function.map.forward.ForwardFunction
                                 </mainClass>
                             </container>
                             <to>
@@ -63,6 +63,22 @@
                             </container>
                             <to>
                                 <image>numaflow-java-examples/simple-sink</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>reduce-counter</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>io.numaproj.numaflow.examples.function.reduce.count.EvenOddCounterFactory
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/reduce-counter</image>
                             </to>
                         </configuration>
                     </execution>

@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.function.utils;
+package io.numaproj.numaflow.utils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

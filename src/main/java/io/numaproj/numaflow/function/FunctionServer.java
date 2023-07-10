@@ -19,13 +19,13 @@ import io.numaproj.numaflow.function.handlers.MapStreamHandler;
 import io.numaproj.numaflow.function.handlers.MapTHandler;
 import io.numaproj.numaflow.function.handlers.ReduceHandler;
 import io.numaproj.numaflow.function.handlers.ReducerFactory;
-import io.numaproj.numaflow.function.utils.GrpcServerUtils;
-import io.numaproj.numaflow.function.utils.ThreadUtils;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
+import io.numaproj.numaflow.utils.GrpcServerUtils;
+import io.numaproj.numaflow.utils.ThreadUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Files;

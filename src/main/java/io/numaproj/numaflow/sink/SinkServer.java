@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
@@ -13,6 +11,8 @@ import io.numaproj.numaflow.info.ServerInfo;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.sink.handler.SinkHandler;
+import io.numaproj.numaflow.utils.GrpcServerUtils;
+import io.numaproj.numaflow.utils.ThreadUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Files;
@@ -43,16 +43,13 @@ public class SinkServer {
      * @param grpcConfig to configure the max message size for grpc
      */
     public SinkServer(SinkGRPCConfig grpcConfig) {
-        this(grpcConfig, new EpollEventLoopGroup());
-    }
-
-    public SinkServer(SinkGRPCConfig grpcConfig, EpollEventLoopGroup group) {
         this(NettyServerBuilder
                 .forAddress(new DomainSocketAddress(grpcConfig.getSocketPath()))
-                .channelType(EpollServerDomainSocketChannel.class)
+                .channelType(GrpcServerUtils.getChannelTypeClass())
                 .maxInboundMessageSize(grpcConfig.getMaxMessageSize())
-                .workerEventLoopGroup(group)
-                .bossEventLoopGroup(group), grpcConfig);
+                .bossEventLoopGroup(GrpcServerUtils.createEventLoopGroup(1, "netty-boss"))
+                .workerEventLoopGroup(GrpcServerUtils.createEventLoopGroup(ThreadUtils.INSTANCE.availableProcessors(), "netty-worker"))
+                , grpcConfig);
     }
 
     public SinkServer(ServerBuilder<?> serverBuilder, SinkGRPCConfig grpcConfig) {
