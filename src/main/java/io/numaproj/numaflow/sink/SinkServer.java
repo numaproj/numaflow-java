@@ -21,6 +21,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * SinkServer is the gRPC server for executing user defined sinks.
+ */
 @Slf4j
 public class SinkServer {
 
