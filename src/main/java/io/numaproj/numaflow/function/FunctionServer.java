@@ -34,6 +34,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * FunctionServer is the gRPC server for executing user defined functions.
+ */
 @Slf4j
 public class FunctionServer {
 
