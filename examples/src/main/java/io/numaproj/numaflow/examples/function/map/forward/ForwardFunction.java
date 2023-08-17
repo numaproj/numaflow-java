@@ -1,19 +1,19 @@
 package io.numaproj.numaflow.examples.function.map.forward;
 
-import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.handlers.MapHandler;
-import io.numaproj.numaflow.function.interfaces.Datum;
-import io.numaproj.numaflow.function.types.Message;
-import io.numaproj.numaflow.function.types.MessageList;
+import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.mapper.Mapper;
+import io.numaproj.numaflow.mapper.Message;
+import io.numaproj.numaflow.mapper.MessageList;
+import io.numaproj.numaflow.mapper.Server;
 
 /**
  * This is a simple User Defined Function example which forwards the message as is.
  */
 
-public class ForwardFunction extends MapHandler {
+public class ForwardFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
-        new FunctionServer().registerMapHandler(new ForwardFunction()).start();
+        new Server(new ForwardFunction()).start();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {

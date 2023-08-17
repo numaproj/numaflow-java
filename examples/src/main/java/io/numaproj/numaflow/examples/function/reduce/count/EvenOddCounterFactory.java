@@ -1,12 +1,12 @@
 package io.numaproj.numaflow.examples.function.reduce.count;
 
-import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.handlers.ReduceHandler;
-import io.numaproj.numaflow.function.handlers.ReducerFactory;
-import io.numaproj.numaflow.function.interfaces.Datum;
-import io.numaproj.numaflow.function.interfaces.Metadata;
-import io.numaproj.numaflow.function.types.Message;
-import io.numaproj.numaflow.function.types.MessageList;
+import io.numaproj.numaflow.reducer.Datum;
+import io.numaproj.numaflow.reducer.Message;
+import io.numaproj.numaflow.reducer.MessageList;
+import io.numaproj.numaflow.reducer.Metadata;
+import io.numaproj.numaflow.reducer.Reducer;
+import io.numaproj.numaflow.reducer.ReducerFactory;
+import io.numaproj.numaflow.reducer.Server;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,7 +20,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
     public static void main(String[] args) throws Exception {
         log.info("counter udf was invoked");
         Config config = new Config(1, 2);
-        new FunctionServer().registerReducerFactory(new EvenOddCounterFactory(config)).start();
+        new Server(new EvenOddCounterFactory(config)).start();
     }
 
     @Override
@@ -29,7 +29,7 @@ public class EvenOddCounterFactory extends ReducerFactory<EvenOddCounterFactory.
     }
 
     @Slf4j
-    public static class EvenOddCounter extends ReduceHandler {
+    public static class EvenOddCounter extends Reducer {
         private final Config config;
         private int evenCount;
         private int oddCount;

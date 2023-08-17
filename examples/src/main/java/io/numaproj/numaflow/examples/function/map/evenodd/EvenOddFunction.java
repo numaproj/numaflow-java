@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.examples.function.map.evenodd;
 
-import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.handlers.MapHandler;
-import io.numaproj.numaflow.function.interfaces.Datum;
-import io.numaproj.numaflow.function.types.Message;
-import io.numaproj.numaflow.function.types.MessageList;
+import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.mapper.Mapper;
+import io.numaproj.numaflow.mapper.Message;
+import io.numaproj.numaflow.mapper.MessageList;
+import io.numaproj.numaflow.mapper.Server;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -15,10 +15,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class EvenOddFunction extends MapHandler {
+public class EvenOddFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
-        new FunctionServer().registerMapHandler(new EvenOddFunction()).start();
+        new Server(new EvenOddFunction()).start();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {

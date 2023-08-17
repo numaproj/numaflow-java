@@ -1,15 +1,15 @@
 package io.numaproj.numaflow.examples.function.reduce.sum;
 
-import io.numaproj.numaflow.function.handlers.ReduceHandler;
-import io.numaproj.numaflow.function.interfaces.Datum;
-import io.numaproj.numaflow.function.interfaces.Metadata;
-import io.numaproj.numaflow.function.types.Message;
-import io.numaproj.numaflow.function.types.MessageList;
+import io.numaproj.numaflow.reducer.Datum;
+import io.numaproj.numaflow.reducer.Message;
+import io.numaproj.numaflow.reducer.MessageList;
+import io.numaproj.numaflow.reducer.Metadata;
+import io.numaproj.numaflow.reducer.Reducer;
 import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
-public class SumFunction extends ReduceHandler {
+public class SumFunction extends Reducer {
 
     private int sum = 0;
 

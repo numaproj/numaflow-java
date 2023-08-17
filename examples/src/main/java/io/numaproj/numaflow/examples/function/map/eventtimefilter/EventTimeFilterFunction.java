@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.examples.function.map.eventtimefilter;
 
-import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.handlers.MapTHandler;
-import io.numaproj.numaflow.function.interfaces.Datum;
-import io.numaproj.numaflow.function.types.MessageT;
-import io.numaproj.numaflow.function.types.MessageTList;
+import io.numaproj.numaflow.sourcetransformer.Datum;
+import io.numaproj.numaflow.sourcetransformer.Message;
+import io.numaproj.numaflow.sourcetransformer.MessageList;
+import io.numaproj.numaflow.sourcetransformer.Server;
+import io.numaproj.numaflow.sourcetransformer.SourceTransformer;
 
 import java.time.Instant;
 
@@ -17,36 +17,35 @@ import java.time.Instant;
  * Otherwise, (exclusively after year 2022), update the tag to "after_year_2022" and update the
  * message event time to Jan 1st 2023.
  */
-public class EventTimeFilterFunction extends MapTHandler {
+public class EventTimeFilterFunction extends SourceTransformer {
 
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 
     public static void main(String[] args) throws Exception {
-        new FunctionServer()
-                .registerMapTHandler(new EventTimeFilterFunction())
+        new Server(new EventTimeFilterFunction())
                 .start();
     }
 
-    public MessageTList processMessage(String[] keys, Datum data) {
+    public MessageList processMessage(String[] keys, Datum data) {
         Instant eventTime = data.getEventTime();
 
         if (eventTime.isBefore(januaryFirst2022)) {
-            return MessageTList.newBuilder().addMessage(MessageT.toDrop()).build();
+            return MessageList.newBuilder().addMessage(Message.toDrop()).build();
         } else if (eventTime.isBefore(januaryFirst2023)) {
-            return MessageTList
+            return MessageList
                     .newBuilder()
                     .addMessage(
-                            new MessageT(
+                            new Message(
                                     data.getValue(),
                                     januaryFirst2022,
                                     null,
                                     new String[]{"within_year_2022"}))
                     .build();
         } else {
-            return MessageTList
+            return MessageList
                     .newBuilder()
-                    .addMessage(new MessageT(
+                    .addMessage(new Message(
                             data.getValue(),
                             januaryFirst2023,
                             null,

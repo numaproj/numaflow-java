@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.examples.function.map.flatmap;
 
-import io.numaproj.numaflow.function.FunctionServer;
-import io.numaproj.numaflow.function.handlers.MapHandler;
-import io.numaproj.numaflow.function.interfaces.Datum;
-import io.numaproj.numaflow.function.types.Message;
-import io.numaproj.numaflow.function.types.MessageList;
+import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.mapper.Mapper;
+import io.numaproj.numaflow.mapper.Message;
+import io.numaproj.numaflow.mapper.MessageList;
+import io.numaproj.numaflow.mapper.Server;
 
 /**
  * This is a simple User Defined Function example which processes the input message
@@ -13,10 +13,10 @@ import io.numaproj.numaflow.function.types.MessageList;
  * "dog" and "cat"
  */
 
-public class FlatMapFunction extends MapHandler {
+public class FlatMapFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
-        new FunctionServer().registerMapHandler(new FlatMapFunction()).start();
+        new Server(new FlatMapFunction()).start();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {
