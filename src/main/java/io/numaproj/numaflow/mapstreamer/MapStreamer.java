@@ -23,7 +23,7 @@ public abstract class MapStreamer {
      * @param datum current message to be processed
      * @param streamObserver stream observer of the response
      */
-    public abstract void processMessage(String[] keys, Datum datum, StreamObserver<Mapstream.MapStreamResponse.Result> streamObserver);
+    public abstract void processMessage(String[] keys, Datum datum, StreamObserver<Mapstream.MapStreamResponse> streamObserver);
 
     /**
      * method will be utilized inside custom processMessage to invoke next on StreamObserver.
@@ -31,15 +31,17 @@ public abstract class MapStreamer {
      * @param message message
      * @return DatumResponse will be passed on to StreamObserver.
      */
-    private Mapstream.MapStreamResponse.Result buildDatumResponse(Message message) {
-        return Mapstream.MapStreamResponse.Result.newBuilder()
-            .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                    message.getValue()))
-            .addAllKeys(message.getKeys()
-                    == null ? new ArrayList<>() : List.of(message.getKeys()))
-            .addAllTags(message.getTags()
-                    == null ? new ArrayList<>() : List.of(message.getTags()))
-            .build();
+    private Mapstream.MapStreamResponse buildDatumResponse(Message message) {
+        return Mapstream.MapStreamResponse.newBuilder()
+                .setResult(Mapstream.MapStreamResponse.Result.newBuilder()
+                        .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
+                        message.getValue()))
+                .addAllKeys(message.getKeys()
+                        == null ? new ArrayList<>() : List.of(message.getKeys()))
+                .addAllTags(message.getTags()
+                        == null ? new ArrayList<>() : List.of(message.getTags()))
+                .build()).build();
+
     }
 
     /**
@@ -48,7 +50,7 @@ public abstract class MapStreamer {
      * @param message message
      * @param streamObserver stream observer of the response
      */
-    protected void onNext(Message message, StreamObserver<Mapstream.MapStreamResponse.Result> streamObserver) {
+    protected void onNext(Message message, StreamObserver<Mapstream.MapStreamResponse> streamObserver) {
         streamObserver.onNext(buildDatumResponse(message));
     }
 }

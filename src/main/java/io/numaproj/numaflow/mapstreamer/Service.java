@@ -24,7 +24,7 @@ class Service extends MapStreamGrpc.MapStreamImplBase {
     @Override
     public void mapStreamFn(
             Mapstream.MapStreamRequest request,
-            StreamObserver<Mapstream.MapStreamResponse.Result> responseObserver) {
+            StreamObserver<Mapstream.MapStreamResponse> responseObserver) {
 
         if (this.mapStreamer == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(

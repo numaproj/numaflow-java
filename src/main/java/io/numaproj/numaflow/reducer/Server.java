@@ -1,7 +1,11 @@
 package io.numaproj.numaflow.reducer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.Constants;
@@ -46,14 +50,16 @@ public class Server {
     public void start() throws Exception {
         GrpcServerUtils.writeServerInfo(serverInfoAccessor, grpcConfig.getSocketPath(), grpcConfig.getInfoFilePath());
 
-        // create server builder
-        ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
-                grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
+        if (this.server == null) {
+            // create server builder
+            ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
+                    grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
 
-        // build server
-        this.server = serverBuilder
-                .addService(this.service)
-                .build();
+            // build server
+            this.server = serverBuilder
+                    .addService(this.service)
+                    .build();
+        }
 
         // start server
         server.start();
@@ -82,5 +88,12 @@ public class Server {
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
+    }
+
+    @VisibleForTesting
+    void setServerBuilder(ServerBuilder<?> serverBuilder) {
+        this.server = serverBuilder
+                .addService(this.service)
+                .build();
     }
 }

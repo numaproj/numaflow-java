@@ -1,6 +1,13 @@
 package io.numaproj.numaflow.utils;
 
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.ForwardingServerCallListener;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.Status;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
@@ -14,6 +21,8 @@ import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
+import io.numaproj.numaflow.reducer.Metadata;
+import io.numaproj.numaflow.shared.Constants;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Files;
@@ -69,11 +78,46 @@ public class GrpcServerUtils {
     }
 
     public static ServerBuilder<?> createServerBuilder(String socketPath, int maxMessageSize) {
+        ServerInterceptor interceptor = new ServerInterceptor() {
+            @Override
+            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                    ServerCall<ReqT, RespT> call,
+                    io.grpc.Metadata headers,
+                    ServerCallHandler<ReqT, RespT> next) {
+
+                final var context =
+                        Context.current().withValues(
+                                Constants.WINDOW_START_TIME,
+                                headers.get(Constants.DATUM_METADATA_WIN_START),
+                                Constants.WINDOW_END_TIME,
+                                headers.get(Constants.DATUM_METADATA_WIN_END));
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
+                    @Override
+                    public void onHalfClose() {
+                        try {
+                            super.onHalfClose();
+                        } catch (RuntimeException ex) {
+                            handleException(ex, call, headers);
+                            throw ex;
+                        }
+                    }
+                    private void handleException(RuntimeException e, ServerCall<ReqT, RespT> serverCall, io.grpc.Metadata headers) {
+                        // Currently, we only have application level exceptions.
+                        // Translate it to UNKNOWN status.
+                        var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                        var newStatus = Status.fromThrowable(status.asException());
+                        serverCall.close(newStatus, headers);
+                    }
+                };
+            }
+        };
         return NettyServerBuilder
                 .forAddress(new DomainSocketAddress(socketPath))
                 .channelType(GrpcServerUtils.getChannelTypeClass())
                 .maxInboundMessageSize(maxMessageSize)
                 .bossEventLoopGroup(GrpcServerUtils.createEventLoopGroup(1, "netty-boss"))
-                .workerEventLoopGroup(GrpcServerUtils.createEventLoopGroup(ThreadUtils.INSTANCE.availableProcessors(), "netty-worker"));
+                .workerEventLoopGroup(GrpcServerUtils.createEventLoopGroup(ThreadUtils.INSTANCE.availableProcessors(), "netty-worker"))
+                .intercept(interceptor);
     }
 }

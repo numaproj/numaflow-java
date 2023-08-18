@@ -139,11 +139,11 @@ class SinkSupervisorActor extends AbstractActor {
                 d.getKeysList().toArray(new String[0]),
                 d.getValue().toByteArray(),
                 Instant.ofEpochSecond(
-                        d.getWatermark().getWatermark().getSeconds(),
-                        d.getWatermark().getWatermark().getNanos()),
+                        d.getWatermark().getSeconds(),
+                        d.getWatermark().getNanos()),
                 Instant.ofEpochSecond(
-                        d.getEventTime().getEventTime().getSeconds(),
-                        d.getEventTime().getEventTime().getNanos()),
+                        d.getEventTime().getSeconds(),
+                        d.getEventTime().getNanos()),
                 d.getId());
     }
 

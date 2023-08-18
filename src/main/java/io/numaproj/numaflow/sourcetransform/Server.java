@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.mapstreamer;
+package io.numaproj.numaflow.sourcetransform;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MapServer is the gRPC server for executing map operation.
+ * Server is the gRPC server for executing source transformer operation.
  */
 @Slf4j
 public class Server {
@@ -23,21 +23,21 @@ public class Server {
     private io.grpc.Server server;
 
     /**
-     * constructor to create sink gRPC server.
-     * @param mapStreamer to process the message
+     * constructor to create gRPC server.
+     * @param sourceTransform to process the message
      */
-    public Server(MapStreamer mapStreamer) {
-        this(mapStreamer, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+    public Server(SourceTransform sourceTransform) {
+        this(sourceTransform, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
-     * constructor to create sink gRPC server with gRPC config.
+     * constructor to create gRPC server with gRPC config.
      *
      * @param grpcConfig to configure the max message size for grpc
-     * @param mapStreamer to process the message
+     * @param sourceTransform to transform the message
      */
-    public Server(MapStreamer mapStreamer, GRPCConfig grpcConfig) {
-        this.service = new Service(mapStreamer);
+    public Server(SourceTransform sourceTransform, GRPCConfig grpcConfig) {
+        this.service = new Service(sourceTransform);
         this.grpcConfig = grpcConfig;
     }
 
@@ -51,6 +51,7 @@ public class Server {
             // create server builder
             ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
                     grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
+
             // build server
             this.server = serverBuilder
                     .addService(this.service)
