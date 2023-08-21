@@ -1,8 +1,13 @@
 package io.numaproj.numaflow.reducer;
 
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
-import io.grpc.*;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.MetadataUtils;

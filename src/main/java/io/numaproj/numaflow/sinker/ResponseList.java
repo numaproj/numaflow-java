@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sinker;
 
-import io.numaproj.numaflow.sinker.Response;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;

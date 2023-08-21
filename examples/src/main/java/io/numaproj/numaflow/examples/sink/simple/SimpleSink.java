@@ -1,9 +1,9 @@
 package io.numaproj.numaflow.examples.sink.simple;
 
-import io.numaproj.numaflow.sinker.Server;
-import io.numaproj.numaflow.sinker.Sinker;
 import io.numaproj.numaflow.sinker.Datum;
 import io.numaproj.numaflow.sinker.Response;
+import io.numaproj.numaflow.sinker.Server;
+import io.numaproj.numaflow.sinker.Sinker;
 import lombok.extern.slf4j.Slf4j;
 
 /**

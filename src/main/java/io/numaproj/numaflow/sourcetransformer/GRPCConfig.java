@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sourcetransform;
+package io.numaproj.numaflow.sourcetransformer;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.numaproj.numaflow.info.ServerInfoConstants;

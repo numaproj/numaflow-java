@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
@@ -19,8 +20,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import io.grpc.Metadata;
-
 
 import static io.numaproj.numaflow.shared.Constants.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.Constants.WIN_START_KEY;

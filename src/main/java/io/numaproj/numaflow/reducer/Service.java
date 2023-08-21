@@ -6,10 +6,10 @@ import akka.actor.AllDeadLetters;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
 import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
+import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
 import io.numaproj.numaflow.shared.Constants;
 import lombok.extern.slf4j.Slf4j;
 

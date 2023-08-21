@@ -1,11 +1,11 @@
-package io.numaproj.numaflow.sourcetransform;
+package io.numaproj.numaflow.sourcetransformer;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.Timestamp;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
-import io.numaproj.numaflow.sourcetransformer.v1.Transform;
+import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,15 +20,15 @@ import static io.numaproj.numaflow.map.v1.MapGrpc.getMapFnMethod;
 @AllArgsConstructor
 class Service extends SourceTransformGrpc.SourceTransformImplBase {
 
-    private final SourceTransform transformer;
+    private final SourceTransformer transformer;
 
     /**
      * Applies a function to each datum element.
      */
     @Override
     public void sourceTransformFn(
-            Transform.SourceTransformRequest request,
-            StreamObserver<Transform.SourceTransformResponse> responseObserver) {
+            Sourcetransformer.SourceTransformRequest request,
+            StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver) {
 
         if (this.transformer == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
@@ -61,18 +61,18 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
      * IsReady is the heartbeat endpoint for gRPC.
      */
     @Override
-    public void isReady(Empty request, StreamObserver<Transform.ReadyResponse> responseObserver) {
-        responseObserver.onNext(Transform.ReadyResponse.newBuilder().setReady(true).build());
+    public void isReady(Empty request, StreamObserver<Sourcetransformer.ReadyResponse> responseObserver) {
+        responseObserver.onNext(Sourcetransformer.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
     }
 
-    private Transform.SourceTransformResponse buildResponse(MessageList messageList) {
-        Transform.SourceTransformResponse.Builder responseBuilder = Transform
+    private Sourcetransformer.SourceTransformResponse buildResponse(MessageList messageList) {
+        Sourcetransformer.SourceTransformResponse.Builder responseBuilder = Sourcetransformer
                 .SourceTransformResponse
                 .newBuilder();
 
         messageList.getMessages().forEach(message -> {
-            responseBuilder.addResults(Transform.SourceTransformResponse.Result.newBuilder()
+            responseBuilder.addResults(Sourcetransformer.SourceTransformResponse.Result.newBuilder()
                     .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                             message.getValue()))
                             .setEventTime(Timestamp.newBuilder()

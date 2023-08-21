@@ -1,10 +1,10 @@
-package io.numaproj.numaflow.examples.sourcetransform.eventtimefilter;
+package io.numaproj.numaflow.examples.sourcetransformer.eventtimefilter;
 
-import io.numaproj.numaflow.sourcetransform.Datum;
-import io.numaproj.numaflow.sourcetransform.Message;
-import io.numaproj.numaflow.sourcetransform.MessageList;
-import io.numaproj.numaflow.sourcetransform.Server;
-import io.numaproj.numaflow.sourcetransform.SourceTransform;
+import io.numaproj.numaflow.sourcetransformer.Datum;
+import io.numaproj.numaflow.sourcetransformer.Message;
+import io.numaproj.numaflow.sourcetransformer.MessageList;
+import io.numaproj.numaflow.sourcetransformer.Server;
+import io.numaproj.numaflow.sourcetransformer.SourceTransformer;
 
 import java.time.Instant;
 
@@ -17,7 +17,7 @@ import java.time.Instant;
  * Otherwise, (exclusively after year 2022), update the tag to "after_year_2022" and update the
  * message event time to Jan 1st 2023.
  */
-public class EventTimeFilterFunction extends SourceTransform {
+public class EventTimeFilterFunction extends SourceTransformer {
 
     private static final Instant januaryFirst2022 = Instant.ofEpochMilli(1640995200000L);
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);

@@ -16,7 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -25,7 +24,6 @@ import static org.junit.Assert.fail;
 @Slf4j
 @RunWith(JUnit4.class)
 public class ServerErrTest {
-    private final static String processedIdSuffix = "-id-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private Server server;

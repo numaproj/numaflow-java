@@ -3,13 +3,10 @@ package io.numaproj.numaflow.reducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.Constants;
-import io.numaproj.numaflow.utils.GrpcServerUtils;
+import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;

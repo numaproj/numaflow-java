@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sourcetransform;
+package io.numaproj.numaflow.sourcetransformer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -6,7 +6,7 @@ import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.Constants;
-import io.numaproj.numaflow.utils.GrpcServerUtils;
+import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -24,20 +24,20 @@ public class Server {
 
     /**
      * constructor to create gRPC server.
-     * @param sourceTransform to process the message
+     * @param sourceTransformer to process the message
      */
-    public Server(SourceTransform sourceTransform) {
-        this(sourceTransform, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+    public Server(SourceTransformer sourceTransformer) {
+        this(sourceTransformer, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
      * constructor to create gRPC server with gRPC config.
      *
      * @param grpcConfig to configure the max message size for grpc
-     * @param sourceTransform to transform the message
+     * @param sourceTransformer to transform the message
      */
-    public Server(SourceTransform sourceTransform, GRPCConfig grpcConfig) {
-        this.service = new Service(sourceTransform);
+    public Server(SourceTransformer sourceTransformer, GRPCConfig grpcConfig) {
+        this.service = new Service(sourceTransformer);
         this.grpcConfig = grpcConfig;
     }
 

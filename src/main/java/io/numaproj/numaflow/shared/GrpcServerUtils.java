@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.utils;
+package io.numaproj.numaflow.shared;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -21,8 +21,6 @@ import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
-import io.numaproj.numaflow.reducer.Metadata;
-import io.numaproj.numaflow.shared.Constants;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.file.Files;

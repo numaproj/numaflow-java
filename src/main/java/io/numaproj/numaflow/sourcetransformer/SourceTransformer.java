@@ -1,14 +1,14 @@
-package io.numaproj.numaflow.sourcetransform;
+package io.numaproj.numaflow.sourcetransformer;
 
 
 /**
- * SourceTransform exposes method for performing transform operation
+ * SourceTransformer exposes method for performing transform operation
  * in the source. Implementations should override the processMessage
  * method which will be used for transforming and assigning event time
  * to input messages
  */
 
-public abstract class SourceTransform {
+public abstract class SourceTransformer {
     /**
      * method which will be used for processing messages.
      *

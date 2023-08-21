@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sourcetransform;
+package io.numaproj.numaflow.sourcetransformer;
 
 import lombok.Builder;
 import lombok.Getter;

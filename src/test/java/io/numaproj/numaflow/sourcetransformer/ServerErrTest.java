@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sourcetransform;
+package io.numaproj.numaflow.sourcetransformer;
 
 import com.google.protobuf.ByteString;
 import io.grpc.Context;
@@ -14,12 +14,11 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
-import io.numaproj.numaflow.sourcetransformer.v1.Transform;
+import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
 
 import static org.junit.Assert.assertEquals;
 
@@ -71,7 +70,7 @@ public class ServerErrTest {
 
         GRPCConfig grpcServerConfig = new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE);
         grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
-        server = new Server( new SourceTransformTestErr(),
+        server = new Server( new SourceTransformerTestErr(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
@@ -94,7 +93,7 @@ public class ServerErrTest {
     @Test
     public void TestSourceTransformErr() {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Transform.SourceTransformRequest request = Transform.SourceTransformRequest
+        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
                 .newBuilder()
                 .addKeys("test-sst-key")
                 .setValue(inValue)
@@ -108,7 +107,7 @@ public class ServerErrTest {
         }
     }
 
-    private static class SourceTransformTestErr extends SourceTransform {
+    private static class SourceTransformerTestErr extends SourceTransformer {
         @Override
         public MessageList processMessage(String[] keys, Datum datum) {
             throw new RuntimeException("unknown exception");
