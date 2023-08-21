@@ -357,7 +357,7 @@
                 <version>3.0.1</version>
                 <configuration>
                     <detectJavaApiLink>false</detectJavaApiLink>
-                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.function.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.function.metadata</excludePackageNames>
+                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.map.v1:io.numaproj.numaflow.reduce.v1:io.numaproj.numaflow.mapstream.v1:io.numaproj.numaflow.sourcetransformer.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.reduce.metadata:io.numaproj.numaflow.shared</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>

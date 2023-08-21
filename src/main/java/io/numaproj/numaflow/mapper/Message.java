@@ -16,7 +16,7 @@ public class Message {
 
 
     /**
-     * used to create message with value, keys and tags(used for conditional forwarding)
+     * used to create Message with value, keys and tags(used for conditional forwarding)
      *
      * @param value message value
      * @param keys message keys
