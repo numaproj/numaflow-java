@@ -95,7 +95,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
             @Override
             public void onCompleted() {
                 // indicate the end of input to the supervisor
-                supervisorActor.tell(Constants.EOF, ActorRef.noSender());
+                supervisorActor.tell(Constants.INFO_EOF, ActorRef.noSender());
 
             }
         };

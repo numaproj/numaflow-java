@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.numaproj.numaflow.info.ServerInfoConstants;
+import io.numaproj.numaflow.shared.Constants;
 import lombok.Getter;
 
 /**
@@ -18,9 +18,9 @@ class GRPCConfig {
      * @param maxMessageSize max payload size for sink gRPC server.
      */
     public GRPCConfig(int maxMessageSize) {
-        this.socketPath = SinkConstants.DEFAULT_SOCKET_PATH;
+        this.socketPath = Constants.SINK_SOCKET_PATH;
         this.maxMessageSize = maxMessageSize;
-        this.infoFilePath = ServerInfoConstants.DEFAULT_SERVER_INFO_FILE_PATH;
+        this.infoFilePath = Constants.DEFAULT_SERVER_INFO_FILE_PATH;
     }
 
     @VisibleForTesting
