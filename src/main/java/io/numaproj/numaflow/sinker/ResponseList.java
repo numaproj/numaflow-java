@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -19,6 +20,10 @@ public class ResponseList {
 
     public static class ResponseListBuilder {
         public ResponseListBuilder addResponses(Iterable<Response> responses) {
+            if (this.responses == null) {
+                this.responses = new ArrayList<>();
+                return this;
+            }
             this.responses.addAll((Collection<? extends Response>) responses);
             return this;
         }
