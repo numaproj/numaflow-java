@@ -286,10 +286,12 @@
                 <version>0.8.7</version>
                 <configuration>
                     <excludes>
-                        <exclude>io/numaproj/numaflow/sink/v1/*</exclude>
-                        <exclude>io/numaproj/numaflow/function/v1/*</exclude>
-                        <exclude>io/numaproj/numaflow/function/metadata/*</exclude>
-                        <exclude>io/numaproj/numaflow/utils/*</exclude>
+                        <exclude>io.numaproj.numaflow.examples.*</exclude>
+                        <exclude>io.numaproj.numaflow.mapstream.v1</exclude>
+                        <exclude>io.numaproj.numaflow.map.v1</exclude>
+                        <exclude>io.numaproj.numaflow.reduce.v1</exclude>
+                        <exclude>io.numaproj.numaflow.sourcetransformer.v1</exclude>
+                        <exclude>io.numaproj.numaflow.sink.v1</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -323,6 +325,15 @@
                                     </limits>
                                 </rule>
                             </rules>
+                            <excludes>
+                                <exclude>io/numaproj/numaflow/examples/*</exclude>
+                                <exclude>io/numaproj/numaflow/mapstream/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/reduce/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/map/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/sourcetransformer/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/sink/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/shared/*</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
@@ -346,7 +357,7 @@
                 <version>3.0.1</version>
                 <configuration>
                     <detectJavaApiLink>false</detectJavaApiLink>
-                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.function.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.function.metadata</excludePackageNames>
+                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.map.v1:io.numaproj.numaflow.reduce.v1:io.numaproj.numaflow.mapstream.v1:io.numaproj.numaflow.sourcetransformer.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.reduce.metadata:io.numaproj.numaflow.shared</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>

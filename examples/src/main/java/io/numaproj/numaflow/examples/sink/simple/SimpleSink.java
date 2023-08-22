@@ -1,9 +1,9 @@
 package io.numaproj.numaflow.examples.sink.simple;
 
-import io.numaproj.numaflow.sink.SinkServer;
-import io.numaproj.numaflow.sink.handler.SinkHandler;
-import io.numaproj.numaflow.sink.interfaces.Datum;
-import io.numaproj.numaflow.sink.types.Response;
+import io.numaproj.numaflow.sinker.Datum;
+import io.numaproj.numaflow.sinker.Response;
+import io.numaproj.numaflow.sinker.Server;
+import io.numaproj.numaflow.sinker.Sinker;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -11,10 +11,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class SimpleSink extends SinkHandler {
+public class SimpleSink extends Sinker {
 
     public static void main(String[] args) throws Exception {
-        new SinkServer().registerSinker(new SimpleSink()).start();
+        new Server(new SimpleSink()).start();
     }
 
     @Override

@@ -42,7 +42,7 @@
                         <configuration>
                             <container>
                                 <mainClass>
-                                    io.numaproj.numaflow.examples.function.map.forward.ForwardFunction
+                                    io.numaproj.numaflow.examples.map.forward.ForwardFunction
                                 </mainClass>
                             </container>
                             <to>
@@ -74,7 +74,7 @@
                         </goals>
                         <configuration>
                             <container>
-                                <mainClass>io.numaproj.numaflow.examples.function.reduce.count.EvenOddCounterFactory
+                                <mainClass>io.numaproj.numaflow.examples.reduce.count.EvenOddCounterFactory
                                 </mainClass>
                             </container>
                             <to>
