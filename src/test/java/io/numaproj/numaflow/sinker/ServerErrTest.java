@@ -6,6 +6,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class ServerErrTest {
     @Before
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
-        GRPCConfig grpcServerConfig = new GRPCConfig(SinkConstants.DEFAULT_MESSAGE_SIZE);
+        GRPCConfig grpcServerConfig = new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE);
         grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
         server = new Server(
                 new TestSinkFnErr(),

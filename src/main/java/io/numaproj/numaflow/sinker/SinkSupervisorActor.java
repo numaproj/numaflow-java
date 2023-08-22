@@ -9,6 +9,7 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
@@ -64,7 +65,7 @@ class SinkSupervisorActor extends AbstractActor {
     @Override
     public void postStop() {
         log.debug("post stop of supervisor executed - {}", getSelf().toString());
-        shutdownActor.tell(SinkConstants.SUCCESS, ActorRef.noSender());
+        shutdownActor.tell(Constants.SUCCESS, ActorRef.noSender());
     }
 
     @Override

@@ -6,6 +6,7 @@ import akka.actor.AllDeadLetters;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.sink.v1.SinkGrpc.getSinkFnMethod;
-import static io.numaproj.numaflow.sinker.SinkConstants.EOF;
 
 @Slf4j
 class Service extends SinkGrpc.SinkImplBase {
@@ -71,7 +71,7 @@ class Service extends SinkGrpc.SinkImplBase {
 
             @Override
             public void onCompleted() {
-                supervisorActor.tell(EOF, ActorRef.noSender());
+                supervisorActor.tell(Constants.EOF, ActorRef.noSender());
             }
         };
     }
