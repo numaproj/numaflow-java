@@ -292,6 +292,7 @@
                         <exclude>io.numaproj.numaflow.reduce.v1</exclude>
                         <exclude>io.numaproj.numaflow.sourcetransformer.v1</exclude>
                         <exclude>io.numaproj.numaflow.sink.v1</exclude>
+                        <exclude>io.numaproj.numaflow.sideinput.v1</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -333,6 +334,7 @@
                                 <exclude>io/numaproj/numaflow/sourcetransformer/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/sink/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/shared/*</exclude>
+                                <exclude>io/numaproj/numaflow/sideinput/v1/*</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -357,7 +359,7 @@
                 <version>3.0.1</version>
                 <configuration>
                     <detectJavaApiLink>false</detectJavaApiLink>
-                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.map.v1:io.numaproj.numaflow.reduce.v1:io.numaproj.numaflow.mapstream.v1:io.numaproj.numaflow.sourcetransformer.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.reduce.metadata:io.numaproj.numaflow.shared</excludePackageNames>
+                    <excludePackageNames>io.numaproj.numaflow.info:io.numaproj.numaflow.map.v1:io.numaproj.numaflow.reduce.v1:io.numaproj.numaflow.mapstream.v1:io.numaproj.numaflow.sourcetransformer.v1:io.numaproj.numaflow.sink.v1:io.numaproj.numaflow.reduce.metadata:io.numaproj.numaflow.shared:io.numaproj.numaflow.sideinput.v1</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
