@@ -14,6 +14,8 @@ public class Constants {
 
         public static final String SOURCE_SOCKET_PATH = "/var/run/numaflow/source.sock";
 
+    public static final String SIDE_INPUT_SOCKET_PATH = "/var/run/numaflow/sideinput.sock";
+
         public static final String SOURCE_TRANSFORMER_SOCKET_PATH = "/var/run/numaflow/sourcetransform.sock";
 
         public static final int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;

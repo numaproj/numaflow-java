@@ -1,6 +1,10 @@
 package io.numaproj.numaflow.examples.sideinput.udf;
 
-import io.numaproj.numaflow.mapper.*;
+import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.mapper.Mapper;
+import io.numaproj.numaflow.mapper.Message;
+import io.numaproj.numaflow.mapper.MessageList;
+import io.numaproj.numaflow.mapper.Server;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

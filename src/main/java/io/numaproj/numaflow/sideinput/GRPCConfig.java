@@ -16,7 +16,7 @@ public class GRPCConfig {
      * @param maxMessageSize max payload size for map gRPC server.
      */
     public GRPCConfig(int maxMessageSize) {
-        this.socketPath = Constants.MAP_SOCKET_PATH;
+        this.socketPath = Constants.SIDE_INPUT_SOCKET_PATH;
         this.maxMessageSize = maxMessageSize;
     }
 

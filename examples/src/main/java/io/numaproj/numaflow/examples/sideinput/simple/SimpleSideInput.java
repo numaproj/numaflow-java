@@ -8,7 +8,7 @@ import io.numaproj.numaflow.sideinput.SideInputRetriever;
 
 public class SimpleSideInput extends SideInputRetriever {
     private final Config config;
-    private ObjectMapper jsonMapper = new ObjectMapper();
+    private final ObjectMapper jsonMapper = new ObjectMapper();
 
     public SimpleSideInput(Config config) {
         this.config = config;

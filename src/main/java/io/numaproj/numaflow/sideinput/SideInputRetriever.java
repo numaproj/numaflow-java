@@ -7,5 +7,9 @@ package io.numaproj.numaflow.sideinput;
  * which will be used for updating the side input.
  */
 public abstract class SideInputRetriever {
+    /**
+     * method which will be used for retrieving side input.
+     * @return Message which contains side input
+     */
     public abstract Message retrieveSideInput();
 }
