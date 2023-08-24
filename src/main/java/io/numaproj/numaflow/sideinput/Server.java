@@ -1,10 +1,7 @@
-package io.numaproj.numaflow.mapper;
+package io.numaproj.numaflow.sideinput;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
-import io.numaproj.numaflow.info.ServerInfoAccessor;
-import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -12,32 +9,31 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Server is the gRPC server for executing map operation.
+ * Server is the gRPC server for retrieving side input.
  */
 @Slf4j
 public class Server {
 
     private final GRPCConfig grpcConfig;
     private final Service service;
-    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
 
     /**
      * constructor to create gRPC server.
-     * @param mapper to process the message
+     * @param sideInputRetriever to retrieve the side input
      */
-    public Server(Mapper mapper) {
-        this(mapper, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+    public Server(SideInputRetriever sideInputRetriever) {
+        this(sideInputRetriever, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
     }
 
     /**
      * constructor to create gRPC server with gRPC config.
      *
      * @param grpcConfig to configure the max message size for grpc
-     * @param mapper to process the message
+     * @param sideInputRetriever to retrieve the side input
      */
-    public Server(Mapper mapper, GRPCConfig grpcConfig) {
-        this.service = new Service(mapper);
+    public Server(SideInputRetriever sideInputRetriever, GRPCConfig grpcConfig) {
+        this.service = new Service(sideInputRetriever);
         this.grpcConfig = grpcConfig;
     }
 
@@ -46,7 +42,6 @@ public class Server {
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
-        GrpcServerUtils.writeServerInfo(serverInfoAccessor, grpcConfig.getSocketPath(), grpcConfig.getInfoFilePath());
 
         if (this.server == null) {
             // create server builder
