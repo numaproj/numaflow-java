@@ -18,14 +18,16 @@ public class SimpleSideInput extends SideInputRetriever {
     public Message retrieveSideInput() {
         byte[] val;
         if (0.9 > config.getDropRatio()) {
-            try {
-                val = jsonMapper.writeValueAsBytes(config);
-            } catch (JsonProcessingException e) {
-                return new Message(new byte[0]);
-            }
-            return new Message(val);
+            config.setDropRatio(0.5F);
+        } else {
+            config.setDropRatio(config.getDropRatio() + 0.01F);
         }
-        return null;
+        try {
+            val = jsonMapper.writeValueAsBytes(config);
+            return new Message(val);
+        } catch (JsonProcessingException e) {
+            return new Message(new byte[0]);
+        }
     }
 
     public static void main(String[] args) throws Exception {
