@@ -17,15 +17,17 @@ public class SimpleSideInput extends SideInputRetriever {
     @Override
     public Message retrieveSideInput() {
         byte[] val;
-        if (0.9 > config.getDropRatio()) {
-            config.setDropRatio(0.5F);
+        if (0.9 > config.getSampling()) {
+            config.setSampling(0.5F);
         } else {
-            config.setDropRatio(config.getDropRatio() + 0.01F);
+            config.setSampling(config.getSampling() + 0.01F);
         }
         try {
             val = jsonMapper.writeValueAsBytes(config);
+            // broadcastMessage will broadcast the message to other side input vertices
             return Message.broadcastMessage(val);
         } catch (JsonProcessingException e) {
+            // noBroadcastMessage will drop the message
             return Message.noBroadcastMessage();
         }
     }

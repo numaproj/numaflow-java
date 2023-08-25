@@ -1,12 +1,14 @@
 package io.numaproj.numaflow.examples.sideinput.udf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.numaproj.numaflow.examples.sideinput.simple.Config;
 import io.numaproj.numaflow.mapper.Datum;
 import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import io.numaproj.numaflow.mapper.Server;
 import io.numaproj.numaflow.sideinput.SideInputRetriever;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -14,9 +16,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-@AllArgsConstructor
 public class SimpleMapWithSideInput extends Mapper {
     SideInputWatcher sideInputWatcher;
+    ObjectMapper objectMapper = new ObjectMapper();
+    Config config = new Config("sampling", 0.5F);
+
+    public SimpleMapWithSideInput(SideInputWatcher sideInputWatcher) {
+        this.sideInputWatcher = sideInputWatcher;
+    }
 
     public static void main(String[] args) throws Exception {
         String sideInputName = "sampling-input";
@@ -37,7 +44,13 @@ public class SimpleMapWithSideInput extends Mapper {
     public MessageList processMessage(String[] keys, Datum data) {
         // Get the side input
         String sideInput = sideInputWatcher.getSideInput();
-        log.info("side input - {}", sideInput);
+        try {
+            config = objectMapper.readValue(sideInput, Config.class);
+        } catch (JsonProcessingException e) {
+            return MessageList.newBuilder().addMessage(Message.toDrop()).build();
+        }
+
+        log.info("side input - {}", config.toString());
         return MessageList
                 .newBuilder()
                 .addMessage(new Message(data.getValue(), keys))
