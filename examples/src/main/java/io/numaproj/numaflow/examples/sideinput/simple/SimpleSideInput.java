@@ -24,9 +24,9 @@ public class SimpleSideInput extends SideInputRetriever {
         }
         try {
             val = jsonMapper.writeValueAsBytes(config);
-            return new Message(val);
+            return Message.broadcastMessage(val);
         } catch (JsonProcessingException e) {
-            return new Message(new byte[0]);
+            return Message.noBroadcastMessage();
         }
     }
 

@@ -5,6 +5,7 @@ import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import io.numaproj.numaflow.mapper.Server;
+import io.numaproj.numaflow.sideinput.SideInputRetriever;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,12 +19,12 @@ public class SimpleMapWithSideInput extends Mapper {
     SideInputWatcher sideInputWatcher;
 
     public static void main(String[] args) throws Exception {
+        String sideInputName = "sampling-input";
         // Get the side input path and file from the environment variables
-        String dirPath = System.getenv("SIDEINPUT_PATH");
-        String filePath = System.getenv("SIDEINPUT_FILE");
+        String dirPath = SideInputRetriever.SIDE_INPUT_DIR;
 
         // Watch for side input
-        SideInputWatcher sideInputWatcher = new SideInputWatcher(dirPath, filePath);
+        SideInputWatcher sideInputWatcher = new SideInputWatcher(dirPath, sideInputName);
         sideInputWatcher.startWatching();
 
         // start the server

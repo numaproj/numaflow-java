@@ -59,7 +59,7 @@ public class ServerTest {
     private static class TestSideInput extends SideInputRetriever {
         @Override
         public Message retrieveSideInput() {
-            return new Message("test-side-input".getBytes());
+            return Message.broadcastMessage("test-side-input".getBytes());
         }
     }
 }

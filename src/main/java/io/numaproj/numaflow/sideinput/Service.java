@@ -53,6 +53,7 @@ class Service extends SideInputGrpc.SideInputImplBase {
         return Sideinput.SideInputResponse.newBuilder()
                 .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                         message.getValue()))
+                .setNoBroadcast(message.isNoBroadcast())
                 .build();
     }
 
