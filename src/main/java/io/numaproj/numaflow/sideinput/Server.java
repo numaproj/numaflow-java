@@ -22,7 +22,7 @@ public class Server {
      * @param sideInputRetriever to retrieve the side input
      */
     public Server(SideInputRetriever sideInputRetriever) {
-        this(sideInputRetriever, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(sideInputRetriever, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

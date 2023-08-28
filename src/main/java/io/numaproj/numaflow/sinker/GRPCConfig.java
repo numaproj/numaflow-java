@@ -1,30 +1,26 @@
 package io.numaproj.numaflow.sinker;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
+import lombok.Builder;
 import lombok.Getter;
 
 /**
- * SinkGRPCConfig is used to provide configurations for sink gRPC server.
+ * GRPCConfig is used to provide configurations for gRPC server.
  */
 @Getter
-class GRPCConfig {
-    private final String socketPath;
-    private final int maxMessageSize;
+@Builder(builderMethodName = "newBuilder")
+public class GRPCConfig {
+    private String socketPath;
+    private int maxMessageSize;
     private String infoFilePath;
 
     /**
-     * Constructor to create Config with message size.
-     * @param maxMessageSize max payload size for sink gRPC server.
+     * Static method to create default GRPCConfig.
      */
-    public GRPCConfig(int maxMessageSize) {
-        this.socketPath = Constants.SINK_SOCKET_PATH;
-        this.maxMessageSize = maxMessageSize;
-        this.infoFilePath = ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH;
-    }
-
-    @VisibleForTesting
-    public void setInfoFilePath(String infoFilePath) {
-        this.infoFilePath = infoFilePath;
+    static GRPCConfig defaultGrpcConfig() {
+        return GRPCConfig.newBuilder()
+                .infoFilePath(ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH)
+                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }
 }

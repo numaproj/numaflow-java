@@ -31,8 +31,12 @@ public class ServerTest {
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
-        GRPCConfig grpcServerConfig = new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE);
-        grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
+        GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
+                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .socketPath(Constants.DEFAULT_SOCKET_PATH)
+                .infoFilePath("/tmp/numaflow-test-server-info)")
+                .build();
+
         server = new Server( new TestSourceTransformer(),
                 grpcServerConfig);
 

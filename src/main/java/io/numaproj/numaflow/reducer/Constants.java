@@ -5,7 +5,7 @@ import io.grpc.Context;
 class Constants {
     public static final int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
 
-    public static final String SOCKET_PATH = "/var/run/numaflow/reduce.sock";
+    public static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/reduce.sock";
 
     public static final String WIN_START_KEY = "x-numaflow-win-start-time";
 

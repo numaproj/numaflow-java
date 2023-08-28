@@ -26,7 +26,7 @@ public class Server {
      * @param reducerFactory to process the message
      */
     public Server(ReducerFactory<? extends Reducer> reducerFactory) {
-        this(reducerFactory, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(reducerFactory, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

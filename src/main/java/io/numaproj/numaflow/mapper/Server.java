@@ -26,7 +26,7 @@ public class Server {
      * @param mapper to process the message
      */
     public Server(Mapper mapper) {
-        this(mapper, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(mapper, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

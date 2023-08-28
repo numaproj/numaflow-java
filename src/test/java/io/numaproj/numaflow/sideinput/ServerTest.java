@@ -25,7 +25,11 @@ public class ServerTest {
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
-        GRPCConfig grpcServerConfig = new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE);
+        GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
+                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .socketPath(Constants.DEFAULT_SOCKET_PATH)
+                .build();
+
         server = new Server( new TestSideInput(),
                 grpcServerConfig);
 

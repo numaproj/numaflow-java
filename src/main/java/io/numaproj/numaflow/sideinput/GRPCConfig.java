@@ -1,22 +1,23 @@
 package io.numaproj.numaflow.sideinput;
 
+import lombok.Builder;
 import lombok.Getter;
 
 /**
- * GRPCConfig is used to provide configurations for map gRPC server.
+ * GRPCConfig is used to provide configurations for gRPC server.
  */
 @Getter
+@Builder(builderMethodName = "newBuilder")
 public class GRPCConfig {
-    private final String socketPath;
-    private final int maxMessageSize;
+    private String socketPath;
+    private int maxMessageSize;
 
     /**
-     * Constructor to create Config with message size.
-     * @param maxMessageSize max payload size for map gRPC server.
+     * Static method to create default GRPCConfig.
      */
-    public GRPCConfig(int maxMessageSize) {
-        this.socketPath = Constants.SIDE_INPUT_SOCKET_PATH;
-        this.maxMessageSize = maxMessageSize;
+    static GRPCConfig defaultGrpcConfig() {
+        return GRPCConfig.newBuilder()
+                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }
-
 }

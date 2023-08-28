@@ -26,7 +26,7 @@ public class Server {
      * @param sinker sink to process the message
      */
     public Server(Sinker sinker) {
-        this(sinker, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(sinker, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

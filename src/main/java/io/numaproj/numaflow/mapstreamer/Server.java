@@ -26,7 +26,7 @@ public class Server {
      * @param mapStreamer to process the message
      */
     public Server(MapStreamer mapStreamer) {
-        this(mapStreamer, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(mapStreamer, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

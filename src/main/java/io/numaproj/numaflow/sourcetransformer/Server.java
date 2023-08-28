@@ -26,7 +26,7 @@ public class Server {
      * @param sourceTransformer to process the message
      */
     public Server(SourceTransformer sourceTransformer) {
-        this(sourceTransformer, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(sourceTransformer, GRPCConfig.defaultGrpcConfig());
     }
 
     /**
