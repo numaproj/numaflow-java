@@ -2,9 +2,11 @@ package io.numaproj.numaflow.mapper;
 
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.time.Instant;
 
+@Getter
 @AllArgsConstructor
 class HandlerDatum implements Datum {
 
