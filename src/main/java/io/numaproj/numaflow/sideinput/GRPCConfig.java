@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sideinput;
 
-import io.numaproj.numaflow.shared.Constants;
 import lombok.Getter;
 
 /**

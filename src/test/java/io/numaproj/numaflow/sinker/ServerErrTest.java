@@ -6,7 +6,6 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.extern.slf4j.Slf4j;

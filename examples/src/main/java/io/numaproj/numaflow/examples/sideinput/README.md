@@ -40,10 +40,10 @@ message to other side input vertices or drop the message. The side input message
 For each side input there will be a file with the given path and after any update to the side input value the file will
 be updated.
 
-The directory is fixed and can be accessed through shared constants `SideInputRetriever.SIDE_INPUT_DIR`.
+The directory is fixed and can be accessed through constants `Constants.SIDE_INPUT_DIR`.
 The file name is the name of the side input.
 ```text
-SideInputRetriever.SIDE_INPUT_DIR -> "/var/numaflow/side-inputs"
+Constants.SIDE_INPUT_DIR -> "/var/numaflow/side-inputs"
 sideInputFileName -> "/var/numaflow/side-inputs/sideInputName"
 ```
 

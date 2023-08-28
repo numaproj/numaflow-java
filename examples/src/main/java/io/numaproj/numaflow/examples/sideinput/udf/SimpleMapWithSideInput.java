@@ -8,7 +8,7 @@ import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import io.numaproj.numaflow.mapper.Server;
-import io.numaproj.numaflow.sideinput.SideInputRetriever;
+import io.numaproj.numaflow.sideinput.Constants;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -28,7 +28,7 @@ public class SimpleMapWithSideInput extends Mapper {
     public static void main(String[] args) throws Exception {
         String sideInputName = "sampling-input";
         // Get the side input path and file from the environment variables
-        String dirPath = SideInputRetriever.SIDE_INPUT_DIR;
+        String dirPath = Constants.SIDE_INPUT_DIR;
 
         // Watch for side input
         SideInputWatcher sideInputWatcher = new SideInputWatcher(dirPath, sideInputName);

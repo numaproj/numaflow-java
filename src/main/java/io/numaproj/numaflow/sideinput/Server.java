@@ -2,7 +2,6 @@ package io.numaproj.numaflow.sideinput;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 

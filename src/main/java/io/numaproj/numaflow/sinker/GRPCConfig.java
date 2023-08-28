@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.numaproj.numaflow.shared.Constants;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
 import lombok.Getter;
 
 /**
@@ -20,7 +20,7 @@ class GRPCConfig {
     public GRPCConfig(int maxMessageSize) {
         this.socketPath = Constants.SINK_SOCKET_PATH;
         this.maxMessageSize = maxMessageSize;
-        this.infoFilePath = Constants.DEFAULT_SERVER_INFO_FILE_PATH;
+        this.infoFilePath = ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH;
     }
 
     @VisibleForTesting

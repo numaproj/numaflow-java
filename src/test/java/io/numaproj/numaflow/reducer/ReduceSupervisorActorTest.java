@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static io.numaproj.numaflow.shared.Constants.EOF;
 import static org.junit.Assert.fail;
 
 public class ReduceSupervisorActorTest {
@@ -47,7 +46,7 @@ public class ReduceSupervisorActorTest {
             supervisor.tell(reduceRequest, ActorRef.noSender());
         }
 
-        supervisor.tell(EOF, ActorRef.noSender());
+        supervisor.tell(Constants.EOF, ActorRef.noSender());
 
         try {
             completableFuture.get();
@@ -84,7 +83,7 @@ public class ReduceSupervisorActorTest {
             supervisor.tell(reduceRequest, ActorRef.noSender());
         }
 
-        supervisor.tell(EOF, ActorRef.noSender());
+        supervisor.tell(Constants.EOF, ActorRef.noSender());
         try {
             completableFuture.get();
         } catch (InterruptedException | ExecutionException e) {

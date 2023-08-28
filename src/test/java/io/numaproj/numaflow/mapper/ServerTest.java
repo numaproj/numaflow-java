@@ -7,7 +7,6 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
-import io.numaproj.numaflow.shared.Constants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

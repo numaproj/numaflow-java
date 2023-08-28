@@ -15,18 +15,26 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.shared.Constants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static io.numaproj.numaflow.shared.Constants.WIN_END_KEY;
-import static io.numaproj.numaflow.shared.Constants.WIN_START_KEY;
+import static io.numaproj.numaflow.reducer.Constants.WIN_END_KEY;
+import static io.numaproj.numaflow.reducer.Constants.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 
 public class ServerTest {
     private final static String REDUCE_PROCESSED_KEY_SUFFIX = "-processed";
+
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
+            WIN_START_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
+
+
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
+            WIN_END_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
 
 
     @Rule
@@ -46,9 +54,9 @@ public class ServerTest {
                 final var context =
                         Context.current().withValues(
                                 Constants.WINDOW_START_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_START),
+                                headers.get(DATUM_METADATA_WIN_START),
                                 Constants.WINDOW_END_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_END));
+                                headers.get(DATUM_METADATA_WIN_END));
                 return Contexts.interceptCall(context, call, headers, next);
             }
         };

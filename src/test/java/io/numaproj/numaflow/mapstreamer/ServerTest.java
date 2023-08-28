@@ -8,7 +8,6 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.mapstream.v1.MapStreamGrpc;
 import io.numaproj.numaflow.mapstream.v1.Mapstream;
-import io.numaproj.numaflow.shared.Constants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

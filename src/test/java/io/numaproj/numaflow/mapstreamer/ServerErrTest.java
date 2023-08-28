@@ -15,7 +15,6 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.mapstream.v1.MapStreamGrpc;
 import io.numaproj.numaflow.mapstream.v1.Mapstream;
-import io.numaproj.numaflow.shared.Constants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,11 +41,7 @@ public class ServerErrTest {
                     ServerCallHandler<ReqT, RespT> next) {
 
                 final var context =
-                        Context.current().withValues(
-                                Constants.WINDOW_START_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_START),
-                                Constants.WINDOW_END_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_END));
+                        Context.current();
                 ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
                 return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
                     @Override

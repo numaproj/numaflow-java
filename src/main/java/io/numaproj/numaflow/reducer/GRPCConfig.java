@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.reducer;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.numaproj.numaflow.shared.Constants;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
 import lombok.Getter;
 
 /**
@@ -18,9 +18,9 @@ public class GRPCConfig {
      * @param maxMessageSize max payload size for gRPC server.
      */
     public GRPCConfig(int maxMessageSize) {
-        this.socketPath = Constants.REDUCE_SOCKET_PATH;
+        this.socketPath = Constants.SOCKET_PATH;
         this.maxMessageSize = maxMessageSize;
-        this.infoFilePath = Constants.DEFAULT_SERVER_INFO_FILE_PATH;
+        this.infoFilePath = ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH;
     }
 
     @VisibleForTesting

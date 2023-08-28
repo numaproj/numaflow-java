@@ -6,7 +6,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sideinput.v1.SideInputGrpc;
 import org.junit.After;
 import org.junit.Before;
