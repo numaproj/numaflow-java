@@ -51,7 +51,6 @@ sideInputFileName -> "/var/numaflow/side-inputs/sideInputName"
 
 The UDF vertex will watch for changes to this file and whenever there is a change it will read the file to obtain the new side input value.
 
-
 ### Pipeline spec
 
 In the spec we need to define the side input vertex and the UDF vertex. The UDF vertex will have the side input vertex as a side input.

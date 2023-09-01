@@ -42,11 +42,11 @@
                         <configuration>
                             <container>
                                 <mainClass>
-                                    io.numaproj.numaflow.examples.sideinput.simple.SimpleSideInput
+                                    io.numaproj.numaflow.examples.map.forward.ForwardFunction
                                 </mainClass>
                             </container>
                             <to>
-                                <image>quay.io/numaio/numaflow-java/sideinput-example:v0.5.0</image>
+                                <image>numaflow-java-examples/forward-function</image>
                             </to>
                         </configuration>
                     </execution>
@@ -58,11 +58,11 @@
                         </goals>
                         <configuration>
                             <container>
-                                <mainClass>io.numaproj.numaflow.examples.sideinput.udf.SimpleMapWithSideInput
+                                <mainClass>io.numaproj.numaflow.examples.sink.simple.SimpleSink
                                 </mainClass>
                             </container>
                             <to>
-                                <image>quay.io/numaio/numaflow-java/udf-sideinput-example:v0.5.0</image>
+                                <image>numaflow-java-examples/simple-sink</image>
                             </to>
                         </configuration>
                     </execution>
