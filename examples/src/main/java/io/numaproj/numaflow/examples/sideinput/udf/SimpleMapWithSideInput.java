@@ -2,7 +2,7 @@ package io.numaproj.numaflow.examples.sideinput.udf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.numaproj.numaflow.examples.sideinput.simple.Config;
+import io.numaproj.numaflow.examples.sideinput.Config;
 import io.numaproj.numaflow.mapper.Datum;
 import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * This is a simple User Defined Map example with side input support.
+ * This example shows how to watch for side input and use it in the map function.
+ * we are using a simple config class to hold the source and sampling rate(side input).
+ * We log the config in the map function.
  */
 
 @Slf4j
@@ -47,6 +50,7 @@ public class SimpleMapWithSideInput extends Mapper {
         try {
             config = objectMapper.readValue(sideInput, Config.class);
         } catch (JsonProcessingException e) {
+            log.error("Failed to deserialize config: {}", e.getMessage());
             return MessageList.newBuilder().addMessage(Message.toDrop()).build();
         }
 

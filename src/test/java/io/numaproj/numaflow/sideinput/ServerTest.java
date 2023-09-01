@@ -52,17 +52,26 @@ public class ServerTest {
     @Test
     public void TestSideInputRetriever() {
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-
         var stub = SideInputGrpc.newBlockingStub(inProcessChannel);
-        var sideInputResponse = stub.retrieveSideInput(Empty.newBuilder().build());
 
+        // First call should return the broadcast message
+        var sideInputResponse = stub.retrieveSideInput(Empty.newBuilder().build());
         assertEquals("test-side-input", new String(sideInputResponse.getValue().toByteArray()));
+
+        // Second call should return no broadcast message
+        sideInputResponse = stub.retrieveSideInput(Empty.newBuilder().build());
+        assertEquals(0, sideInputResponse.getValue().size());
     }
 
     private static class TestSideInput extends SideInputRetriever {
+        int count = 0;
         @Override
         public Message retrieveSideInput() {
-            return Message.broadcastMessage("test-side-input".getBytes());
+            count++;
+            if (count > 1) {
+                return Message.createNoBroadcastMessage();
+            }
+            return Message.createBroadcastMessage("test-side-input".getBytes());
         }
     }
 }
