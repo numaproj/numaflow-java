@@ -10,7 +10,6 @@ import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.shared.Constants;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
 import scala.collection.Iterable;
@@ -93,7 +92,7 @@ class ReduceSupervisorActor extends AbstractActor {
      */
     private void invokeActors(ReduceOuterClass.ReduceRequest datumRequest) {
         String[] keys = datumRequest.getKeysList().toArray(new String[0]);
-        String keyStr = String.join(Constants.DELIMITTER, keys);
+        String keyStr = String.join(Constants.DELIMITER, keys);
         if (!actorsMap.containsKey(keyStr)) {
             Reducer reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
@@ -122,7 +121,7 @@ class ReduceSupervisorActor extends AbstractActor {
          */
 
         responseObserver.onNext(actorResponse.getResponse());
-        actorsMap.remove(String.join(Constants.DELIMITTER, actorResponse.getKeys()));
+        actorsMap.remove(String.join(Constants.DELIMITER, actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();
             getContext().getSystem().stop(getSelf());

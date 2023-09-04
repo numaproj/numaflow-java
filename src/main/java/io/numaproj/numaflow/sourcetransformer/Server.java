@@ -5,7 +5,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +26,7 @@ public class Server {
      * @param sourceTransformer to process the message
      */
     public Server(SourceTransformer sourceTransformer) {
-        this(sourceTransformer, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(sourceTransformer, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

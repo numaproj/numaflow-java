@@ -15,14 +15,13 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.shared.Constants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static io.numaproj.numaflow.shared.Constants.WIN_END_KEY;
-import static io.numaproj.numaflow.shared.Constants.WIN_START_KEY;
+import static io.numaproj.numaflow.reducer.Constants.WIN_END_KEY;
+import static io.numaproj.numaflow.reducer.Constants.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -33,6 +32,15 @@ public class ServerErrTest {
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private Server server;
     private ManagedChannel inProcessChannel;
+
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
+            WIN_START_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
+
+
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
+            WIN_END_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
 
     @Before
     public void setUp() throws Exception {
@@ -46,17 +54,21 @@ public class ServerErrTest {
                 final var context =
                         Context.current().withValues(
                                 Constants.WINDOW_START_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_START),
+                                headers.get(DATUM_METADATA_WIN_START),
                                 Constants.WINDOW_END_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_END));
+                                headers.get(DATUM_METADATA_WIN_END));
                 return Contexts.interceptCall(context, call, headers, next);
             }
         };
 
         String serverName = InProcessServerBuilder.generateName();
 
-        GRPCConfig grpcServerConfig = new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE);
-        grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
+        GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
+                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .socketPath(Constants.DEFAULT_SOCKET_PATH)
+                .infoFilePath("/tmp/numaflow-test-server-info)")
+                .build();
+
         server = new Server( new ReduceErrTestFactory(),
                 grpcServerConfig);
 

@@ -9,7 +9,6 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;

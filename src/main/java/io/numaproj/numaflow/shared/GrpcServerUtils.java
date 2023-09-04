@@ -3,6 +3,7 @@ package io.numaproj.numaflow.shared;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ForwardingServerCallListener;
+import io.grpc.Metadata;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -34,6 +35,26 @@ import java.util.HashMap;
 @Slf4j
 public class GrpcServerUtils {
 
+    public static final String WIN_START_KEY = "x-numaflow-win-start-time";
+
+    public static final String WIN_END_KEY = "x-numaflow-win-end-time";
+
+    public static final Context.Key<String> WINDOW_START_TIME = Context.keyWithDefault(
+            WIN_START_KEY,
+            "");
+
+    public static final Context.Key<String> WINDOW_END_TIME = Context.keyWithDefault(
+            WIN_END_KEY,
+            "");
+
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
+            WIN_START_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
+
+
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
+            WIN_END_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
 
     /*
         * Get the server socket channel class based on the availability of epoll and kqueue.
@@ -85,10 +106,10 @@ public class GrpcServerUtils {
 
                 final var context =
                         Context.current().withValues(
-                                Constants.WINDOW_START_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_START),
-                                Constants.WINDOW_END_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_END));
+                                WINDOW_START_TIME,
+                                headers.get(DATUM_METADATA_WIN_START),
+                                WINDOW_END_TIME,
+                                headers.get(DATUM_METADATA_WIN_END));
                 ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
                 return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
                     @Override

@@ -5,7 +5,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +26,7 @@ public class Server {
      * @param reducerFactory to process the message
      */
     public Server(ReducerFactory<? extends Reducer> reducerFactory) {
-        this(reducerFactory, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(reducerFactory, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

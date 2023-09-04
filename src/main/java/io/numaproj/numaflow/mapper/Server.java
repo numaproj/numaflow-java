@@ -5,14 +5,13 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.Constants;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * MapServer is the gRPC server for executing map operation.
+ * Server is the gRPC server for executing map operation.
  */
 @Slf4j
 public class Server {
@@ -27,7 +26,7 @@ public class Server {
      * @param mapper to process the message
      */
     public Server(Mapper mapper) {
-        this(mapper, new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE));
+        this(mapper, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.info;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.numaproj.numaflow.shared.Constants;
 import lombok.AllArgsConstructor;
 
 import java.io.File;
@@ -43,7 +42,7 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
         FileWriter eofWriter = new FileWriter(filePath, true);
         try {
             objectMapper.writeValue(fileWriter, serverInfo);
-            eofWriter.append(Constants.INFO_EOF);
+            eofWriter.append(ServerInfoAccessor.INFO_EOF);
         } finally {
             eofWriter.close();
             fileWriter.close();
@@ -59,11 +58,11 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
     }
 
     private String verifyEOFAtEndAndTrim(String content) throws Exception {
-        int eofIndex = content.lastIndexOf(Constants.INFO_EOF);
+        int eofIndex = content.lastIndexOf(ServerInfoAccessor.INFO_EOF);
         if (eofIndex == -1) {
             throw new Exception("EOF marker not found in the file content");
         }
-        if (eofIndex != content.length() - Constants.INFO_EOF.length()) {
+        if (eofIndex != content.length() - ServerInfoAccessor.INFO_EOF.length()) {
             throw new Exception("EOF marker is not at the end of the file content");
         }
         return content.substring(0, eofIndex);

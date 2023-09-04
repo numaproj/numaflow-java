@@ -1,42 +1,38 @@
-package io.numaproj.numaflow.mapstreamer;
+package io.numaproj.numaflow.sideinput;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
-import io.numaproj.numaflow.info.ServerInfoAccessor;
-import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * MapServer is the gRPC server for executing map operation.
+ * Server is the gRPC server for retrieving side input.
  */
 @Slf4j
 public class Server {
 
     private final GRPCConfig grpcConfig;
     private final Service service;
-    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
 
     /**
-     * constructor to create sink gRPC server.
-     * @param mapStreamer to process the message
+     * constructor to create gRPC server.
+     * @param sideInputRetriever to retrieve the side input
      */
-    public Server(MapStreamer mapStreamer) {
-        this(mapStreamer, GRPCConfig.defaultGrpcConfig());
+    public Server(SideInputRetriever sideInputRetriever) {
+        this(sideInputRetriever, GRPCConfig.defaultGrpcConfig());
     }
 
     /**
-     * constructor to create sink gRPC server with gRPC config.
+     * constructor to create gRPC server with gRPC config.
      *
      * @param grpcConfig to configure the max message size for grpc
-     * @param mapStreamer to process the message
+     * @param sideInputRetriever to retrieve the side input
      */
-    public Server(MapStreamer mapStreamer, GRPCConfig grpcConfig) {
-        this.service = new Service(mapStreamer);
+    public Server(SideInputRetriever sideInputRetriever, GRPCConfig grpcConfig) {
+        this.service = new Service(sideInputRetriever);
         this.grpcConfig = grpcConfig;
     }
 
@@ -45,12 +41,12 @@ public class Server {
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
-        GrpcServerUtils.writeServerInfo(serverInfoAccessor, grpcConfig.getSocketPath(), grpcConfig.getInfoFilePath());
 
         if (this.server == null) {
             // create server builder
             ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
                     grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
+
             // build server
             this.server = serverBuilder
                     .addService(this.service)

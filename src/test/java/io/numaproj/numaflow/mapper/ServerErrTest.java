@@ -14,7 +14,6 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
-import io.numaproj.numaflow.shared.Constants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,11 +41,7 @@ public class ServerErrTest {
                     ServerCallHandler<ReqT, RespT> next) {
 
                 final var context =
-                        Context.current().withValues(
-                                Constants.WINDOW_START_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_START),
-                                Constants.WINDOW_END_TIME,
-                                headers.get(Constants.DATUM_METADATA_WIN_END));
+                        Context.current();
                 ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
                 return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
                     @Override
@@ -71,8 +66,12 @@ public class ServerErrTest {
 
         String serverName = InProcessServerBuilder.generateName();
 
-        GRPCConfig grpcServerConfig = new GRPCConfig(Constants.DEFAULT_MESSAGE_SIZE);
-        grpcServerConfig.setInfoFilePath("/tmp/numaflow-test-server-info");
+        GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
+                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .socketPath(Constants.DEFAULT_SOCKET_PATH)
+                .infoFilePath("/tmp/numaflow-test-server-info)")
+                .build();
+
         server = new Server( new TestMapFnErr(),
                 grpcServerConfig);
 

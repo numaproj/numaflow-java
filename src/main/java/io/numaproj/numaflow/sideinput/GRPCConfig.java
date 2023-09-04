@@ -1,6 +1,5 @@
-package io.numaproj.numaflow.sinker;
+package io.numaproj.numaflow.sideinput;
 
-import io.numaproj.numaflow.info.ServerInfoAccessor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,14 +11,12 @@ import lombok.Getter;
 public class GRPCConfig {
     private String socketPath;
     private int maxMessageSize;
-    private String infoFilePath;
 
     /**
      * Static method to create default GRPCConfig.
      */
     static GRPCConfig defaultGrpcConfig() {
         return GRPCConfig.newBuilder()
-                .infoFilePath(ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
                 .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }
