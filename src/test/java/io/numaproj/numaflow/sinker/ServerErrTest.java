@@ -109,8 +109,13 @@ public class ServerErrTest {
     private static class TestSinkFnErr extends Sinker {
 
         @Override
-        public Response processMessage(Datum datum) {
+        public void processMessage(Datum datum) {
             throw new RuntimeException("unknown exception");
+        }
+
+        @Override
+        public ResponseList getResponse() {
+            return null;
         }
     }
 }

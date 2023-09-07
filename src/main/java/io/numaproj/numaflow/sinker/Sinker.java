@@ -10,7 +10,13 @@ public abstract class Sinker {
     /**
      * method will be used for processing messages.
      * @param datum current message to be processed
-     * @return Response to indicate success or failure.
      */
-    public abstract Response processMessage(Datum datum);
+    public abstract void processMessage(Datum datum);
+
+    /**
+     * method will be used for returning the responses.
+     * each response should contain the id of the message
+     * @return ResponseList which contains the responses
+     */
+    public abstract ResponseList getResponse();
 }

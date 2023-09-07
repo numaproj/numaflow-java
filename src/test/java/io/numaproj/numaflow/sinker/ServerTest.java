@@ -104,15 +104,22 @@ public class ServerTest {
     @Slf4j
     private static class TestSinkFn extends Sinker {
 
+        private ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
         @Override
-        public Response processMessage(Datum datum) {
+        public void processMessage(Datum datum) {
             if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
-                return Response.responseFailure(
+                builder.addResponse(Response.responseFailure(
                         datum.getId() + processedIdSuffix,
-                        "error message");
+                        "error message"));
+                return;
             }
             log.info(new String(datum.getValue()));
-            return Response.responseOK(datum.getId() + processedIdSuffix);
+            builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
+        }
+
+        @Override
+        public ResponseList getResponse() {
+            return builder.build();
         }
     }
 }

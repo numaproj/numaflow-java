@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 class SinkActor extends AbstractActor {
 
     private final Sinker sinker;
-    private final ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
 
     public static Props props(Sinker sinker) {
         return Props.create(SinkActor.class, sinker);
@@ -33,12 +32,15 @@ class SinkActor extends AbstractActor {
                 .build();
     }
 
+    // invokeHandler is called by the sink server when a new message is received.
     private void invokeHandler(HandlerDatum handlerDatum) {
-        responseListBuilder.addResponse(this.sinker.processMessage(handlerDatum));
+        this.sinker.processMessage(handlerDatum);
     }
 
+    // getResult is called by the sink server when EOF is received.
     private void getResult(String eof) {
-        getContext().getParent().tell(responseListBuilder.build(), ActorRef.noSender());
+        ResponseList responseList = this.sinker.getResponse();
+        getContext().getParent().tell(responseList, ActorRef.noSender());
     }
 }
 
