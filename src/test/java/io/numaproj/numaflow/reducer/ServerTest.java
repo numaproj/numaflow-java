@@ -15,13 +15,14 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.shared.GrpcServerUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static io.numaproj.numaflow.reducer.Constants.WIN_END_KEY;
-import static io.numaproj.numaflow.reducer.Constants.WIN_START_KEY;
+import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
+import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 
 public class ServerTest {
@@ -53,9 +54,9 @@ public class ServerTest {
                     ServerCallHandler<ReqT, RespT> next) {
                 final var context =
                         Context.current().withValues(
-                                Constants.WINDOW_START_TIME,
+                                GrpcServerUtils.WINDOW_START_TIME,
                                 headers.get(DATUM_METADATA_WIN_START),
-                                Constants.WINDOW_END_TIME,
+                                GrpcServerUtils.WINDOW_END_TIME,
                                 headers.get(DATUM_METADATA_WIN_END));
                 return Contexts.interceptCall(context, call, headers, next);
             }

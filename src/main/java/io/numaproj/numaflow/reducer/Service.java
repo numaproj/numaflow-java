@@ -10,6 +10,7 @@ import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
+import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -41,8 +42,8 @@ class Service extends ReduceGrpc.ReduceImplBase {
         }
 
         // get window start and end time from gPRC metadata
-        String winSt = io.numaproj.numaflow.reducer.Constants.WINDOW_START_TIME.get();
-        String winEt = io.numaproj.numaflow.reducer.Constants.WINDOW_END_TIME.get();
+        String winSt = GrpcServerUtils.WINDOW_START_TIME.get();
+        String winEt = GrpcServerUtils.WINDOW_END_TIME.get();
 
         // convert the start and end time to Instant
         Instant startTime = Instant.ofEpochMilli(Long.parseLong(winSt));
