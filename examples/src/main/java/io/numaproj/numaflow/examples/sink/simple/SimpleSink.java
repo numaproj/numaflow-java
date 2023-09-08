@@ -32,11 +32,16 @@ public class SimpleSink extends Sinker {
         } catch (IOException e) {
             responseListBuilder.addResponse(Response.responseFailure(datum.getId(), e.getMessage()));
         }
-        log.info(new String(datum.getValue()));
     }
 
     @Override
     public ResponseList getResponse() {
-        return responseListBuilder.build();
+        // Reset the builder after building the response to avoid keeping old responses in memory
+        // this is required as the same sinker instance is used for multiple requests
+        try {
+            return responseListBuilder.build();
+        } finally {
+            responseListBuilder.clearResponses();
+        }
     }
 }
