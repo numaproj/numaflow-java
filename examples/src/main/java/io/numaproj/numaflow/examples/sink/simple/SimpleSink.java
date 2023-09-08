@@ -8,8 +8,6 @@ import io.numaproj.numaflow.sinker.Server;
 import io.numaproj.numaflow.sinker.Sinker;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-import java.util.List;
 
 /**
  * This is a simple User Defined Sink example which logs the input message
@@ -26,10 +24,10 @@ public class SimpleSink extends Sinker {
     @Override
     public void processMessage(Datum datum) {
         try {
-            String decodedMessage = mapper.readValue(datum.getValue(), String.class);
-            log.info("Decoded message - {}", decodedMessage);
+            String msg = new String(datum.getValue());
+            log.info("Received message: {}", msg);
             responseListBuilder.addResponse(Response.responseOK(datum.getId()));
-        } catch (IOException e) {
+        } catch (Exception e) {
             responseListBuilder.addResponse(Response.responseFailure(datum.getId(), e.getMessage()));
         }
     }
