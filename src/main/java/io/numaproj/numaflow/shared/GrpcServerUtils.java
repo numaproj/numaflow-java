@@ -47,7 +47,7 @@ public class GrpcServerUtils {
             WIN_END_KEY,
             "");
 
-    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = Metadata.Key.of(
             WIN_START_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
 
@@ -97,7 +97,7 @@ public class GrpcServerUtils {
     }
 
     public static ServerBuilder<?> createServerBuilder(String socketPath, int maxMessageSize) {
-        ServerInterceptor interceptor = new ServerInterceptor() {
+        ServerInterceptor   interceptor = new ServerInterceptor() {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
                     ServerCall<ReqT, RespT> call,
