@@ -14,6 +14,8 @@ class SinkActor extends AbstractActor {
 
     private final Sinker sinker;
 
+    private final ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
+
     public static Props props(Sinker sinker) {
         return Props.create(SinkActor.class, sinker);
     }
@@ -33,12 +35,20 @@ class SinkActor extends AbstractActor {
 
     // invokeHandler is called by the sink server when a new message is received.
     private void invokeHandler(HandlerDatum handlerDatum) {
-        this.sinker.processMessage(handlerDatum);
+        Response response = this.sinker.processMessage(handlerDatum);
+        responseListBuilder.addResponse(response);
     }
 
     // getResult is called by the sink server when EOF is received.
     private void getResult(String eof) {
-        ResponseList responseList = this.sinker.getResponse();
+        ResponseList responseList;
+        // Reset the builder after building the response to avoid keeping old responses in memory
+        // this is required as the same sinker instance is used for multiple requests
+        try {
+            responseList = responseListBuilder.build();
+        } finally {
+            responseListBuilder.clearResponses();
+        }
         getContext().getParent().tell(responseList, ActorRef.noSender());
     }
 }

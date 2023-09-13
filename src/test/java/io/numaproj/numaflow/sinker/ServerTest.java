@@ -89,12 +89,12 @@ public class ServerTest {
 
         inputStreamObserver.onCompleted();
 
-        while(!outputStreamObserver.completed.get());
+        while (!outputStreamObserver.completed.get()) ;
         SinkOuterClass.SinkResponse responseList = outputStreamObserver.getSinkResponse();
         assertEquals(100, responseList.getResultsCount());
-        responseList.getResultsList().forEach((response -> {
-            assertEquals(response.getId(), expectedId);
-        }));
+        responseList
+                .getResultsList()
+                .forEach((response -> assertEquals(response.getId(), expectedId)));
 
         assertEquals(
                 responseList.getResults(responseList.getResultsCount() - 1).getErrMsg(),
@@ -103,23 +103,15 @@ public class ServerTest {
 
     @Slf4j
     private static class TestSinkFn extends Sinker {
-
-        private ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
         @Override
-        public void processMessage(Datum datum) {
+        public Response processMessage(Datum datum) {
             if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
-                builder.addResponse(Response.responseFailure(
+                return Response.responseFailure(
                         datum.getId() + processedIdSuffix,
-                        "error message"));
-                return;
+                        "error message");
             }
             log.info(new String(datum.getValue()));
-            builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
-        }
-
-        @Override
-        public ResponseList getResponse() {
-            return builder.build();
+            return Response.responseOK(datum.getId() + processedIdSuffix);
         }
     }
 }

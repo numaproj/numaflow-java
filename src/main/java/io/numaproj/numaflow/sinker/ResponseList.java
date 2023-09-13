@@ -13,4 +13,9 @@ import lombok.Singular;
 public class ResponseList {
     @Singular("addResponse")
     private Iterable<Response> responses;
+
+    // Javadoc "cannot find symbol" when using lombok builder.
+    // We explicitly declare the builder here to make Javadoc happy.
+    public static class ResponseListBuilder {
+    }
 }
