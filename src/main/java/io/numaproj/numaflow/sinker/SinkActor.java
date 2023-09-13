@@ -8,6 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Sink actor invokes the user defined sink and returns the response back on EOF.
+ * <p>
+ * When receiving a HandlerDatum, the sinker processes the message and the actor adds the response to a response list.
+ * When receiving a string indicating EOF,
+ * the sink actor sends the responses to supervisor actor and clean up the response list to prepare for the next batch.
  */
 @Slf4j
 class SinkActor extends AbstractActor {
