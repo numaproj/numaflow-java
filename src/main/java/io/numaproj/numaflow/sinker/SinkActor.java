@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Sink actor invokes the user defined sink and returns the response back on EOF.
  */
-
 @Slf4j
 class SinkActor extends AbstractActor {
 

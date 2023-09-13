@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.examples.sink.simple;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.numaproj.numaflow.sinker.Datum;
 import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
@@ -15,8 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SimpleSink extends Sinker {
-    private final ObjectMapper mapper = new ObjectMapper();
     private final ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
+
     public static void main(String[] args) throws Exception {
         new Server(new SimpleSink()).start();
     }
@@ -28,7 +27,9 @@ public class SimpleSink extends Sinker {
             log.info("Received message: {}", msg);
             responseListBuilder.addResponse(Response.responseOK(datum.getId()));
         } catch (Exception e) {
-            responseListBuilder.addResponse(Response.responseFailure(datum.getId(), e.getMessage()));
+            responseListBuilder.addResponse(Response.responseFailure(
+                    datum.getId(),
+                    e.getMessage()));
         }
     }
 

@@ -110,7 +110,6 @@ class SinkSupervisorActor extends AbstractActor {
                 akka.actor.ActorContext context,
                 ActorRef child,
                 Iterable<ActorRef> children) {
-
         }
 
         @Override
@@ -125,9 +124,8 @@ class SinkSupervisorActor extends AbstractActor {
             Preconditions.checkArgument(
                     !restart,
                     "on failures, we will never restart our actors, we escalate");
-            /*
-                   tell the shutdown actor about the exception.
-             */
+
+            // tell the shutdown actor about the exception.
             log.debug("process failure of supervisor strategy executed - {}", getSelf().toString());
             shutdownActor.tell(cause, context.parent());
             getContext().getSystem().stop(getSelf());
@@ -149,13 +147,14 @@ class SinkSupervisorActor extends AbstractActor {
 
     public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {
         var responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
-        responses.getResponses().forEach(response -> {
-            responseBuilder.addResults(SinkOuterClass.SinkResponse.Result.newBuilder()
-                    .setId(response.getId() == null ? "" : response.getId())
-                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                    .setSuccess(response.getSuccess())
-                    .build());
-        });
+        responses
+                .getResponses()
+                .forEach(response -> responseBuilder.addResults(SinkOuterClass.SinkResponse.Result
+                        .newBuilder()
+                        .setId(response.getId() == null ? "":response.getId())
+                        .setErrMsg(response.getErr() == null ? "":response.getErr())
+                        .setSuccess(response.getSuccess())
+                        .build()));
         return responseBuilder.build();
     }
 }

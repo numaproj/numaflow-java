@@ -56,7 +56,7 @@ class Service extends SinkGrpc.SinkImplBase {
                         responseObserver
                 ));
 
-        return new StreamObserver<SinkOuterClass.SinkRequest>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(SinkOuterClass.SinkRequest d) {
                 supervisorActor.tell(d, ActorRef.noSender());
@@ -79,13 +79,17 @@ class Service extends SinkGrpc.SinkImplBase {
      * IsReady is the heartbeat endpoint for gRPC.
      */
     @Override
-    public void isReady(Empty request, StreamObserver<SinkOuterClass.ReadyResponse> responseObserver) {
+    public void isReady(
+            Empty request,
+            StreamObserver<SinkOuterClass.ReadyResponse> responseObserver) {
         responseObserver.onNext(SinkOuterClass.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
     }
 
     // handle the exception with corresponding response status code.
-    private void handleFailure(CompletableFuture<Void> failureFuture, StreamObserver<SinkOuterClass.SinkResponse> responseObserver) {
+    private void handleFailure(
+            CompletableFuture<Void> failureFuture,
+            StreamObserver<SinkOuterClass.SinkResponse> responseObserver) {
         new Thread(() -> {
             try {
                 failureFuture.get();
