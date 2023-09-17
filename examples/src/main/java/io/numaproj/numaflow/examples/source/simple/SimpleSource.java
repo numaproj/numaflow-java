@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.examples.source.simple;
 
+import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
@@ -59,5 +60,9 @@ public class SimpleSource extends Sourcer {
     public long getPending() {
         // pending messages will be zero for a simple source
         return 0;
+    }
+
+    public static void main(String[] args) throws Exception {
+        new Server(new SimpleSource()).start();
     }
 }
