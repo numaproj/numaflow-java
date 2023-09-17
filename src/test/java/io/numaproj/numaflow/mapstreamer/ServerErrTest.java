@@ -111,7 +111,7 @@ public class ServerErrTest {
 
     private static class TestMapStreamFnErr extends MapStreamer {
         @Override
-        public void processMessage(String[] keys, Datum datum, StreamObserver<Mapstream.MapStreamResponse> streamObserver) {
+        public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {
             throw new RuntimeException("unknown exception");
         }
     }

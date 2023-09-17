@@ -4,7 +4,6 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.mapstream.v1.MapStreamGrpc;
 import io.numaproj.numaflow.mapstream.v1.Mapstream;
@@ -92,7 +91,7 @@ public class ServerTest {
 
     private static class TestMapStreamFn extends MapStreamer {
         @Override
-        public void processMessage(String[] keys, Datum datum, StreamObserver<Mapstream.MapStreamResponse> streamObserver) {
+        public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {
             String[] updatedKeys = Arrays
                     .stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
@@ -103,7 +102,7 @@ public class ServerTest {
                                         + PROCESSED_VALUE_SUFFIX).getBytes(),
                                 updatedKeys,
                                 new String[]{"test-tag"});
-                onNext(msg, streamObserver);
+                outputObserver.send(msg);
             }
         }
     }

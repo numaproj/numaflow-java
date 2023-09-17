@@ -46,7 +46,7 @@ class Service extends MapStreamGrpc.MapStreamImplBase {
         // process Datum
         this.mapStreamer.processMessage(request
                 .getKeysList()
-                .toArray(new String[0]), handlerDatum, responseObserver);
+                .toArray(new String[0]), handlerDatum, new OutputObserverImpl(responseObserver));
 
         responseObserver.onCompleted();
     }
