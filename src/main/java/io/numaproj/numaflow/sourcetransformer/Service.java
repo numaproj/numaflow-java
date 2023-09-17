@@ -61,8 +61,13 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
      * IsReady is the heartbeat endpoint for gRPC.
      */
     @Override
-    public void isReady(Empty request, StreamObserver<Sourcetransformer.ReadyResponse> responseObserver) {
-        responseObserver.onNext(Sourcetransformer.ReadyResponse.newBuilder().setReady(true).build());
+    public void isReady(
+            Empty request,
+            StreamObserver<Sourcetransformer.ReadyResponse> responseObserver) {
+        responseObserver.onNext(Sourcetransformer.ReadyResponse
+                .newBuilder()
+                .setReady(true)
+                .build());
         responseObserver.onCompleted();
     }
 
@@ -75,11 +80,11 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
             responseBuilder.addResults(Sourcetransformer.SourceTransformResponse.Result.newBuilder()
                     .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                             message.getValue()))
-                            .setEventTime(Timestamp.newBuilder()
-                                    .setSeconds(message
-                                            .getEventTime()
-                                            .getEpochSecond())
-                                    .setNanos(message.getEventTime().getNano()))
+                    .setEventTime(Timestamp.newBuilder()
+                            .setSeconds(message
+                                    .getEventTime()
+                                    .getEpochSecond())
+                            .setNanos(message.getEventTime().getNano()))
                     .addAllKeys(message.getKeys()
                             == null ? new ArrayList<>() : List.of(message.getKeys()))
                     .addAllTags(message.getTags()

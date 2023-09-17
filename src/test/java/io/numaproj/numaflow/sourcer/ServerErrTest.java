@@ -1,6 +1,5 @@
-package io.numaproj.numaflow.sourcetransformer;
+package io.numaproj.numaflow.sourcer;
 
-import com.google.protobuf.ByteString;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ForwardingServerCallListener;
@@ -12,8 +11,8 @@ import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
-import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
+import io.numaproj.numaflow.source.v1.SourceGrpc;
+import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -79,7 +78,7 @@ public class ServerErrTest {
                 .build();
 
         server = new Server(
-                new SourceTransformerTestErr(),
+                new TestSourcerErr(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
@@ -100,25 +99,33 @@ public class ServerErrTest {
     }
 
     @Test
-    public void TestSourceTransformErr() {
-        ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
-                .newBuilder()
-                .addKeys("test-sst-key")
-                .setValue(inValue)
+    public void TestSourcerErr() {
+        SourceOuterClass.ReadRequest request = SourceOuterClass.ReadRequest.newBuilder()
                 .build();
 
-        var stub = SourceTransformGrpc.newBlockingStub(inProcessChannel);
+        var stub = SourceGrpc.newBlockingStub(inProcessChannel);
         try {
-            stub.sourceTransformFn(request);
+            stub.readFn(request);
         } catch (Exception e) {
             assertEquals("UNKNOWN: unknown exception", e.getMessage());
         }
     }
 
-    private static class SourceTransformerTestErr extends SourceTransformer {
+    private static class TestSourcerErr extends Sourcer {
+
         @Override
-        public MessageList processMessage(String[] keys, Datum datum) {
+        public void read(ReadRequest request, OutputObserver observer) {
+            throw new RuntimeException("unknown exception");
+        }
+
+        @Override
+        public void ack(AckRequest request) {
+            throw new RuntimeException("unknown exception");
+
+        }
+
+        @Override
+        public long getPending() {
             throw new RuntimeException("unknown exception");
         }
     }

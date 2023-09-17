@@ -1,11 +1,11 @@
 package io.numaproj.numaflow.examples.source.simple;
 
-import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
 import io.numaproj.numaflow.sourcer.OutputObserver;
 import io.numaproj.numaflow.sourcer.ReadRequest;
+import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.Sourcer;
 
 import java.nio.ByteBuffer;
@@ -21,18 +21,25 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 public class SimpleSource extends Sourcer {
-    private long readIndex = 0;
     private final Map<Long, Boolean> messages = new ConcurrentHashMap<>();
+    private long readIndex = 0;
+
+    public static void main(String[] args) throws Exception {
+        new Server(new SimpleSource()).start();
+    }
 
     @Override
     public void read(ReadRequest request, OutputObserver observer) {
-
+        long startTime = System.currentTimeMillis();
         if (messages.entrySet().size() > 0) {
             // if there are messages not acknowledged, return
             return;
         }
 
         for (int i = 0; i < request.getCount(); i++) {
+            if (System.currentTimeMillis() - startTime > request.getTimeout().toEpochMilli()) {
+                return;
+            }
             // create a message with increasing offset
             Offset offset = new Offset(ByteBuffer.allocate(4).putLong(readIndex).array(), "0");
             Message message = new Message(
@@ -55,14 +62,9 @@ public class SimpleSource extends Sourcer {
         }
     }
 
-
     @Override
     public long getPending() {
         // pending messages will be zero for a simple source
         return 0;
-    }
-
-    public static void main(String[] args) throws Exception {
-        new Server(new SimpleSource()).start();
     }
 }

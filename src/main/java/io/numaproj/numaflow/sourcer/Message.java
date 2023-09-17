@@ -18,6 +18,7 @@ public class Message {
 
     /**
      * used to create Message with value, offset and eventTime.
+     *
      * @param value message value
      * @param offset message offset
      * @param eventTime message eventTime
@@ -29,6 +30,7 @@ public class Message {
 
     /**
      * used to create Message with value, offset, eventTime and keys.
+     *
      * @param value message value
      * @param offset message offset
      * @param eventTime message eventTime

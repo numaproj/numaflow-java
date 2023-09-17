@@ -65,14 +65,16 @@ public class ServerErrTest {
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
         Thread t = new Thread(() -> {
-            while (outputStreamObserver.t == null){
+            while (outputStreamObserver.t == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-            assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+            assertEquals(
+                    "UNKNOWN: java.lang.RuntimeException: unknown exception",
+                    outputStreamObserver.t.getMessage());
         });
         t.start();
 

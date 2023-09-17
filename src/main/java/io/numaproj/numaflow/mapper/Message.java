@@ -38,7 +38,7 @@ public class Message {
     }
 
     /**
-     *  used to create Message with value and keys.
+     * used to create Message with value and keys.
      *
      * @param value message value
      * @param keys message keys
@@ -48,7 +48,7 @@ public class Message {
     }
 
     /**
-     *  creates a Message which will be dropped
+     * creates a Message which will be dropped
      *
      * @return returns the Message which will be dropped
      */

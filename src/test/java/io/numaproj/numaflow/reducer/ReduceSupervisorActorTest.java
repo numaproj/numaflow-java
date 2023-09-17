@@ -76,7 +76,8 @@ public class ReduceSupervisorActorTest {
                                 new ReduceOutputStreamObserver()));
 
         for (int i = 1; i <= 10; i++) {
-            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest.newBuilder()
+            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest
+                    .newBuilder()
                     .addKeys("reduce-test" + i)
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .build();

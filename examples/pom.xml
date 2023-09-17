@@ -74,7 +74,8 @@
                         </goals>
                         <configuration>
                             <container>
-                                <mainClass>io.numaproj.numaflow.examples.reduce.count.EvenOddCounterFactory
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.reduce.count.EvenOddCounterFactory
                                 </mainClass>
                             </container>
                             <to>

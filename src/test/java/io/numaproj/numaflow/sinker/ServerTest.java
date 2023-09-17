@@ -89,7 +89,7 @@ public class ServerTest {
 
         inputStreamObserver.onCompleted();
 
-        while(!outputStreamObserver.completed.get());
+        while (!outputStreamObserver.completed.get()) ;
         SinkOuterClass.SinkResponse responseList = outputStreamObserver.getSinkResponse();
         assertEquals(100, responseList.getResultsCount());
         responseList.getResultsList().forEach((response -> {
@@ -105,6 +105,7 @@ public class ServerTest {
     private static class TestSinkFn extends Sinker {
 
         private ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
+
         @Override
         public void processMessage(Datum datum) {
             if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {

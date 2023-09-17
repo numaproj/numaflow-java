@@ -25,8 +25,9 @@ class OutputObserverImpl implements OutputObserver {
     private Mapstream.MapStreamResponse buildResponse(Message message) {
         return Mapstream.MapStreamResponse.newBuilder()
                 .setResult(Mapstream.MapStreamResponse.Result.newBuilder()
-                        .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                                message.getValue()))
+                        .setValue(
+                                message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
+                                        message.getValue()))
                         .addAllKeys(message.getKeys()
                                 == null ? new ArrayList<>() : List.of(message.getKeys()))
                         .addAllTags(message.getTags()

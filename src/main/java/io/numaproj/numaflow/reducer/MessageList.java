@@ -23,8 +23,8 @@ public class MessageList {
      */
     public static class MessageListBuilder {
         /**
-         *
          * @param messages to append all the messages to MessageList
+         *
          * @return returns the builder
          */
         public MessageListBuilder addMessages(Iterable<Message> messages) {

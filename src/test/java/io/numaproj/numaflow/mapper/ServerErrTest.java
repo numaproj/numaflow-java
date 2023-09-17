@@ -42,8 +42,13 @@ public class ServerErrTest {
 
                 final var context =
                         Context.current();
-                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
-                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(
+                        context,
+                        call,
+                        headers,
+                        next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(
+                        listener) {
                     @Override
                     public void onHalfClose() {
                         try {
@@ -53,7 +58,11 @@ public class ServerErrTest {
                             throw ex;
                         }
                     }
-                    private void handleException(RuntimeException e, ServerCall<ReqT, RespT> serverCall, io.grpc.Metadata headers) {
+
+                    private void handleException(
+                            RuntimeException e,
+                            ServerCall<ReqT, RespT> serverCall,
+                            io.grpc.Metadata headers) {
                         // Currently, we only have application level exceptions.
                         // Translate it to UNKNOWN status.
                         var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
@@ -72,11 +81,12 @@ public class ServerErrTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server( new TestMapFnErr(),
+        server = new Server(
+                new TestMapFnErr(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                        .intercept(interceptor)
+                .intercept(interceptor)
                 .directExecutor());
 
         server.start();

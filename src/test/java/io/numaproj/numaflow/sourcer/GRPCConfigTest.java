@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sinker;
+package io.numaproj.numaflow.sourcer;
 
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import org.junit.Assert;
@@ -33,3 +33,4 @@ public class GRPCConfigTest {
         Assert.assertEquals(infoFilePath, grpcConfig.getInfoFilePath());
     }
 }
+

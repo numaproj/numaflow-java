@@ -26,6 +26,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
     /**
      * readFn is the endpoint for reading data from the sourcer.
+     *
      * @param request the request
      * @param responseObserver the response observer
      */
@@ -35,12 +36,13 @@ class Service extends SourceGrpc.SourceImplBase {
             StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
         if (this.sourcer == null) {
             io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
-                   getReadFnMethod(),
+                    getReadFnMethod(),
                     responseObserver);
             return;
         }
         OutputObserverImpl outputObserver = new OutputObserverImpl(responseObserver);
-        ReadRequestImpl readRequest = new ReadRequestImpl(request.getRequest().getNumRecords(),
+        ReadRequestImpl readRequest = new ReadRequestImpl(
+                request.getRequest().getNumRecords(),
                 Instant.ofEpochMilli(request.getRequest().getTimeoutInMs()));
         this.sourcer.read(readRequest, outputObserver);
         responseObserver.onCompleted();
@@ -48,6 +50,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
     /**
      * ackFn is the endpoint for acknowledging data from the sourcer.
+     *
      * @param request the request
      * @param responseObserver the response observer
      */
@@ -81,6 +84,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
     /**
      * pendingFn is the endpoint for getting the number of pending messages from the sourcer.
+     *
      * @param request the request
      * @param responseObserver the response observer
      */
@@ -106,6 +110,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
     /**
      * isReady is the endpoint for checking if the sourcer is ready.
+     *
      * @param request the request
      * @param responseObserver the response observer
      */

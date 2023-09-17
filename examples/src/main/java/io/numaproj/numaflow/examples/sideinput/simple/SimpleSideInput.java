@@ -27,6 +27,10 @@ public class SimpleSideInput extends SideInputRetriever {
         this.config = config;
     }
 
+    public static void main(String[] args) throws Exception {
+        new Server(new SimpleSideInput(new Config("sampling", 0.5F))).start();
+    }
+
     @Override
     public Message retrieveSideInput() {
         byte[] val;
@@ -45,9 +49,5 @@ public class SimpleSideInput extends SideInputRetriever {
             log.error("Failed to serialize config: {}", e.getMessage());
             return Message.createNoBroadcastMessage();
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-        new Server(new SimpleSideInput(new Config("sampling", 0.5F))).start();
     }
 }

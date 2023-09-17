@@ -36,7 +36,8 @@ public class ServerTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server(new TestMapStreamFn(),
+        server = new Server(
+                new TestMapStreamFn(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
@@ -98,10 +99,10 @@ public class ServerTest {
                     .toArray(String[]::new);
             for (int i = 0; i < 10; i++) {
                 Message msg = new Message(
-                                (new String(datum.getValue())
-                                        + PROCESSED_VALUE_SUFFIX).getBytes(),
-                                updatedKeys,
-                                new String[]{"test-tag"});
+                        (new String(datum.getValue())
+                                + PROCESSED_VALUE_SUFFIX).getBytes(),
+                        updatedKeys,
+                        new String[]{"test-tag"});
                 outputObserver.send(msg);
             }
         }

@@ -11,7 +11,6 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.mapstream.v1.MapStreamGrpc;
 import io.numaproj.numaflow.mapstream.v1.Mapstream;
@@ -42,8 +41,13 @@ public class ServerErrTest {
 
                 final var context =
                         Context.current();
-                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
-                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(
+                        context,
+                        call,
+                        headers,
+                        next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(
+                        listener) {
                     @Override
                     public void onHalfClose() {
                         try {
@@ -53,7 +57,11 @@ public class ServerErrTest {
                             throw ex;
                         }
                     }
-                    private void handleException(RuntimeException e, ServerCall<ReqT, RespT> serverCall, io.grpc.Metadata headers) {
+
+                    private void handleException(
+                            RuntimeException e,
+                            ServerCall<ReqT, RespT> serverCall,
+                            io.grpc.Metadata headers) {
                         // Currently, we only have application level exceptions.
                         // Translate it to UNKNOWN status.
                         var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
@@ -72,11 +80,12 @@ public class ServerErrTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server(new TestMapStreamFnErr(),
+        server = new Server(
+                new TestMapStreamFnErr(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                        .intercept(interceptor)
+                .intercept(interceptor)
                 .directExecutor());
 
         server.start();

@@ -14,6 +14,7 @@ public class Offset {
 
     /**
      * used to create Offset with value and partitionId.
+     *
      * @param value offset value
      * @param partitionId offset partitionId
      */

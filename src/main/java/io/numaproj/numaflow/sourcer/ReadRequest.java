@@ -10,6 +10,7 @@ public interface ReadRequest {
      * @return the number of messages to be read
      */
     long getCount();
+
     /**
      * @return the timeout for reading messages
      */

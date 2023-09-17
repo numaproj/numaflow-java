@@ -5,7 +5,6 @@ import lombok.Getter;
 import java.time.Instant;
 
 
-
 /**
  * Message is used to wrap the data return by SourceTransformer functions.
  */
@@ -56,7 +55,7 @@ public class Message {
     }
 
     /**
-     *  creates a Message which will be dropped
+     * creates a Message which will be dropped
      *
      * @return returns the Message which will be dropped
      */

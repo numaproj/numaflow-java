@@ -36,7 +36,8 @@ public class ServerTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server( new TestMapFn(),
+        server = new Server(
+                new TestMapFn(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)

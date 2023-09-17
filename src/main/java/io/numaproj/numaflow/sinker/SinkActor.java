@@ -15,12 +15,12 @@ class SinkActor extends AbstractActor {
 
     private final Sinker sinker;
 
-    public static Props props(Sinker sinker) {
-        return Props.create(SinkActor.class, sinker);
-    }
-
     public SinkActor(Sinker sinker) {
         this.sinker = sinker;
+    }
+
+    public static Props props(Sinker sinker) {
+        return Props.create(SinkActor.class, sinker);
     }
 
     @Override

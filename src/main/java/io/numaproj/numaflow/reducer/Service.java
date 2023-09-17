@@ -29,6 +29,20 @@ class Service extends ReduceGrpc.ReduceImplBase {
         this.reducerFactory = reducerFactory;
     }
 
+    static void handleFailure(
+            CompletableFuture<Void> failureFuture,
+            StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
+        new Thread(() -> {
+            try {
+                failureFuture.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+                var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                responseObserver.onError(status.asException());
+            }
+        }).start();
+    }
+
     /**
      * Streams input data to reduceFn and returns the result.
      */
@@ -105,20 +119,10 @@ class Service extends ReduceGrpc.ReduceImplBase {
      * IsReady is the heartbeat endpoint for gRPC.
      */
     @Override
-    public void isReady(Empty request, StreamObserver<ReduceOuterClass.ReadyResponse> responseObserver) {
+    public void isReady(
+            Empty request,
+            StreamObserver<ReduceOuterClass.ReadyResponse> responseObserver) {
         responseObserver.onNext(ReduceOuterClass.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
-    }
-
-    static void handleFailure(CompletableFuture<Void> failureFuture, StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
-        new Thread(() -> {
-            try {
-                failureFuture.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-                var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
-                responseObserver.onError(status.asException());
-            }
-        }).start();
     }
 }

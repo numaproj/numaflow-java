@@ -16,6 +16,7 @@ public class ThreadUtils {
 
     /**
      * availableProcessors returns the number available processors.
+     *
      * @return the number of available processors
      */
     public int availableProcessors() {
@@ -26,6 +27,7 @@ public class ThreadUtils {
      * Creates a new thread factory with the given name.
      *
      * @param name the name of the thread
+     *
      * @return a new thread factory
      */
     public ThreadFactory newThreadFactory(String name) {
