@@ -5,7 +5,7 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
 
-import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +43,7 @@ class Service extends SourceGrpc.SourceImplBase {
         OutputObserverImpl outputObserver = new OutputObserverImpl(responseObserver);
         ReadRequestImpl readRequest = new ReadRequestImpl(
                 request.getRequest().getNumRecords(),
-                Instant.ofEpochMilli(request.getRequest().getTimeoutInMs()));
+                Duration.ofMillis(request.getRequest().getTimeoutInMs()));
         this.sourcer.read(readRequest, outputObserver);
         responseObserver.onCompleted();
     }

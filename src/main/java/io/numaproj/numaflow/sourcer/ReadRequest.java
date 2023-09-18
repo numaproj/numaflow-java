@@ -1,6 +1,6 @@
 package io.numaproj.numaflow.sourcer;
 
-import java.time.Instant;
+import java.time.Duration;
 
 /**
  * ReadRequest request for reading messages from source.
@@ -14,5 +14,5 @@ public interface ReadRequest {
     /**
      * @return the timeout for reading messages
      */
-    Instant getTimeout();
+    Duration getTimeout();
 }

@@ -89,7 +89,7 @@ public class Server {
     /**
      * Set server builder for testing.
      *
-     * @param serverBuilder
+     * @param serverBuilder in process server builder can be used for testing
      */
     @VisibleForTesting
     public void setServerBuilder(ServerBuilder<?> serverBuilder) {

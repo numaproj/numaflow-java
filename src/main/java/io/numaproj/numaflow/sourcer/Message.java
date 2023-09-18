@@ -25,7 +25,6 @@ public class Message {
      */
     public Message(byte[] value, Offset offset, Instant eventTime) {
         this(value, offset, eventTime, null);
-
     }
 
     /**
@@ -42,5 +41,4 @@ public class Message {
         this.eventTime = eventTime;
         this.keys = keys;
     }
-
 }

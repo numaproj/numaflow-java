@@ -1,16 +1,23 @@
 package io.numaproj.numaflow.sourcer;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-import java.time.Instant;
+import java.time.Duration;
 
 /**
  * ReadRequest is used to wrap the request for reading messages from source.
  */
-@Getter
 @AllArgsConstructor
 class ReadRequestImpl implements ReadRequest {
     long count;
-    Instant timeout;
+    Duration timeout;
+
+    @Override
+    public long getCount() {
+        return this.count;
+    }
+
+    @Override
+    public Duration getTimeout() {
+        return this.timeout;
+    }
 }

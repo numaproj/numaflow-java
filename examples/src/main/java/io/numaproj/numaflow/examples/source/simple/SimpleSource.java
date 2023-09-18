@@ -37,7 +37,7 @@ public class SimpleSource extends Sourcer {
         }
 
         for (int i = 0; i < request.getCount(); i++) {
-            if (System.currentTimeMillis() - startTime > request.getTimeout().toEpochMilli()) {
+            if (System.currentTimeMillis() - startTime > request.getTimeout().toMillis()) {
                 return;
             }
             // create a message with increasing offset
