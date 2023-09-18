@@ -17,7 +17,9 @@ public class Message {
     /**
      * createBroadcastMessage creates a new Message with the given value
      * This is used to broadcast the message to other side input vertices.
+     *
      * @param value message value
+     *
      * @return returns the Message with noBroadcast flag set to false
      */
     public static Message createBroadcastMessage(byte[] value) {
@@ -27,6 +29,7 @@ public class Message {
     /**
      * createNoBroadcastMessage creates a new Message with noBroadcast flag set to true
      * This is used to drop the message and not to broadcast it to other side input vertices.
+     *
      * @return returns the Message with noBroadcast flag set to true
      */
     public static Message createNoBroadcastMessage() {

@@ -11,6 +11,7 @@ public abstract class Sinker {
      * method will be used for processing messages.
      * response for the message should be added to the
      * response list which will be returned by getResponse
+     *
      * @param datum current message to be processed
      */
     public abstract void processMessage(Datum datum);
@@ -22,6 +23,7 @@ public abstract class Sinker {
      * each response should contain the id of the message
      * Response.responseOK() and Response.responseFailure() can
      * be used for creating the responses
+     *
      * @return ResponseList which contains the responses
      */
     public abstract ResponseList getResponse();

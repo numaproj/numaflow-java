@@ -1,9 +1,11 @@
 # SideInput Example
 
-An example that demonstrates how to write a `sideinput` function along with a sample `User Defined function`
+An example that demonstrates how to write a `sideinput` function along with a
+sample `User Defined function`
 which watches and uses the corresponding side input.
 
 ### SideInput
+
 ```java
 public class SimpleSideInput extends SideInputRetriever {
     private final Config config;
@@ -34,14 +36,18 @@ public class SimpleSideInput extends SideInputRetriever {
     }
 }
 ```
-After performing the retrieval/update for the side input value the user can choose to either broadcast the
+
+After performing the retrieval/update for the side input value the user can choose to either
+broadcast the
 message to other side input vertices or drop the message. The side input message is not retried.
 
-For each side input there will be a file with the given path and after any update to the side input value the file will
+For each side input there will be a file with the given path and after any update to the side input
+value the file will
 be updated.
 
 The directory is fixed and can be accessed through constants `Constants.SIDE_INPUT_DIR`.
 The file name is the name of the side input.
+
 ```text
 Constants.SIDE_INPUT_DIR -> "/var/numaflow/side-inputs"
 sideInputFileName -> "/var/numaflow/side-inputs/sideInputName"
@@ -49,13 +55,16 @@ sideInputFileName -> "/var/numaflow/side-inputs/sideInputName"
 
 ### User Defined Function
 
-The UDF vertex will watch for changes to this file and whenever there is a change it will read the file to obtain the new side input value.
+The UDF vertex will watch for changes to this file and whenever there is a change it will read the
+file to obtain the new side input value.
 
 ### Pipeline spec
 
-In the spec we need to define the side input vertex and the UDF vertex. The UDF vertex will have the side input vertex as a side input.
+In the spec we need to define the side input vertex and the UDF vertex. The UDF vertex will have the
+side input vertex as a side input.
 
 Side input spec:
+
 ```yaml
 spec:
   sideInputs:
@@ -69,6 +78,7 @@ spec:
 ```
 
 Vertex spec for the UDF vertex:
+
 ```yaml
     - name: si-log
       udf:

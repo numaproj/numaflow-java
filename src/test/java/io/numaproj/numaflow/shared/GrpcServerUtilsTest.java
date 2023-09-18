@@ -30,7 +30,9 @@ public class GrpcServerUtilsTest {
         ServerInfoAccessor mockAccessor = Mockito.mock(ServerInfoAccessor.class);
         Mockito.when(mockAccessor.getSDKVersion()).thenReturn("1.0.0");
         GrpcServerUtils.writeServerInfo(mockAccessor, null, "infoFilePath");
-        Mockito.verify(mockAccessor, Mockito.times(1)).write(Mockito.any(), Mockito.eq("infoFilePath"));
+        Mockito
+                .verify(mockAccessor, Mockito.times(1))
+                .write(Mockito.any(), Mockito.eq("infoFilePath"));
     }
 
     @Test

@@ -8,7 +8,6 @@ package io.numaproj.numaflow.reducer;
 
 public abstract class Reducer {
     /**
-     *
      * addMessage will be invoked for each input message.
      * It can be used to read the input data from datum and
      * update the result for given keys.
@@ -24,6 +23,7 @@ public abstract class Reducer {
      *
      * @param keys message keys
      * @param md metadata which contains window information
+     *
      * @return MessageList output value, aggregated result
      */
     public abstract MessageList getOutput(String[] keys, Metadata md);

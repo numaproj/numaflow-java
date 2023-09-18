@@ -19,6 +19,7 @@ public class Server {
 
     /**
      * constructor to create gRPC server.
+     *
      * @param sideInputRetriever to retrieve the side input
      */
     public Server(SideInputRetriever sideInputRetriever) {
@@ -38,6 +39,7 @@ public class Server {
 
     /**
      * Start serving requests.
+     *
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
@@ -75,6 +77,7 @@ public class Server {
     /**
      * Stop serving requests and shutdown resources. Await termination on the main thread since the
      * grpc library uses daemon threads.
+     *
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
@@ -85,7 +88,8 @@ public class Server {
 
     /**
      * Set server builder for testing.
-     * @param serverBuilder
+     *
+     * @param serverBuilder in process server builder can be used for testing
      */
     @VisibleForTesting
     public void setServerBuilder(ServerBuilder<?> serverBuilder) {

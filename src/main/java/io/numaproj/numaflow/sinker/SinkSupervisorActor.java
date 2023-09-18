@@ -92,6 +92,30 @@ class SinkSupervisorActor extends AbstractActor {
         sinkActor.tell(EOF, getSelf());
     }
 
+    private HandlerDatum constructHandlerDatum(SinkOuterClass.SinkRequest d) {
+        return new HandlerDatum(
+                d.getKeysList().toArray(new String[0]),
+                d.getValue().toByteArray(),
+                Instant.ofEpochSecond(
+                        d.getWatermark().getSeconds(),
+                        d.getWatermark().getNanos()),
+                Instant.ofEpochSecond(
+                        d.getEventTime().getSeconds(),
+                        d.getEventTime().getNanos()),
+                d.getId());
+    }
+
+    public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {
+        var responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
+        responses.getResponses().forEach(response -> {
+            responseBuilder.addResults(SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
+                    .setSuccess(response.getSuccess())
+                    .build());
+        });
+        return responseBuilder.build();
+    }
 
     /*
         We need supervisor to handle failures, by default if there are any failures
@@ -132,30 +156,5 @@ class SinkSupervisorActor extends AbstractActor {
             shutdownActor.tell(cause, context.parent());
             getContext().getSystem().stop(getSelf());
         }
-    }
-
-    private HandlerDatum constructHandlerDatum(SinkOuterClass.SinkRequest d) {
-        return new HandlerDatum(
-                d.getKeysList().toArray(new String[0]),
-                d.getValue().toByteArray(),
-                Instant.ofEpochSecond(
-                        d.getWatermark().getSeconds(),
-                        d.getWatermark().getNanos()),
-                Instant.ofEpochSecond(
-                        d.getEventTime().getSeconds(),
-                        d.getEventTime().getNanos()),
-                d.getId());
-    }
-
-    public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {
-        var responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
-        responses.getResponses().forEach(response -> {
-            responseBuilder.addResults(SinkOuterClass.SinkResponse.Result.newBuilder()
-                    .setId(response.getId() == null ? "" : response.getId())
-                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                    .setSuccess(response.getSuccess())
-                    .build());
-        });
-        return responseBuilder.build();
     }
 }

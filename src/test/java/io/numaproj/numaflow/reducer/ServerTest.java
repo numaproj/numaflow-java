@@ -26,18 +26,13 @@ import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 
 public class ServerTest {
-    private final static String REDUCE_PROCESSED_KEY_SUFFIX = "-processed";
-
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
             WIN_START_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
-
-
     public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
             WIN_END_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
-
-
+    private final static String REDUCE_PROCESSED_KEY_SUFFIX = "-processed";
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private Server server;
@@ -70,11 +65,12 @@ public class ServerTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server( new ReduceTestFactory(),
+        server = new Server(
+                new ReduceTestFactory(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                        .intercept(interceptor)
+                .intercept(interceptor)
                 .directExecutor());
 
         server.start();
@@ -93,7 +89,6 @@ public class ServerTest {
     @Test
     public void TestReducerWithOneKey() {
         String reduceKey = "reduce-key";
-
 
 
         Metadata metadata = new Metadata();
@@ -136,7 +131,7 @@ public class ServerTest {
                 outputStreamObserver.resultDatum.get().getResults(0).getValue());
     }
 
-        @Test
+    @Test
     public void TestReducerWithMultipleKey() {
         String reduceKey = "reduce-key";
         int keyCount = 100;
@@ -156,7 +151,8 @@ public class ServerTest {
         // send messages with 100 different keys
         for (int j = 0; j < keyCount; j++) {
             for (int i = 1; i <= 10; i++) {
-                ReduceOuterClass.ReduceRequest inputDatum = ReduceOuterClass.ReduceRequest.newBuilder()
+                ReduceOuterClass.ReduceRequest inputDatum = ReduceOuterClass.ReduceRequest
+                        .newBuilder()
                         .addKeys(reduceKey + j)
                         .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                         .build();

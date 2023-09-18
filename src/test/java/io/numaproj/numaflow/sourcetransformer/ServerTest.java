@@ -37,7 +37,8 @@ public class ServerTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server( new TestSourceTransformer(),
+        server = new Server(
+                new TestSourceTransformer(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
@@ -75,9 +76,9 @@ public class ServerTest {
 
         assertEquals(1, actualDatumList.getResultsCount());
         assertEquals(
-                        com.google.protobuf.Timestamp.newBuilder()
-                                .setSeconds(TEST_EVENT_TIME.getEpochSecond())
-                                .setNanos(TEST_EVENT_TIME.getNano()).build(),
+                com.google.protobuf.Timestamp.newBuilder()
+                        .setSeconds(TEST_EVENT_TIME.getEpochSecond())
+                        .setNanos(TEST_EVENT_TIME.getNano()).build(),
                 actualDatumList.getResults(0).getEventTime());
         assertEquals(
                 expectedKey,

@@ -12,7 +12,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 
 /**
-  SideInputWatcher is used to watch for side input file changes.
+ * SideInputWatcher is used to watch for side input file changes.
  */
 public class SideInputWatcher {
 

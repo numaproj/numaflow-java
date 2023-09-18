@@ -29,19 +29,16 @@ import static org.junit.Assert.fail;
 public class ServerErrTest {
 
 
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
+            WIN_START_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
+    public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
+            WIN_END_KEY,
+            Metadata.ASCII_STRING_MARSHALLER);
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private Server server;
     private ManagedChannel inProcessChannel;
-
-    public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
-            WIN_START_KEY,
-            Metadata.ASCII_STRING_MARSHALLER);
-
-
-    public static final Metadata.Key<String> DATUM_METADATA_WIN_END = Metadata.Key.of(
-            WIN_END_KEY,
-            Metadata.ASCII_STRING_MARSHALLER);
 
     @Before
     public void setUp() throws Exception {
@@ -70,11 +67,12 @@ public class ServerErrTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server( new ReduceErrTestFactory(),
+        server = new Server(
+                new ReduceErrTestFactory(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                        .intercept(interceptor)
+                .intercept(interceptor)
                 .directExecutor());
 
         server.start();
@@ -102,14 +100,16 @@ public class ServerErrTest {
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         Thread t = new Thread(() -> {
-            while (outputStreamObserver.t == null){
+            while (outputStreamObserver.t == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-            assertEquals("UNKNOWN: java.lang.RuntimeException: unknown exception", outputStreamObserver.t.getMessage());
+            assertEquals(
+                    "UNKNOWN: java.lang.RuntimeException: unknown exception",
+                    outputStreamObserver.t.getMessage());
         });
         t.start();
 
@@ -119,7 +119,8 @@ public class ServerErrTest {
                 .reduceFn(outputStreamObserver);
 
         for (int i = 1; i <= 10; i++) {
-            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest.newBuilder()
+            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest
+                    .newBuilder()
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .addKeys(reduceKey)
                     .build();

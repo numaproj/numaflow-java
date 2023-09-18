@@ -4,7 +4,6 @@ import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
-import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.mapstream.v1.MapStreamGrpc;
 import io.numaproj.numaflow.mapstream.v1.Mapstream;
@@ -37,7 +36,8 @@ public class ServerTest {
                 .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
-        server = new Server(new TestMapStreamFn(),
+        server = new Server(
+                new TestMapStreamFn(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
@@ -92,18 +92,18 @@ public class ServerTest {
 
     private static class TestMapStreamFn extends MapStreamer {
         @Override
-        public void processMessage(String[] keys, Datum datum, StreamObserver<Mapstream.MapStreamResponse> streamObserver) {
+        public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {
             String[] updatedKeys = Arrays
                     .stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
             for (int i = 0; i < 10; i++) {
                 Message msg = new Message(
-                                (new String(datum.getValue())
-                                        + PROCESSED_VALUE_SUFFIX).getBytes(),
-                                updatedKeys,
-                                new String[]{"test-tag"});
-                onNext(msg, streamObserver);
+                        (new String(datum.getValue())
+                                + PROCESSED_VALUE_SUFFIX).getBytes(),
+                        updatedKeys,
+                        new String[]{"test-tag"});
+                outputObserver.send(msg);
             }
         }
     }

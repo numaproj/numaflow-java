@@ -14,7 +14,7 @@ public class ReduceErrTestFactory extends ReducerFactory<ReduceErrTestFactory.Re
 
         @Override
         public void addMessage(String[] keys, Datum datum, Metadata md) {
-           throw new RuntimeException("unknown exception");
+            throw new RuntimeException("unknown exception");
         }
 
         @Override

@@ -57,7 +57,7 @@ public class GrpcServerUtils {
             Metadata.ASCII_STRING_MARSHALLER);
 
     /*
-        * Get the server socket channel class based on the availability of epoll and kqueue.
+     * Get the server socket channel class based on the availability of epoll and kqueue.
      */
     public static Class<? extends ServerChannel> getChannelTypeClass() {
         if (KQueue.isAvailable()) {
@@ -67,7 +67,7 @@ public class GrpcServerUtils {
     }
 
     /*
-        * Get the event loop group based on the availability of epoll and kqueue.
+     * Get the event loop group based on the availability of epoll and kqueue.
      */
     public static EventLoopGroup createEventLoopGroup(int threads, String name) {
         if (KQueue.isAvailable()) {
@@ -76,7 +76,10 @@ public class GrpcServerUtils {
         return new EpollEventLoopGroup(threads, ThreadUtils.INSTANCE.newThreadFactory(name));
     }
 
-    public static void writeServerInfo(ServerInfoAccessor serverInfoAccessor, String socketPath, String infoFilePath) throws Exception {
+    public static void writeServerInfo(
+            ServerInfoAccessor serverInfoAccessor,
+            String socketPath,
+            String infoFilePath) throws Exception {
         // cleanup socket path if it exists (unit test builder doesn't use one)
         if (socketPath != null) {
             Path path = Paths.get(socketPath);
@@ -97,7 +100,7 @@ public class GrpcServerUtils {
     }
 
     public static ServerBuilder<?> createServerBuilder(String socketPath, int maxMessageSize) {
-        ServerInterceptor   interceptor = new ServerInterceptor() {
+        ServerInterceptor interceptor = new ServerInterceptor() {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
                     ServerCall<ReqT, RespT> call,
@@ -110,8 +113,13 @@ public class GrpcServerUtils {
                                 headers.get(DATUM_METADATA_WIN_START),
                                 WINDOW_END_TIME,
                                 headers.get(DATUM_METADATA_WIN_END));
-                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(context, call, headers, next);
-                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(listener) {
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(
+                        context,
+                        call,
+                        headers,
+                        next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(
+                        listener) {
                     @Override
                     public void onHalfClose() {
                         try {
@@ -121,7 +129,11 @@ public class GrpcServerUtils {
                             throw ex;
                         }
                     }
-                    private void handleException(RuntimeException e, ServerCall<ReqT, RespT> serverCall, io.grpc.Metadata headers) {
+
+                    private void handleException(
+                            RuntimeException e,
+                            ServerCall<ReqT, RespT> serverCall,
+                            io.grpc.Metadata headers) {
                         // Currently, we only have application level exceptions.
                         // Translate it to UNKNOWN status.
                         var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
@@ -136,7 +148,9 @@ public class GrpcServerUtils {
                 .channelType(GrpcServerUtils.getChannelTypeClass())
                 .maxInboundMessageSize(maxMessageSize)
                 .bossEventLoopGroup(GrpcServerUtils.createEventLoopGroup(1, "netty-boss"))
-                .workerEventLoopGroup(GrpcServerUtils.createEventLoopGroup(ThreadUtils.INSTANCE.availableProcessors(), "netty-worker"))
+                .workerEventLoopGroup(GrpcServerUtils.createEventLoopGroup(
+                        ThreadUtils.INSTANCE.availableProcessors(),
+                        "netty-worker"))
                 .intercept(interceptor);
     }
 }

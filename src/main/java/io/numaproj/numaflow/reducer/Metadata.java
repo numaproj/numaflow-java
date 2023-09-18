@@ -6,6 +6,7 @@ package io.numaproj.numaflow.reducer;
 public interface Metadata {
     /**
      * method to get the interval window.
+     *
      * @return IntervalWindow which has the window information
      */
     IntervalWindow getIntervalWindow();

@@ -30,7 +30,8 @@ public class ServerTest {
                 .socketPath(Constants.DEFAULT_SOCKET_PATH)
                 .build();
 
-        server = new Server( new TestSideInput(),
+        server = new Server(
+                new TestSideInput(),
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
@@ -65,6 +66,7 @@ public class ServerTest {
 
     private static class TestSideInput extends SideInputRetriever {
         int count = 0;
+
         @Override
         public Message retrieveSideInput() {
             count++;

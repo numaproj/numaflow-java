@@ -59,7 +59,9 @@ class Service extends MapGrpc.MapImplBase {
      * IsReady is the heartbeat endpoint for gRPC.
      */
     @Override
-    public void isReady(Empty request, StreamObserver<MapOuterClass.ReadyResponse> responseObserver) {
+    public void isReady(
+            Empty request,
+            StreamObserver<MapOuterClass.ReadyResponse> responseObserver) {
         responseObserver.onNext(MapOuterClass.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
     }

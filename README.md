@@ -9,6 +9,7 @@ This SDK provides the interface for
 writing [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/user-defined-functions/)
 and [UDSinks](https://numaflow.numaproj.io/user-guide/sinks/user-defined-sinks/) in Java.
 .
+
 ## Getting Started
 
 ### Requirements
@@ -21,6 +22,7 @@ and [UDSinks](https://numaflow.numaproj.io/user-guide/sinks/user-defined-sinks/)
 #### Maven users
 
 Add this dependency to your project's POM:
+
 ```xml
 <dependency>
   <groupId>io.numaproj.numaflow</groupId>
@@ -36,6 +38,7 @@ Add this dependency to your project's build file:
 ```groovy
 compile "io.numaproj.numaflow:numaflow-java:0.5.1"
 ```
+
 ```
 
 ### Build
@@ -53,7 +56,6 @@ mvn clean install
 * **User Defined Sink(UDSink)**
     * [Sink](src/main/java/io/numaproj/numaflow/examples/sink/simple)
 
-
 You will see a warning in the log on startup, which you can safely ignore:
 
 ```
@@ -66,7 +68,8 @@ shouldn't (https://github.com/grpc/grpc-java/blob/47ddfa4f205d4672e035c37349dfd3
 
 ### API Documentation
 
-Please, refer to our [Javadoc](https://javadoc.io/doc/io.numaproj.numaflow/numaflow-java/latest/index.html) website.
+Please, refer to
+our [Javadoc](https://javadoc.io/doc/io.numaproj.numaflow/numaflow-java/latest/index.html) website.
 
 ## Development
 
