@@ -1,6 +1,10 @@
 package io.numaproj.numaflow.examples.mapstream.flatmapstream;
 
-import io.numaproj.numaflow.mapstreamer.*;
+import io.numaproj.numaflow.mapstreamer.Datum;
+import io.numaproj.numaflow.mapstreamer.MapStreamer;
+import io.numaproj.numaflow.mapstreamer.Message;
+import io.numaproj.numaflow.mapstreamer.OutputObserver;
+import io.numaproj.numaflow.mapstreamer.Server;
 
 
 /**
