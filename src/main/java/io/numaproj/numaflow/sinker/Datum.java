@@ -11,33 +11,33 @@ public interface Datum {
      *
      * @return returns the datum keys.
      */
-    public abstract String[] getKeys();
+    String[] getKeys();
 
     /**
      * method to get the payload value
      *
      * @return returns the payload value in byte array
      */
-    public abstract byte[] getValue();
+    byte[] getValue();
 
     /**
      * method to get the event time of the payload
      *
      * @return returns the event time of the payload
      */
-    public abstract Instant getEventTime();
+    Instant getEventTime();
 
     /**
      * method to get the watermark information
      *
      * @return returns the watermark
      */
-    public abstract Instant getWatermark();
+    Instant getWatermark();
 
     /**
      * method to get the ID for the Payload
      *
      * @return returns the ID
      */
-    public abstract String getId();
+    String getId();
 }

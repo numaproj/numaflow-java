@@ -13,6 +13,8 @@ class HandlerDatum implements Datum {
     private Instant eventTime;
     private String id;
 
+    static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null);
+
     @Override
     public String[] getKeys() {
         return keys;

@@ -1,22 +1,27 @@
 package io.numaproj.numaflow.sinker;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.AllDeadLetters;
 import com.google.protobuf.Empty;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.CompletableFuture;
+import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static io.numaproj.numaflow.sink.v1.SinkGrpc.getSinkFnMethod;
 
 @Slf4j
 class Service extends SinkGrpc.SinkImplBase {
-    public static final ActorSystem sinkActorSystem = ActorSystem.create("sink");
+    private final ExecutorService sinkTaskExecutor = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
+    private final long SHUTDOWN_TIME = 30;
 
     private final Sinker sinker;
 
@@ -35,31 +40,20 @@ class Service extends SinkGrpc.SinkImplBase {
                     responseObserver);
         }
 
-        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
+        DatumIteratorImpl datumStream = new DatumIteratorImpl();
 
-        // create a shutdown actor that listens to exceptions.
-        ActorRef shutdownActorRef = sinkActorSystem.
-                actorOf(SinkShutdownActor.props(failureFuture));
-
-        // subscribe for dead letters
-        sinkActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
-
-        handleFailure(failureFuture, responseObserver);
-
-        /*
-            supervisor actor to create and manage the sink actor which invokes the handlers.
-        */
-        ActorRef supervisorActor = sinkActorSystem
-                .actorOf(SinkSupervisorActor.props(
-                        sinker,
-                        shutdownActorRef,
-                        responseObserver
-                ));
+        Future<ResponseList> result = sinkTaskExecutor.submit(() -> this.sinker.processMessages(
+                datumStream));
 
         return new StreamObserver<SinkOuterClass.SinkRequest>() {
             @Override
             public void onNext(SinkOuterClass.SinkRequest d) {
-                supervisorActor.tell(d, ActorRef.noSender());
+                try {
+                    datumStream.writeMessage(constructHandlerDatum(d));
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    onError(e);
+                }
             }
 
             @Override
@@ -70,7 +64,22 @@ class Service extends SinkGrpc.SinkImplBase {
 
             @Override
             public void onCompleted() {
-                supervisorActor.tell(Constants.EOF, ActorRef.noSender());
+                SinkOuterClass.SinkResponse response = SinkOuterClass.SinkResponse
+                        .newBuilder()
+                        .build();
+                try {
+                    datumStream.writeMessage(HandlerDatum.EOF_DATUM);
+                    // wait until the sink handler returns, result.get() is a blocking call
+                    ResponseList responses = result.get();
+                    // construct responseList from responses
+                    response = buildResponseList(responses);
+
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                    onError(e);
+                }
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
             }
         };
     }
@@ -86,18 +95,46 @@ class Service extends SinkGrpc.SinkImplBase {
         responseObserver.onCompleted();
     }
 
-    // handle the exception with corresponding response status code.
-    private void handleFailure(
-            CompletableFuture<Void> failureFuture,
-            StreamObserver<SinkOuterClass.SinkResponse> responseObserver) {
-        new Thread(() -> {
-            try {
-                failureFuture.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-                var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
-                responseObserver.onError(status.asException());
+    private HandlerDatum constructHandlerDatum(SinkOuterClass.SinkRequest d) {
+        return new HandlerDatum(
+                d.getKeysList().toArray(new String[0]),
+                d.getValue().toByteArray(),
+                Instant.ofEpochSecond(
+                        d.getWatermark().getSeconds(),
+                        d.getWatermark().getNanos()),
+                Instant.ofEpochSecond(
+                        d.getEventTime().getSeconds(),
+                        d.getEventTime().getNanos()),
+                d.getId());
+    }
+
+    public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {
+        var responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
+        responses.getResponses().forEach(response -> {
+            responseBuilder.addResults(SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
+                    .setSuccess(response.getSuccess())
+                    .build());
+        });
+        return responseBuilder.build();
+    }
+
+    // shuts down the executor service which is used for reduce
+    public void shutDown() {
+        this.sinkTaskExecutor.shutdown();
+        try {
+            if (!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
+                System.err.println("Sink executor did not terminate in the specified time.");
+                List<Runnable> droppedTasks = sinkTaskExecutor.shutdownNow();
+                System.err.println("Sink executor was abruptly shut down. " + droppedTasks.size()
+                        + " tasks will not be executed.");
+            } else {
+                System.err.println("Sink executor was terminated.");
             }
-        }).start();
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+            e.printStackTrace();
+        }
     }
 }
