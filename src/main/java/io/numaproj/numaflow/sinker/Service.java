@@ -18,9 +18,12 @@ import static io.numaproj.numaflow.sink.v1.SinkGrpc.getSinkFnMethod;
 
 @Slf4j
 class Service extends SinkGrpc.SinkImplBase {
+    // sinkTaskExecutor is the executor for the sinker. It is a fixed size thread pool
+    // with the number of threads equal to the number of cores on the machine times 2.
     private final ExecutorService sinkTaskExecutor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
+    // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
     private final long SHUTDOWN_TIME = 30;
 
     private final Sinker sinker;
@@ -125,12 +128,12 @@ class Service extends SinkGrpc.SinkImplBase {
         this.sinkTaskExecutor.shutdown();
         try {
             if (!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-                System.err.println("Sink executor did not terminate in the specified time.");
+                log.error("Sink executor did not terminate in the specified time.");
                 List<Runnable> droppedTasks = sinkTaskExecutor.shutdownNow();
-                System.err.println("Sink executor was abruptly shut down. " + droppedTasks.size()
+                log.error("Sink executor was abruptly shut down. " + droppedTasks.size()
                         + " tasks will not be executed.");
             } else {
-                System.err.println("Sink executor was terminated.");
+                log.error("Sink executor was terminated.");
             }
         } catch (InterruptedException e) {
             Thread.interrupted();

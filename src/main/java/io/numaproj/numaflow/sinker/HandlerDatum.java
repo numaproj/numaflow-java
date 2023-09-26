@@ -13,6 +13,7 @@ class HandlerDatum implements Datum {
     private Instant eventTime;
     private String id;
 
+    // EOF_DATUM is used to indicate the end of the stream.
     static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null);
 
     @Override
