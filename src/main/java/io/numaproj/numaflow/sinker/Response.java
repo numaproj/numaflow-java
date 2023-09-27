@@ -19,7 +19,9 @@ public class Response {
 
     /**
      * Static method to create response for successful message processing.
+     *
      * @param id id of the message
+     *
      * @return Response object with success status
      */
     public static Response responseOK(String id) {
@@ -28,8 +30,10 @@ public class Response {
 
     /**
      * Static method to create response for failed message processing.
+     *
      * @param id id of the message
      * @param errMsg error message
+     *
      * @return Response object with failure status and error message
      */
     public static Response responseFailure(String id, String errMsg) {

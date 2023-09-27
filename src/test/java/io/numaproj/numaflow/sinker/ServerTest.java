@@ -61,7 +61,7 @@ public class ServerTest {
     }
 
     @Test
-    public void sinkerSuccess() throws InterruptedException {
+    public void sinkerSuccess() {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
@@ -109,8 +109,17 @@ public class ServerTest {
         public ResponseList processMessages(DatumIterator datumIterator) {
             ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
 
-            while (datumIterator.hasNext()) {
-                Datum datum = datumIterator.next();
+            while (true) {
+                Datum datum = null;
+                try {
+                    datum = datumIterator.next();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    continue;
+                }
+                if (datum == null) {
+                    break;
+                }
                 if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
                     builder.addResponse(Response.responseFailure(
                             datum.getId() + processedIdSuffix,

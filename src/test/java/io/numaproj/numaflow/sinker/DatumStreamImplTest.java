@@ -6,9 +6,7 @@ import org.junit.Test;
 import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 public class DatumStreamImplTest {
     @Test
@@ -23,15 +21,12 @@ public class DatumStreamImplTest {
         datumIterator.writeMessage(datum2);
         datumIterator.writeMessage(eofDatum);
 
-        assertTrue(datumIterator.hasNext());
         assertEquals(datum1, datumIterator.next());
 
-        assertTrue(datumIterator.hasNext());
         assertEquals(datum2, datumIterator.next());
 
-        assertFalse(datumIterator.hasNext());
 
-        assertThrows(IllegalStateException.class, () -> datumIterator.next());
+        assertNull(datumIterator.next());
     }
 
     @AllArgsConstructor

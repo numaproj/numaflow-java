@@ -4,47 +4,29 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * An implementation of {@link DatumIterator} that uses a blocking queue to store the elements.
+ * A thread-safe implementation of {@link DatumIterator}, backed by a blocking queue.
  */
 @Slf4j
 class DatumIteratorImpl implements DatumIterator {
     private final BlockingQueue<Datum> blockingQueue = new LinkedBlockingDeque<>();
-    private Datum nextElement;
-    private boolean isClosed = false;
-
-    /*
-     * Returns true if there is at least one more element in the iterator, or false otherwise.
-     * This method blocks until an element becomes available in the blocking queue.
-     * When EOF is received, this method will return false and the iterator will be closed.
-     */
-    @Override
-    public boolean hasNext() {
-        if (nextElement != null) {
-            return true;
-        }
-        try {
-            nextElement = blockingQueue.take(); // block until an element becomes available
-            if (nextElement.equals(HandlerDatum.EOF_DATUM)) {
-                isClosed = true;
-                return false;
-            }
-            return true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
-    }
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     @Override
-    public Datum next() {
-        if (isClosed || !hasNext()) {
-            throw new IllegalStateException("No more elements");
+    public Datum next() throws InterruptedException {
+        // if the iterator is closed, return null
+        if (closed.get()) {
+            return null;
         }
-        Datum element = nextElement;
-        nextElement = null;
-        return element;
+        Datum datum = blockingQueue.take();
+        // if EOF is received, close the iterator and return null
+        if (datum == HandlerDatum.EOF_DATUM) {
+            closed.set(true);
+            return null;
+        }
+        return datum;
     }
 
     // blocking call, waits until the write operation is successful

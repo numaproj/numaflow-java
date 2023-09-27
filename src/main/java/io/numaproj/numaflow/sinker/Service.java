@@ -20,11 +20,15 @@ import static io.numaproj.numaflow.sink.v1.SinkGrpc.getSinkFnMethod;
 class Service extends SinkGrpc.SinkImplBase {
     // sinkTaskExecutor is the executor for the sinker. It is a fixed size thread pool
     // with the number of threads equal to the number of cores on the machine times 2.
+    // We use 2 times the number of cores because the sinker is a CPU intensive task.
     private final ExecutorService sinkTaskExecutor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
     // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
+    // We use 30 seconds as the default value because it provides a balance between giving tasks enough time to complete
+    // and not delaying program termination unduly.
     private final long SHUTDOWN_TIME = 30;
+
 
     private final Sinker sinker;
 
