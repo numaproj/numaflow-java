@@ -10,7 +10,7 @@ import static org.junit.Assert.assertNull;
 
 public class DatumStreamImplTest {
     @Test
-    public void hasNextAndNextReturnCorrectElements() throws InterruptedException {
+    public void datumStreamNextTest() throws InterruptedException {
         Datum datum1 = new TestDatum("test1");
         Datum datum2 = new TestDatum("test2");
         Datum eofDatum = HandlerDatum.EOF_DATUM;
