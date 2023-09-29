@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * ResponseList is used to return the list of responses from udsink
+ * ResponseList is used to return the list of responses from user defined sinker.
  */
 
 @Getter

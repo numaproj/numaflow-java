@@ -7,6 +7,8 @@ import java.time.Instant;
 @AllArgsConstructor
 class HandlerDatum implements Datum {
 
+    // EOF_DATUM is used to indicate the end of the stream.
+    static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null);
     private String[] keys;
     private byte[] value;
     private Instant watermark;

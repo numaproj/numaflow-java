@@ -61,7 +61,7 @@ public class ServerTest {
     }
 
     @Test
-    public void sinkerSuccess() throws InterruptedException {
+    public void sinkerSuccess() {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
@@ -104,23 +104,34 @@ public class ServerTest {
     @Slf4j
     private static class TestSinkFn extends Sinker {
 
-        private ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
 
         @Override
-        public void processMessage(Datum datum) {
-            if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
-                builder.addResponse(Response.responseFailure(
-                        datum.getId() + processedIdSuffix,
-                        "error message"));
-                return;
+        public ResponseList processMessages(DatumIterator datumIterator) {
+            ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
+
+            while (true) {
+                Datum datum = null;
+                try {
+                    datum = datumIterator.next();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    continue;
+                }
+                if (datum == null) {
+                    break;
+                }
+                if (Arrays.equals(datum.getKeys(), new String[]{"invalid-key"})) {
+                    builder.addResponse(Response.responseFailure(
+                            datum.getId() + processedIdSuffix,
+                            "error message"));
+                    continue;
+                }
+                log.info(new String(datum.getValue()));
+                builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
             }
-            log.info(new String(datum.getValue()));
-            builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
-        }
 
-        @Override
-        public ResponseList getResponse() {
             return builder.build();
         }
+
     }
 }

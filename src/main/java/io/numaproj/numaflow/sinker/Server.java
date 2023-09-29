@@ -89,6 +89,7 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
+        this.service.shutDown();
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
