@@ -6,9 +6,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.numaproj.numaflow/numaflow-java.svg?label=Maven%20Central)](https://central.sonatype.com/search?q=numaflow+java&smo=true)
 
 This SDK provides the interface for
-writing [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/user-defined-functions/)
+writing [UDSources](https://numaflow.numaproj.io/user-guide/sources/user-defined-sources/), [UDTransformer](https://numaflow.numaproj.io/user-guide/sources/transformer/overview/), [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/user-defined-functions/)
 and [UDSinks](https://numaflow.numaproj.io/user-guide/sinks/user-defined-sinks/) in Java.
-.
 
 ## Getting Started
 
@@ -27,7 +26,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>io.numaproj.numaflow</groupId>
   <artifactId>numaflow-java</artifactId>
-  <version>0.5.2</version>
+  <version>0.5.3</version>
 </dependency>
 ```
 
@@ -36,7 +35,7 @@ Add this dependency to your project's POM:
 Add this dependency to your project's build file:
 
 ```groovy
-compile "io.numaproj.numaflow:numaflow-java:0.5.2"
+compile "io.numaproj.numaflow:numaflow-java:0.5.3"
 ```
 
 ```
@@ -47,14 +46,23 @@ compile "io.numaproj.numaflow:numaflow-java:0.5.2"
 mvn clean install
 ```
 
-### Examples on how to write UDFs and UDSinks in Java
+### Examples on how to write UDSources, UDTransformers, UDFs, UDSinks and SideInputs in Java
+* **User Defined Source(UDSource)**
+    * [Source](examples/src/main/java/io/numaproj/numaflow/examples/source/simple)
+
+* **User Defined Source Transformer(UDTransformer)**
+    * [Source Transformer](examples/src/main/java/io/numaproj/numaflow/examples/sourcetransformer/eventtimefilter)
 
 * **User Defined Function(UDF)**
-    * [Map](src/main/java/io/numaproj/numaflow/examples/function/map)
-    * [Reduce](src/main/java/io/numaproj/numaflow/examples/function/reduce)
+    * [MapStream](examples/src/main/java/io/numaproj/numaflow/examples/mapstream/flatmapstream)
+    * [Map](examples/src/main/java/io/numaproj/numaflow/examples/map)
+    * [Reduce](examples/src/main/java/io/numaproj/numaflow/examples/reduce)
 
 * **User Defined Sink(UDSink)**
-    * [Sink](src/main/java/io/numaproj/numaflow/examples/sink/simple)
+    * [Sink](examples/src/main/java/io/numaproj/numaflow/examples/sink/simple)
+
+* **User Defined SideInput(SideInput)**
+    * [SideInput](examples/src/main/java/io/numaproj/numaflow/examples/sideinput)
 
 You will see a warning in the log on startup, which you can safely ignore:
 
@@ -75,7 +83,7 @@ our [Javadoc](https://javadoc.io/doc/io.numaproj.numaflow/numaflow-java/latest/i
 
 ### Updating proto definition files
 
-To keep up-to-date, do the following before building:
+To keep up-to-date, do the following before building(using udf as an example):
 
 * copy the `*.proto` files
   from [numaflow-go](https://github.com/numaproj/numaflow-go/tree/main/pkg/apis/proto)
@@ -84,10 +92,6 @@ To keep up-to-date, do the following before building:
 
 ```protobuf
 option java_package = "io.numaproj.numaflow.function.v1";
-```
-
-```protobuf
-option java_package = "io.numaproj.numaflow.sink.v1";
 ```
 
 ## Code Style
