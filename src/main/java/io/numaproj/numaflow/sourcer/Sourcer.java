@@ -25,6 +25,7 @@ public abstract class Sourcer {
 
     /**
      * method will be used for getting the number of pending messages from source.
+     * when the return value is negative, it indicates the pending information is not available.
      *
      * @return number of pending messages
      */
