@@ -40,3 +40,5 @@ buildNumber.properties
 
 # IDE
 .vscode/
+.DS_Store
+*/**/.DS_Store
