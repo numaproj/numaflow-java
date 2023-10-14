@@ -26,7 +26,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>io.numaproj.numaflow</groupId>
   <artifactId>numaflow-java</artifactId>
-  <version>0.5.3</version>
+  <version>0.5.4</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ Add this dependency to your project's POM:
 Add this dependency to your project's build file:
 
 ```groovy
-compile "io.numaproj.numaflow:numaflow-java:0.5.3"
+compile "io.numaproj.numaflow:numaflow-java:0.5.4"
 ```
 
 ```
