@@ -6,7 +6,7 @@
 
     <groupId>io.numaproj.numaflow</groupId>
     <artifactId>numaflow-java</artifactId>
-    <version>0.5.5</version>
+    <version>0.5.6</version>
     <packaging>jar</packaging>
 
     <name>numaflow-java</name>
@@ -23,7 +23,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <protobuf.version>3.21.8</protobuf.version>
-        <grpc.version>1.50.2</grpc.version>
+        <grpc.version>1.59.0</grpc.version>
         <netty.version>4.1.100.Final</netty.version> <!-- match version grpc-netty depends on -->
         <akka.version>2.7.0</akka.version>
         <slf4j.version>2.0.7</slf4j.version>
@@ -121,6 +121,7 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty</artifactId>
+            <version>1.59.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.netty</groupId>
@@ -147,12 +148,16 @@
             <version>${netty.version}</version>
             <classifier>linux-x86_64</classifier>
         </dependency>
-
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport-native-kqueue</artifactId>
             <version>${netty.version}</version>
             <classifier>osx-aarch_64</classifier>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http2</artifactId>
+            <version>${netty.version}</version>
         </dependency>
 
         <dependency>
