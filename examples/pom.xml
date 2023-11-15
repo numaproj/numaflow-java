@@ -16,7 +16,7 @@
         <dependency>
             <groupId>io.numaproj.numaflow</groupId>
             <artifactId>numaflow-java</artifactId>
-            <version>0.5.5</version>
+            <version>0.5.6</version>
         </dependency>
 
         <dependency>
@@ -34,7 +34,7 @@
                 <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>forward-function</id>
+                        <id>event-time-filter-function</id>
                         <phase>package</phase>
                         <goals>
                             <goal>dockerBuild</goal>
@@ -42,11 +42,62 @@
                         <configuration>
                             <container>
                                 <mainClass>
-                                    io.numaproj.numaflow.examples.map.forward.ForwardFunction
+                                    io.numaproj.numaflow.examples.sourcetransformer.eventtimefilter.EventTimeFilterFunction
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/forward-function</image>
+                                <image>numaflow-java-examples/event-time-filter</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>flat-map-stream</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.mapstream.flatmapstream.FlatMapStreamFunction
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/flat-map-stream</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>flat-map</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.map.flatmap.FlatMapFunction
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/flat-map</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>even-odd</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.map.evenodd.EvenOddFunction
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/even-odd</image>
                             </to>
                         </configuration>
                     </execution>
@@ -67,7 +118,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>reduce-counter</id>
+                        <id>reduce-sum</id>
                         <phase>package</phase>
                         <goals>
                             <goal>dockerBuild</goal>
@@ -75,11 +126,11 @@
                         <configuration>
                             <container>
                                 <mainClass>
-                                    io.numaproj.numaflow.examples.reduce.count.EvenOddCounterFactory
+                                    io.numaproj.numaflow.examples.reduce.sum.SumFactory
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/reduce-counter</image>
+                                <image>numaflow-java-examples/reduce-sum</image>
                             </to>
                         </configuration>
                     </execution>
