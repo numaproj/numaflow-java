@@ -26,7 +26,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>io.numaproj.numaflow</groupId>
   <artifactId>numaflow-java</artifactId>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
 </dependency>
 ```
 
