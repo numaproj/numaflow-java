@@ -80,7 +80,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/flat-map</image>
+                                <image>numaflow-java-examples/map-flatmap</image>
                             </to>
                         </configuration>
                     </execution>
