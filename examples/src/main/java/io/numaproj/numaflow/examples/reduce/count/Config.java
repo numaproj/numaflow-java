@@ -6,6 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class Config {
-    private int oddIncrementBy;
-    private int evenIncrementBy;
+    private int incrementBy;
 }
