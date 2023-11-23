@@ -35,7 +35,7 @@ class Service extends MapGrpc.MapImplBase {
             return;
         }
 
-        HandlerDatum handlerDatum = new HandlerDatum(
+        Datum handlerDatum = new HandlerDatum(
                 request.getValue().toByteArray(),
                 Instant.ofEpochSecond(
                         request.getWatermark().getSeconds(),
