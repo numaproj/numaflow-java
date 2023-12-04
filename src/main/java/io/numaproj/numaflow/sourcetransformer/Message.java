@@ -11,9 +11,6 @@ import java.time.Instant;
 @Getter
 public class Message {
     public static final String DROP = "U+005C__DROP__";
-    // Watermark are at millisecond granularity, hence we use epoch(0) - 1 to indicate watermark is not available.
-    // EventTimeForDrop is used to indicate that the message is dropped hence, excluded from watermark calculation
-    private static final Instant EventTimeForDrop = Instant.ofEpochMilli(-1);
     private final String[] keys;
     private final byte[] value;
     private final Instant eventTime;
@@ -56,14 +53,18 @@ public class Message {
     }
 
     /**
-     * creates a Message which will be dropped
+     * creates a Message which will be dropped.
+     *
+     * @param eventTime message eventTime is required because even though a message is dropped,
+     *         we consider it as being processed, hence it should be counted in the watermark calculation
+     *         using the provided event time.
      *
      * @return returns the Message which will be dropped
      */
-    public static Message toDrop() {
+    public static Message toDrop(Instant eventTime) {
         return new Message(
                 new byte[0],
-                EventTimeForDrop,
+                eventTime,
                 null,
                 new String[]{DROP});
     }
