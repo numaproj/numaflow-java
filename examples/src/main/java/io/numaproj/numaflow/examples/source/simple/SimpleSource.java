@@ -10,6 +10,7 @@ import io.numaproj.numaflow.sourcer.Sourcer;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +42,7 @@ public class SimpleSource extends Sourcer {
                 return;
             }
             // create a message with increasing offset
-            Offset offset = new Offset(ByteBuffer.allocate(4).putLong(readIndex).array(), "0");
+            Offset offset = new Offset(ByteBuffer.allocate(4).putLong(readIndex).array());
             Message message = new Message(
                     ByteBuffer.allocate(4).putLong(readIndex).array(),
                     offset,
@@ -66,5 +67,10 @@ public class SimpleSource extends Sourcer {
     public long getPending() {
         // pending messages will be zero for a simple source
         return 0;
+    }
+
+    @Override
+    public List<Integer> getPartitions() {
+        return Sourcer.defaultPartitions();
     }
 }

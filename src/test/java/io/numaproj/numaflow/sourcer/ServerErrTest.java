@@ -18,6 +18,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 public class ServerErrTest {
@@ -122,6 +124,11 @@ public class ServerErrTest {
         public void ack(AckRequest request) {
             throw new RuntimeException("unknown exception");
 
+        }
+
+        @Override
+        public List<Integer> getPartitions() {
+            return Sourcer.defaultPartitions();
         }
 
         @Override
