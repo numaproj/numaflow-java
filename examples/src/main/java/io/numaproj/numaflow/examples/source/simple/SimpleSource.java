@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.examples.source.simple;
 
+import com.google.common.primitives.Longs;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
@@ -8,7 +9,6 @@ import io.numaproj.numaflow.sourcer.ReadRequest;
 import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.Sourcer;
 
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +42,9 @@ public class SimpleSource extends Sourcer {
                 return;
             }
             // create a message with increasing offset
-            Offset offset = new Offset(ByteBuffer.allocate(4).putLong(readIndex).array());
+            Offset offset = new Offset(Longs.toByteArray(readIndex));
             Message message = new Message(
-                    ByteBuffer.allocate(4).putLong(readIndex).array(),
+                    Long.toString(readIndex).getBytes(),
                     offset,
                     Instant.now());
             // send the message to the observer
@@ -59,7 +59,7 @@ public class SimpleSource extends Sourcer {
     public void ack(AckRequest request) {
         // remove the acknowledged messages from the map
         for (Offset offset : request.getOffsets()) {
-            messages.remove(ByteBuffer.wrap(offset.getValue()).getLong());
+            messages.remove(Longs.fromByteArray(offset.getValue()));
         }
     }
 
