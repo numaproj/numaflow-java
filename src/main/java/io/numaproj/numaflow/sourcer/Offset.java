@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 public class Offset {
     private final byte[] value;
-    private final String partitionId;
+    private final Integer partitionId;
 
     /**
      * used to create Offset with value and partitionId.
@@ -18,8 +18,18 @@ public class Offset {
      * @param value offset value
      * @param partitionId offset partitionId
      */
-    public Offset(byte[] value, String partitionId) {
+    public Offset(byte[] value, Integer partitionId) {
         this.value = value;
         this.partitionId = partitionId;
+    }
+
+    /**
+     * used to create Offset with value and default partitionId.
+     *
+     * @param value offset value
+     */
+    public Offset(byte[] value) {
+        this.value = value;
+        this.partitionId = Sourcer.defaultPartitions().get(0);
     }
 }

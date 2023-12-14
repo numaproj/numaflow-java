@@ -122,4 +122,25 @@ class Service extends SourceGrpc.SourceImplBase {
         responseObserver.onNext(SourceOuterClass.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
     }
+
+    @Override
+    public void partitionsFn(
+            Empty request,
+            StreamObserver<SourceOuterClass.PartitionsResponse> responseObserver) {
+
+        if (this.sourcer == null) {
+            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+                    getPendingFnMethod(),
+                    responseObserver);
+            return;
+        }
+
+        List<Integer> partitions = this.sourcer.getPartitions();
+        responseObserver.onNext(SourceOuterClass.PartitionsResponse.newBuilder()
+                .setResult(
+                        SourceOuterClass.PartitionsResponse.Result.newBuilder()
+                                .addAllPartitions(partitions)).
+                build());
+        responseObserver.onCompleted();
+    }
 }
