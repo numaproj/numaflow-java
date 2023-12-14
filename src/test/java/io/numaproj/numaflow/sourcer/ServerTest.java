@@ -92,6 +92,10 @@ public class ServerTest {
         var pending = stub.pendingFn(Empty.newBuilder().build());
         assertEquals(5, pending.getResult().getCount());
 
+        var partitions = stub.partitionsFn(Empty.newBuilder().build());
+        assertEquals(1, partitions.getResult().getPartitionsCount());
+        assertEquals(0, partitions.getResult().getPartitions(0));
+
         // ack the 5 messages
         var ackResponse = stub.ackFn(ackRequestBuilder.build());
         assertEquals(Empty.newBuilder().build(), ackResponse.getResult().getSuccess());
@@ -137,7 +141,7 @@ public class ServerTest {
             for (int i = 0; i < 10; i++) {
                 messages.add(new Message(
                         ByteBuffer.allocate(4).putInt(i).array(),
-                        new Offset(ByteBuffer.allocate(4).putInt(i).array(), "0"),
+                        new Offset(ByteBuffer.allocate(4).putInt(i).array(), 0),
                         eventTime
                 ));
                 eventTime = eventTime.plusMillis(1000L);
@@ -157,6 +161,11 @@ public class ServerTest {
                 yetToBeAcked.put(readIndex.get(), true);
                 readIndex.incrementAndGet();
             }
+        }
+
+        @Override
+        public List<Integer> getPartitions() {
+            return Sourcer.defaultPartitions();
         }
 
         @Override

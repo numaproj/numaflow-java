@@ -1,5 +1,8 @@
 package io.numaproj.numaflow.sourcer;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Sourcer exposes method for reading messages from source.
  * Implementations should override the read method which will be used
@@ -30,4 +33,28 @@ public abstract class Sourcer {
      * @return number of pending messages
      */
     public abstract long getPending();
+
+    /**
+     * method returns the partitions associated with the source, will be used by the platform to determine
+     * the partitions to which the watermark should be published. If the source doesn't have partitions,
+     * `defaultPartitions()` can be used to return the default partitions.
+     * In most cases, the defaultPartitions() should be enough; the cases where we need to implement custom getPartitions()
+     * is in a case like Kafka, where a reader can read from multiple Kafka partitions.
+     *
+     * @return list of partitions
+     */
+    public abstract List<Integer> getPartitions();
+
+    /**
+     * method returns default partitions for the source.
+     * It can be used in the getPartitions() function of the Sourcer interface only
+     * if the source doesn't have partitions. DefaultPartition will be the pod replica
+     * index of the source.
+     *
+     * @return list of partitions
+     */
+    public static List<Integer> defaultPartitions() {
+        String partition = System.getenv().getOrDefault("NUMAFLOW_REPLICA", "0");
+        return Collections.singletonList(Integer.parseInt(partition));
+    }
 }
