@@ -110,7 +110,6 @@ class Service extends ReduceGrpc.ReduceImplBase {
             public void onCompleted() {
                 // indicate the end of input to the supervisor
                 supervisorActor.tell(Constants.EOF, ActorRef.noSender());
-
             }
         };
     }

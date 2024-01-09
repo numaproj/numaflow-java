@@ -4,6 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,18 +50,38 @@ class ReduceActor extends AbstractActor {
 
     private ActorResponse buildDatumListResponse(MessageList messageList) {
         ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
+        responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
+                .setStart(Timestamp.newBuilder()
+                        .setSeconds(this.md.getIntervalWindow().getStartTime().getEpochSecond())
+                        .setNanos(this.md.getIntervalWindow().getStartTime().getNano()))
+                .setEnd(Timestamp.newBuilder()
+                        .setSeconds(this.md.getIntervalWindow().getEndTime().getEpochSecond())
+                        .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
+                .setSlot("slot-0").build());
+        // for aligned window, if we start building the response, it means we already reached EOF.
+        responseBuilder.setEOF(true);
+
+        ReduceOuterClass.ReduceResponse.Result.Builder resultBuilder = ReduceOuterClass.ReduceResponse.Result.newBuilder();
         messageList.getMessages().forEach(message -> {
-            responseBuilder.addResults(ReduceOuterClass.ReduceResponse.Result.newBuilder()
-                    .setValue(ByteString.copyFrom(message.getValue()))
-                    .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(
-                            message.getKeys()))
-                    .addAllTags(message.getTags() == null ? new ArrayList<>() : List.of(
-                            message.getTags()))
-                    .build());
+            responseBuilder.set
+            resultBuilder.setValue(ByteString.copyFrom(message.getValue()))
+                    .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
+                    .addAllTags(message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
+                    .build();
+        });
+
+
+        // set result
+
+        responseBuilder.setResult()
+
+        
+        messageList.getMessages().forEach(message -> {
+
+
 
         });
         return new ActorResponse(this.keys, responseBuilder.build());
     }
-
 }
 

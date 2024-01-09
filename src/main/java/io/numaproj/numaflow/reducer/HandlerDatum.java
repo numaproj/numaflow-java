@@ -7,11 +7,9 @@ import java.time.Instant;
 
 @AllArgsConstructor
 class HandlerDatum implements Datum {
-
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
-
 
     @Override
     public Instant getWatermark() {
@@ -27,5 +25,4 @@ class HandlerDatum implements Datum {
     public Instant getEventTime() {
         return this.eventTime;
     }
-
 }
