@@ -19,6 +19,7 @@ public class ReduceTestFactory extends ReducerFactory<ReduceTestFactory.ReduceTe
 
         @Override
         public MessageList getOutput(String[] keys, Metadata md) {
+            System.out.println("returning number: " + sum);
             String[] updatedKeys = Arrays
                     .stream(keys)
                     .map(c -> c + "-processed")

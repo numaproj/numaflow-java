@@ -20,7 +20,6 @@ import java.util.List;
 @Slf4j
 @AllArgsConstructor
 class ReduceActor extends AbstractActor {
-
     private String[] keys;
     private Metadata md;
     private Reducer groupBy;
@@ -45,11 +44,15 @@ class ReduceActor extends AbstractActor {
     private void getResult(String eof) {
         MessageList resultMessages = this.groupBy.getOutput(keys, md);
         // send the result back to sender(parent actor)
-        getSender().tell(buildDatumListResponse(resultMessages), getSelf());
+        resultMessages.getMessages().forEach(message -> {
+            getSender().tell(buildActorResponse(message), getSelf());
+        });
     }
 
-    private ActorResponse buildDatumListResponse(MessageList messageList) {
+    private ActorResponse buildActorResponse(Message message) {
+        // TODO(nit) - this transformation is complex, we can create a local model of ReduceResponse and handle transformation between gRPC response and ReduceResponse at a central place.
         ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
+        // set the window using the actor metadata.
         responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
                 .setStart(Timestamp.newBuilder()
                         .setSeconds(this.md.getIntervalWindow().getStartTime().getEpochSecond())
@@ -58,29 +61,17 @@ class ReduceActor extends AbstractActor {
                         .setSeconds(this.md.getIntervalWindow().getEndTime().getEpochSecond())
                         .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
                 .setSlot("slot-0").build());
-        // for aligned window, if we start building the response, it means we already reached EOF.
+        // if we start building the response, it means we already reached EOF.
         responseBuilder.setEOF(true);
-
-        ReduceOuterClass.ReduceResponse.Result.Builder resultBuilder = ReduceOuterClass.ReduceResponse.Result.newBuilder();
-        messageList.getMessages().forEach(message -> {
-            responseBuilder.set
-            resultBuilder.setValue(ByteString.copyFrom(message.getValue()))
-                    .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
-                    .addAllTags(message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
-                    .build();
-        });
-
-
-        // set result
-
-        responseBuilder.setResult()
-
-        
-        messageList.getMessages().forEach(message -> {
-
-
-
-        });
+        // set the result.
+        responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
+                .newBuilder()
+                .setValue(ByteString.copyFrom(message.getValue()))
+                .addAllKeys(message.getKeys()
+                        == null ? new ArrayList<>():Arrays.asList(message.getKeys()))
+                .addAllTags(
+                        message.getTags() == null ? new ArrayList<>():List.of(message.getTags()))
+                .build());
         return new ActorResponse(this.keys, responseBuilder.build());
     }
 }

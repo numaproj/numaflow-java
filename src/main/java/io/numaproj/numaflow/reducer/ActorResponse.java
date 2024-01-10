@@ -10,6 +10,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 class ActorResponse {
+    // TODO - do we need keys? they seem already present in the ReduceResponse
     String[] keys;
     ReduceOuterClass.ReduceResponse response;
 }

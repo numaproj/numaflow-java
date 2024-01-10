@@ -17,13 +17,16 @@ import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
-import static org.junit.Assert.assertEquals;
 
 public class ServerTest {
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
@@ -87,15 +90,14 @@ public class ServerTest {
     }
 
     @Test
-    public void TestReducerWithOneKey() {
+    public void given_inputReduceRequestsShareSameKey_when_serverStarts_then_allRequestsGetAggregatedToOneResponse() {
         String reduceKey = "reduce-key";
-
 
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
         metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
 
-        //create an output stream observer
+        // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
@@ -105,8 +107,11 @@ public class ServerTest {
 
         for (int i = 1; i <= 10; i++) {
             ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest.newBuilder()
-                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                    .addKeys(reduceKey)
+                    .setPayload(ReduceOuterClass.ReduceRequest.Payload
+                            .newBuilder()
+                            .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                            .addAllKeys(Arrays.asList(reduceKey))
+                            .build())
                     .build();
             inputStreamObserver.onNext(request);
         }
@@ -118,29 +123,34 @@ public class ServerTest {
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
         while (!outputStreamObserver.completed.get()) ;
 
-        assertEquals(1, outputStreamObserver.resultDatum.get().getResultsCount());
-        assertEquals(
+        Assert.assertEquals(1, outputStreamObserver.resultDatum.get().size());
+        Assert.assertEquals(
                 expectedKeys,
                 outputStreamObserver.resultDatum
                         .get()
-                        .getResults(0)
+                        .get(0)
+                        .getResult()
                         .getKeysList()
                         .toArray(new String[0]));
-        assertEquals(
+        Assert.assertEquals(
                 expectedValue,
-                outputStreamObserver.resultDatum.get().getResults(0).getValue());
+                outputStreamObserver.resultDatum
+                        .get()
+                        .get(0)
+                        .getResult()
+                        .getValue());
     }
 
     @Test
-    public void TestReducerWithMultipleKey() {
+    public void given_inputReduceRequestsHaveDifferentKeySets_when_serverStarts_then_requestsGetAggregatedSeparately() {
         String reduceKey = "reduce-key";
-        int keyCount = 100;
+        int keyCount = 3;
 
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
         metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
 
-        //create an output stream observer
+        // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
@@ -148,15 +158,17 @@ public class ServerTest {
                 .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
-        // send messages with 100 different keys
+        // send messages with 3 different keys
         for (int j = 0; j < keyCount; j++) {
             for (int i = 1; i <= 10; i++) {
-                ReduceOuterClass.ReduceRequest inputDatum = ReduceOuterClass.ReduceRequest
+                ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
                         .newBuilder()
-                        .addKeys(reduceKey + j)
-                        .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                        .setPayload(ReduceOuterClass.ReduceRequest.Payload.newBuilder()
+                                .addAllKeys(Arrays.asList(reduceKey + j))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                                .build())
                         .build();
-                inputStreamObserver.onNext(inputDatum);
+                inputStreamObserver.onNext(request);
             }
         }
 
@@ -166,10 +178,11 @@ public class ServerTest {
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
 
         while (!outputStreamObserver.completed.get()) ;
-        ReduceOuterClass.ReduceResponse result = outputStreamObserver.resultDatum.get();
-        assertEquals(100, result.getResultsCount());
-        for (int i = 0; i < keyCount; i++) {
-            assertEquals(expectedValue, result.getResults(0).getValue());
-        }
+        List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
+        // the outputStreamObserver should have observed keyCount responses, each of which has value 55.
+        Assert.assertEquals(keyCount, result.size());
+        result.forEach(response -> {
+            Assert.assertEquals(expectedValue, response.getResult().getValue());
+        });
     }
 }

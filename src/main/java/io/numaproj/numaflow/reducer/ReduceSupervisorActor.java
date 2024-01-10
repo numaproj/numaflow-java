@@ -22,7 +22,6 @@ import java.util.Optional;
 /**
  * ReduceSupervisorActor actor distributes the messages to actors and handles failure.
  */
-
 @Slf4j
 class ReduceSupervisorActor extends AbstractActor {
     private final ReducerFactory<? extends Reducer> reducerFactory;
@@ -90,19 +89,21 @@ class ReduceSupervisorActor extends AbstractActor {
         if there is no actor for an incoming set of keys, create a new actor
         track all the child actors using actors map
      */
-    private void invokeActors(ReduceOuterClass.ReduceRequest datumRequest) {
-        String[] keys = datumRequest.getKeysList().toArray(new String[0]);
+    private void invokeActors(ReduceOuterClass.ReduceRequest reduceRequest) {
+        ReduceOuterClass.ReduceRequest.Payload payload = reduceRequest.getPayload();
+        String[] keys = payload.getKeysList().toArray(new String[0]);
         String keyStr = String.join(Constants.DELIMITER, keys);
+        System.out.println("kerantest keyStr: " + keyStr);
         if (!actorsMap.containsKey(keyStr)) {
             Reducer reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
                     .actorOf(ReduceActor.props(keys, md, reduceHandler));
-
             actorsMap.put(keyStr, actorRef);
         }
 
-        HandlerDatum handlerDatum = constructHandlerDatum(datumRequest);
+        HandlerDatum handlerDatum = constructHandlerDatum(payload);
         actorsMap.get(keyStr).tell(handlerDatum, getSelf());
+        System.out.println("kerantest number of actors: " + actorsMap.size());
     }
 
     private void sendEOF(String EOF) {
@@ -128,15 +129,15 @@ class ReduceSupervisorActor extends AbstractActor {
         }
     }
 
-    private HandlerDatum constructHandlerDatum(ReduceOuterClass.ReduceRequest datumRequest) {
+    private HandlerDatum constructHandlerDatum(ReduceOuterClass.ReduceRequest.Payload payload) {
         return new HandlerDatum(
-                datumRequest.getValue().toByteArray(),
+                payload.getValue().toByteArray(),
                 Instant.ofEpochSecond(
-                        datumRequest.getWatermark().getSeconds(),
-                        datumRequest.getWatermark().getNanos()),
+                        payload.getWatermark().getSeconds(),
+                        payload.getWatermark().getNanos()),
                 Instant.ofEpochSecond(
-                        datumRequest.getEventTime().getSeconds(),
-                        datumRequest.getEventTime().getNanos())
+                        payload.getEventTime().getSeconds(),
+                        payload.getEventTime().getNanos())
         );
     }
 
