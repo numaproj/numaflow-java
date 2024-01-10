@@ -122,6 +122,7 @@ class ReduceSupervisorActor extends AbstractActor {
          */
 
         responseObserver.onNext(actorResponse.getResponse());
+        // TODO - do we need to include window information for aligned windows?
         actorsMap.remove(String.join(Constants.DELIMITER, actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();

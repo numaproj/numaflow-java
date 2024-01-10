@@ -89,7 +89,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
                         responseObserver));
 
 
-        return new StreamObserver<ReduceOuterClass.ReduceRequest>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(ReduceOuterClass.ReduceRequest datum) {
                 // send the message to parent actor, which takes care of distribution.

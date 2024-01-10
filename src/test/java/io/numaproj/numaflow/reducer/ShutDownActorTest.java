@@ -1,15 +1,28 @@
 package io.numaproj.numaflow.reducer;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.AllDeadLetters;
+import akka.actor.DeadLetter;
+import com.google.protobuf.ByteString;
+import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
+import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
 import org.junit.Test;
+
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 public class ShutDownActorTest {
 
     @Test
     public void testFailure() {
-        /*
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
-        CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         String reduceKey = "reduce-key";
         ReduceOuterClass.ReduceRequest.Payload.Builder payloadBuilder = ReduceOuterClass.ReduceRequest.Payload
@@ -45,12 +58,10 @@ public class ShutDownActorTest {
         } catch (Exception e) {
             assertEquals(e.getMessage(), "java.lang.RuntimeException: UDF Failure");
         }
-         */
     }
 
     @Test
     public void testDeadLetterHandling() {
-        /*
         final ActorSystem actorSystem = ActorSystem.create("test-system-2");
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
@@ -80,8 +91,6 @@ public class ShutDownActorTest {
         } catch (Exception e) {
             assertEquals(e.getMessage(), "java.lang.Throwable: dead letters");
         }
-
-         */
     }
 
 
