@@ -92,8 +92,8 @@ class ReduceSupervisorActor extends AbstractActor {
     private void invokeActors(ReduceOuterClass.ReduceRequest reduceRequest) {
         ReduceOuterClass.ReduceRequest.Payload payload = reduceRequest.getPayload();
         String[] keys = payload.getKeysList().toArray(new String[0]);
+        // TODO - do we need to include window information in the keyStr?
         String keyStr = String.join(Constants.DELIMITER, keys);
-        System.out.println("kerantest keyStr: " + keyStr);
         if (!actorsMap.containsKey(keyStr)) {
             Reducer reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
@@ -103,7 +103,6 @@ class ReduceSupervisorActor extends AbstractActor {
 
         HandlerDatum handlerDatum = constructHandlerDatum(payload);
         actorsMap.get(keyStr).tell(handlerDatum, getSelf());
-        System.out.println("kerantest number of actors: " + actorsMap.size());
     }
 
     private void sendEOF(String EOF) {

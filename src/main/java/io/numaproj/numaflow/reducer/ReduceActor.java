@@ -50,7 +50,6 @@ class ReduceActor extends AbstractActor {
     }
 
     private ActorResponse buildActorResponse(Message message) {
-        // TODO(nit) - this transformation is complex, we can create a local model of ReduceResponse and handle transformation between gRPC response and ReduceResponse at a central place.
         ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
         // set the window using the actor metadata.
         responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()

@@ -135,8 +135,6 @@ public class ServerErrTest {
         try {
             t.join();
         } catch (InterruptedException e) {
-            // the thread should always finish successfully with test assertion passing.
-            // if not, fail the test.
             fail("Thread got interrupted before test assertion.");
         }
     }

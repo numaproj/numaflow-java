@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 class ActorResponse {
-    // TODO - do we need keys? they seem already present in the ReduceResponse
+    // FIXME - with the latest proto update, each response has a single set of keys, hence we can remove the keys field here.
     String[] keys;
     ReduceOuterClass.ReduceResponse response;
 }

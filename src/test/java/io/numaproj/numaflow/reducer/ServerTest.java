@@ -158,7 +158,7 @@ public class ServerTest {
                 .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
-        // send messages with 3 different keys
+        // send messages with keyCount different keys
         for (int j = 0; j < keyCount; j++) {
             for (int i = 1; i <= 10; i++) {
                 ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
