@@ -95,7 +95,8 @@ public class ServerErrTest {
 
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
-
+        // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
+        // the test can still succeed.
         AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
 
         Thread t = new Thread(() -> {

@@ -108,7 +108,7 @@ public class ReduceSupervisorActorTest {
         supervisor.tell(Constants.EOF, ActorRef.noSender());
         try {
             completableFuture.get();
-            // each reduce request generates two reduce response, one containing the data and the other one indicating EOF.
+            // each reduce request generates two reduce responses, one containing the data and the other one indicating EOF.
             assertEquals(20, outputStreamObserver.resultDatum.get().size());
             for (int i = 0; i < 20; i++) {
                 ReduceOuterClass.ReduceResponse response = outputStreamObserver.resultDatum
