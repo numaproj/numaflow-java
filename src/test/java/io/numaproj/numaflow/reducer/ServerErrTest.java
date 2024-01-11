@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
@@ -94,22 +96,23 @@ public class ServerErrTest {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
+        AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
+
         Thread t = new Thread(() -> {
             while (outputStreamObserver.t == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    // TODO - FIXME - if reaching here, fail the test.
-                    System.out.println("kerantest - should never reach here.");
-                    e.printStackTrace();
+                    exceptionInThread.set(e);
                 }
             }
-            System.out.println("kerantest - should reach here.");
-            // TODO - FIXME - the assertion happens within a thread so even if it fails, the test method can still pass.
-            // nit: also make "unknown exception" a shared const between test factory and test.
-            assertEquals(
-                    "UNKNOWN: java.lang.RuntimeException: unknown exception",
-                    outputStreamObserver.t.getMessage());
+            try {
+                assertEquals(
+                        "UNKNOWN: java.lang.RuntimeException: unknown exception",
+                        outputStreamObserver.t.getMessage());
+            } catch (Throwable e) {
+                exceptionInThread.set(e);
+            }
         });
         t.start();
 
@@ -136,6 +139,10 @@ public class ServerErrTest {
             t.join();
         } catch (InterruptedException e) {
             fail("Thread got interrupted before test assertion.");
+        }
+        // Fail the test if any exception caught in the thread
+        if (exceptionInThread.get() != null) {
+            fail("Assertion failed in the thread: " + exceptionInThread.get().getMessage());
         }
     }
 }

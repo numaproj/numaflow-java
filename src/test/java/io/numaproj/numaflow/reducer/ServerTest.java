@@ -27,6 +27,7 @@ import java.util.List;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ServerTest {
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
@@ -123,7 +124,8 @@ public class ServerTest {
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
         while (!outputStreamObserver.completed.get()) ;
 
-        assertEquals(1, outputStreamObserver.resultDatum.get().size());
+        // Expect 2 responses, one containing the aggregated data and the other indicating EOF.
+        assertEquals(2, outputStreamObserver.resultDatum.get().size());
         assertEquals(
                 expectedKeys,
                 outputStreamObserver.resultDatum
@@ -139,6 +141,7 @@ public class ServerTest {
                         .get(0)
                         .getResult()
                         .getValue());
+        assertTrue(outputStreamObserver.resultDatum.get().get(1).getEOF());
     }
 
     @Test
@@ -179,10 +182,10 @@ public class ServerTest {
 
         while (!outputStreamObserver.completed.get()) ;
         List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
-        // the outputStreamObserver should have observed keyCount responses, each of which has value 55.
-        assertEquals(keyCount, result.size());
+        // the outputStreamObserver should have observed 2*keyCount responses, because for each key set, one response for the aggregated result, the other for EOF.
+        assertEquals(keyCount * 2, result.size());
         result.forEach(response -> {
-            assertEquals(expectedValue, response.getResult().getValue());
+            assertTrue(response.getResult().getValue().equals(expectedValue) || response.getEOF());
         });
     }
 }

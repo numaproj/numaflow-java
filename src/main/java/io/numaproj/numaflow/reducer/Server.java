@@ -67,7 +67,7 @@ public class Server {
         server.start();
 
         log.info(
-                "(keran-test)Server started, listening on socket path: "
+                "Server started, listening on socket path: "
                         + grpcConfig.getSocketPath());
 
         // register shutdown hook

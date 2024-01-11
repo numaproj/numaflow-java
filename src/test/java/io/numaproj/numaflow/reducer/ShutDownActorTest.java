@@ -44,12 +44,12 @@ public class ShutDownActorTest {
                                 shutdownActor,
                                 new ReduceOutputStreamObserver()));
 
-        ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest.newBuilder()
+        ActorRequest reduceRequest = new ActorRequest(ReduceOuterClass.ReduceRequest.newBuilder()
                 .setPayload(payloadBuilder
                         .addKeys("reduce-test")
                         .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                         .build())
-                .build();
+                .build());
         supervisor.tell(reduceRequest, ActorRef.noSender());
 
         try {

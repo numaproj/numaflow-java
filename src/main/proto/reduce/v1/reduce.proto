@@ -70,6 +70,7 @@ message ReduceResponse {
   Window window = 2;
 
   // EOF represents the end of the response for a window.
+  // When it's set to true, the platform considers the response as an indicator which doesn't contain real data.
   bool EOF = 3;
 }
 

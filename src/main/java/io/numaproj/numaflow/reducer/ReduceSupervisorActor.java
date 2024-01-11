@@ -78,7 +78,7 @@ class ReduceSupervisorActor extends AbstractActor {
     public Receive createReceive() {
         return ReceiveBuilder
                 .create()
-                .match(ReduceOuterClass.ReduceRequest.class, this::invokeActors)
+                .match(ActorRequest.class, this::invokeActors)
                 .match(String.class, this::sendEOF)
                 .match(ActorResponse.class, this::responseListener)
                 .build();
@@ -89,22 +89,18 @@ class ReduceSupervisorActor extends AbstractActor {
         if there is no actor for an incoming set of keys, create a new actor
         track all the child actors using actors map
      */
-    private void invokeActors(ReduceOuterClass.ReduceRequest reduceRequest) {
-        ReduceOuterClass.ReduceRequest.Payload payload = reduceRequest.getPayload();
-        String[] keys = payload.getKeysList().toArray(new String[0]);
-        // TODO - do we need to include window information in the keyStr?
-        // for aligned reducer, there is always single window.
-        // but at the same time, would like to be consistent with GO SDK implementation.
-        String keyStr = String.join(Constants.DELIMITER, keys);
-        if (!actorsMap.containsKey(keyStr)) {
+    private void invokeActors(ActorRequest actorRequest) {
+        String[] keys = actorRequest.getKeySet();
+        String uniqueId = actorRequest.getUniqueIdentifier();
+        if (!actorsMap.containsKey(uniqueId)) {
             Reducer reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
                     .actorOf(ReduceActor.props(keys, md, reduceHandler));
-            actorsMap.put(keyStr, actorRef);
+            actorsMap.put(uniqueId, actorRef);
         }
 
-        HandlerDatum handlerDatum = constructHandlerDatum(payload);
-        actorsMap.get(keyStr).tell(handlerDatum, getSelf());
+        HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getRequest().getPayload());
+        actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
     }
 
     private void sendEOF(String EOF) {
@@ -115,17 +111,6 @@ class ReduceSupervisorActor extends AbstractActor {
 
     // listen to child actors for the result.
     private void responseListener(ActorResponse actorResponse) {
-        // TODO - do we need to include window information for aligned windows?
-        // for aligned reducer, there is always single window.
-        // but at the same time, would like to be consistent with GO SDK implementation.
-        if (actorResponse.getResponse().getEOF()) {
-            actorsMap.remove(String.join(Constants.DELIMITER, actorResponse.getKeys()));
-            if (actorsMap.isEmpty()) {
-                responseObserver.onCompleted();
-                getContext().getSystem().stop(getSelf());
-            }
-            return;
-        }
         /*
             send the result back to the client
             remove the child entry from the map after getting result.
@@ -133,6 +118,14 @@ class ReduceSupervisorActor extends AbstractActor {
             done we can close the stream.
          */
         responseObserver.onNext(actorResponse.getResponse());
+        String uniqueId = actorResponse.getUniqueIdentifier();
+        if (actorResponse.getResponse().getEOF()) {
+            actorsMap.remove(uniqueId);
+            if (actorsMap.isEmpty()) {
+                responseObserver.onCompleted();
+                getContext().getSystem().stop(getSelf());
+            }
+        }
     }
 
     private HandlerDatum constructHandlerDatum(ReduceOuterClass.ReduceRequest.Payload payload) {

@@ -47,7 +47,7 @@ class ReduceActor extends AbstractActor {
         resultMessages.getMessages().forEach(message -> {
             getSender().tell(buildActorResponse(message), getSelf());
         });
-        // send EOF
+        // send a response back with EOF set to true, indicating the reducer has finished the data aggregation.
         getSender().tell(buildEOFActorResponse(), getSelf());
     }
 
@@ -72,7 +72,7 @@ class ReduceActor extends AbstractActor {
                 .addAllTags(
                         message.getTags() == null ? new ArrayList<>():List.of(message.getTags()))
                 .build());
-        return new ActorResponse(this.keys, responseBuilder.build());
+        return new ActorResponse(responseBuilder.build());
     }
 
     private ActorResponse buildEOFActorResponse() {
@@ -86,7 +86,11 @@ class ReduceActor extends AbstractActor {
                         .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
                 .setSlot("slot-0").build());
         responseBuilder.setEOF(true);
-        return new ActorResponse(this.keys, responseBuilder.build());
+        // set a dummy result with the keys.
+        responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
+                .newBuilder()
+                .addAllKeys(List.of(this.keys))
+                .build());
+        return new ActorResponse(responseBuilder.build());
     }
 }
-

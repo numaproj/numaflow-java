@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ReduceSupervisorActorTest {
@@ -37,7 +38,7 @@ public class ReduceSupervisorActorTest {
                         .props(new TestReducerFactory(), md, shutdownActor, outputStreamObserver));
 
         for (int i = 1; i <= 10; i++) {
-            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest
+            ActorRequest reduceRequest = new ActorRequest(ReduceOuterClass.ReduceRequest
                     .newBuilder()
                     .setPayload(ReduceOuterClass.ReduceRequest.Payload
                             .newBuilder()
@@ -45,20 +46,25 @@ public class ReduceSupervisorActorTest {
                             .addAllKeys(Arrays.asList("key-1", "key-2"))
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
-                    .build();
+                    .build());
             supervisor.tell(reduceRequest, ActorRef.noSender());
         }
         supervisor.tell(Constants.EOF, ActorRef.noSender());
 
         try {
             completableFuture.get();
-            assertEquals(1, outputStreamObserver.resultDatum.get().size());
+            // the observer should receive 2 messages, one is the aggregated result, the other is the EOF response.
+            assertEquals(2, outputStreamObserver.resultDatum.get().size());
             assertEquals("10", outputStreamObserver.resultDatum
                     .get()
                     .get(0)
                     .getResult()
                     .getValue()
                     .toStringUtf8());
+            assertEquals(true, outputStreamObserver.resultDatum
+                    .get()
+                    .get(1)
+                    .getEOF());
         } catch (InterruptedException | ExecutionException e) {
             fail("Expected the future to complete without exception");
         }
@@ -87,7 +93,7 @@ public class ReduceSupervisorActorTest {
                 );
 
         for (int i = 1; i <= 10; i++) {
-            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest
+            ActorRequest reduceRequest = new ActorRequest(ReduceOuterClass.ReduceRequest
                     .newBuilder()
                     .setPayload(ReduceOuterClass.ReduceRequest.Payload
                             .newBuilder()
@@ -95,22 +101,21 @@ public class ReduceSupervisorActorTest {
                             .addAllKeys(Arrays.asList("shared-key", "unique-key-" + i))
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
-                    .build();
+                    .build());
             supervisor.tell(reduceRequest, ActorRef.noSender());
         }
 
         supervisor.tell(Constants.EOF, ActorRef.noSender());
         try {
             completableFuture.get();
-            // the outputStreamObserver should get updated 10 times, each time with value 1.
-            assertEquals(10, outputStreamObserver.resultDatum.get().size());
-            for (int i = 0; i < 10; i++) {
-                assertEquals("1", outputStreamObserver.resultDatum
+            // each reduce request generates two reduce response, one containing the data and the other one indicating EOF.
+            assertEquals(20, outputStreamObserver.resultDatum.get().size());
+            for (int i = 0; i < 20; i++) {
+                ReduceOuterClass.ReduceResponse response = outputStreamObserver.resultDatum
                         .get()
-                        .get(i)
-                        .getResult()
-                        .getValue()
-                        .toStringUtf8());
+                        .get(i);
+                assertTrue(response.getResult().getValue().toStringUtf8().equals("1")
+                        || response.getEOF());
             }
         } catch (InterruptedException | ExecutionException e) {
             fail("Expected the future to complete without exception");

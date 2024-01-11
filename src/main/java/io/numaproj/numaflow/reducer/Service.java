@@ -94,7 +94,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
             public void onNext(ReduceOuterClass.ReduceRequest datum) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
-                    supervisorActor.tell(datum, ActorRef.noSender());
+                    supervisorActor.tell(new ActorRequest(datum), ActorRef.noSender());
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }
