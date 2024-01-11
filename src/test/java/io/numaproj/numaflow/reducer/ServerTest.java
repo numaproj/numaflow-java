@@ -17,7 +17,6 @@ import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -27,6 +26,7 @@ import java.util.List;
 
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
+import static org.junit.Assert.assertEquals;
 
 public class ServerTest {
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
@@ -123,8 +123,8 @@ public class ServerTest {
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
         while (!outputStreamObserver.completed.get()) ;
 
-        Assert.assertEquals(1, outputStreamObserver.resultDatum.get().size());
-        Assert.assertEquals(
+        assertEquals(1, outputStreamObserver.resultDatum.get().size());
+        assertEquals(
                 expectedKeys,
                 outputStreamObserver.resultDatum
                         .get()
@@ -132,7 +132,7 @@ public class ServerTest {
                         .getResult()
                         .getKeysList()
                         .toArray(new String[0]));
-        Assert.assertEquals(
+        assertEquals(
                 expectedValue,
                 outputStreamObserver.resultDatum
                         .get()
@@ -180,9 +180,9 @@ public class ServerTest {
         while (!outputStreamObserver.completed.get()) ;
         List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
         // the outputStreamObserver should have observed keyCount responses, each of which has value 55.
-        Assert.assertEquals(keyCount, result.size());
+        assertEquals(keyCount, result.size());
         result.forEach(response -> {
-            Assert.assertEquals(expectedValue, response.getResult().getValue());
+            assertEquals(expectedValue, response.getResult().getValue());
         });
     }
 }

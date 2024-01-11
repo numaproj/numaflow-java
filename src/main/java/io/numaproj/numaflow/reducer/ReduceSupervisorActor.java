@@ -93,6 +93,8 @@ class ReduceSupervisorActor extends AbstractActor {
         ReduceOuterClass.ReduceRequest.Payload payload = reduceRequest.getPayload();
         String[] keys = payload.getKeysList().toArray(new String[0]);
         // TODO - do we need to include window information in the keyStr?
+        // for aligned reducer, there is always single window.
+        // but at the same time, would like to be consistent with GO SDK implementation.
         String keyStr = String.join(Constants.DELIMITER, keys);
         if (!actorsMap.containsKey(keyStr)) {
             Reducer reduceHandler = reducerFactory.createReducer();
@@ -122,6 +124,8 @@ class ReduceSupervisorActor extends AbstractActor {
 
         responseObserver.onNext(actorResponse.getResponse());
         // TODO - do we need to include window information for aligned windows?
+        // for aligned reducer, there is always single window.
+        // but at the same time, would like to be consistent with GO SDK implementation.
         actorsMap.remove(String.join(Constants.DELIMITER, actorResponse.getKeys()));
         if (actorsMap.isEmpty()) {
             responseObserver.onCompleted();
