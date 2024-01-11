@@ -47,6 +47,8 @@ class ReduceActor extends AbstractActor {
         resultMessages.getMessages().forEach(message -> {
             getSender().tell(buildActorResponse(message), getSelf());
         });
+        // send EOF
+        getSender().tell(buildEOFActorResponse(), getSelf());
     }
 
     private ActorResponse buildActorResponse(Message message) {
@@ -60,8 +62,7 @@ class ReduceActor extends AbstractActor {
                         .setSeconds(this.md.getIntervalWindow().getEndTime().getEpochSecond())
                         .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
                 .setSlot("slot-0").build());
-        // if we start building the response, it means we already reached EOF.
-        responseBuilder.setEOF(true);
+        responseBuilder.setEOF(false);
         // set the result.
         responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
                 .newBuilder()
@@ -71,6 +72,20 @@ class ReduceActor extends AbstractActor {
                 .addAllTags(
                         message.getTags() == null ? new ArrayList<>():List.of(message.getTags()))
                 .build());
+        return new ActorResponse(this.keys, responseBuilder.build());
+    }
+
+    private ActorResponse buildEOFActorResponse() {
+        ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
+        responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
+                .setStart(Timestamp.newBuilder()
+                        .setSeconds(this.md.getIntervalWindow().getStartTime().getEpochSecond())
+                        .setNanos(this.md.getIntervalWindow().getStartTime().getNano()))
+                .setEnd(Timestamp.newBuilder()
+                        .setSeconds(this.md.getIntervalWindow().getEndTime().getEpochSecond())
+                        .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
+                .setSlot("slot-0").build());
+        responseBuilder.setEOF(true);
         return new ActorResponse(this.keys, responseBuilder.build());
     }
 }
