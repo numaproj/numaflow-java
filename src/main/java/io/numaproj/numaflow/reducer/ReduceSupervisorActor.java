@@ -118,9 +118,8 @@ class ReduceSupervisorActor extends AbstractActor {
             done we can close the stream.
          */
         responseObserver.onNext(actorResponse.getResponse());
-        String uniqueId = actorResponse.getUniqueIdentifier();
         if (actorResponse.getResponse().getEOF()) {
-            actorsMap.remove(uniqueId);
+            actorsMap.remove(actorResponse.getUniqueIdentifier());
             if (actorsMap.isEmpty()) {
                 responseObserver.onCompleted();
                 getContext().getSystem().stop(getSelf());
