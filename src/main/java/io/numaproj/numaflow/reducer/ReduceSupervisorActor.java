@@ -22,7 +22,6 @@ import java.util.Optional;
 /**
  * ReduceSupervisorActor actor distributes the messages to actors and handles failure.
  */
-
 @Slf4j
 class ReduceSupervisorActor extends AbstractActor {
     private final ReducerFactory<? extends Reducer> reducerFactory;
@@ -79,7 +78,7 @@ class ReduceSupervisorActor extends AbstractActor {
     public Receive createReceive() {
         return ReceiveBuilder
                 .create()
-                .match(ReduceOuterClass.ReduceRequest.class, this::invokeActors)
+                .match(ActorRequest.class, this::invokeActors)
                 .match(String.class, this::sendEOF)
                 .match(ActorResponse.class, this::responseListener)
                 .build();
@@ -90,19 +89,18 @@ class ReduceSupervisorActor extends AbstractActor {
         if there is no actor for an incoming set of keys, create a new actor
         track all the child actors using actors map
      */
-    private void invokeActors(ReduceOuterClass.ReduceRequest datumRequest) {
-        String[] keys = datumRequest.getKeysList().toArray(new String[0]);
-        String keyStr = String.join(Constants.DELIMITER, keys);
-        if (!actorsMap.containsKey(keyStr)) {
+    private void invokeActors(ActorRequest actorRequest) {
+        String[] keys = actorRequest.getKeySet();
+        String uniqueId = actorRequest.getUniqueIdentifier();
+        if (!actorsMap.containsKey(uniqueId)) {
             Reducer reduceHandler = reducerFactory.createReducer();
             ActorRef actorRef = getContext()
                     .actorOf(ReduceActor.props(keys, md, reduceHandler));
-
-            actorsMap.put(keyStr, actorRef);
+            actorsMap.put(uniqueId, actorRef);
         }
 
-        HandlerDatum handlerDatum = constructHandlerDatum(datumRequest);
-        actorsMap.get(keyStr).tell(handlerDatum, getSelf());
+        HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getRequest().getPayload());
+        actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
     }
 
     private void sendEOF(String EOF) {
@@ -119,24 +117,25 @@ class ReduceSupervisorActor extends AbstractActor {
             if there are no entries in the map, that means processing is
             done we can close the stream.
          */
-
         responseObserver.onNext(actorResponse.getResponse());
-        actorsMap.remove(String.join(Constants.DELIMITER, actorResponse.getKeys()));
-        if (actorsMap.isEmpty()) {
-            responseObserver.onCompleted();
-            getContext().getSystem().stop(getSelf());
+        if (actorResponse.getResponse().getEOF()) {
+            actorsMap.remove(actorResponse.getUniqueIdentifier());
+            if (actorsMap.isEmpty()) {
+                responseObserver.onCompleted();
+                getContext().getSystem().stop(getSelf());
+            }
         }
     }
 
-    private HandlerDatum constructHandlerDatum(ReduceOuterClass.ReduceRequest datumRequest) {
+    private HandlerDatum constructHandlerDatum(ReduceOuterClass.ReduceRequest.Payload payload) {
         return new HandlerDatum(
-                datumRequest.getValue().toByteArray(),
+                payload.getValue().toByteArray(),
                 Instant.ofEpochSecond(
-                        datumRequest.getWatermark().getSeconds(),
-                        datumRequest.getWatermark().getNanos()),
+                        payload.getWatermark().getSeconds(),
+                        payload.getWatermark().getNanos()),
                 Instant.ofEpochSecond(
-                        datumRequest.getEventTime().getSeconds(),
-                        datumRequest.getEventTime().getNanos())
+                        payload.getEventTime().getSeconds(),
+                        payload.getEventTime().getNanos())
         );
     }
 

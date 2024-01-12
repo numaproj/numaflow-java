@@ -21,14 +21,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ServerErrTest {
-
-
     public static final Metadata.Key<String> DATUM_METADATA_WIN_START = io.grpc.Metadata.Key.of(
             WIN_START_KEY,
             Metadata.ASCII_STRING_MARSHALLER);
@@ -42,7 +42,6 @@ public class ServerErrTest {
 
     @Before
     public void setUp() throws Exception {
-
         ServerInterceptor interceptor = new ServerInterceptor() {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
@@ -89,27 +88,32 @@ public class ServerErrTest {
     }
 
     @Test
-    public void TestReducerErr() {
-        String reduceKey = "reduce-key";
-
+    public void given_reducerThrows_when_serverRuns_then_outputStreamContainsThrowable() {
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
         metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
 
-        //create an output stream observer
+        // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+        // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
+        // the test can still succeed.
+        AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
 
         Thread t = new Thread(() -> {
             while (outputStreamObserver.t == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    exceptionInThread.set(e);
                 }
             }
-            assertEquals(
-                    "UNKNOWN: java.lang.RuntimeException: unknown exception",
-                    outputStreamObserver.t.getMessage());
+            try {
+                assertEquals(
+                        "UNKNOWN: java.lang.RuntimeException: unknown exception",
+                        outputStreamObserver.t.getMessage());
+            } catch (Throwable e) {
+                exceptionInThread.set(e);
+            }
         });
         t.start();
 
@@ -121,8 +125,11 @@ public class ServerErrTest {
         for (int i = 1; i <= 10; i++) {
             ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest
                     .newBuilder()
-                    .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                    .addKeys(reduceKey)
+                    .setPayload(ReduceOuterClass.ReduceRequest.Payload
+                            .newBuilder()
+                            .addKeys("reduce-key")
+                            .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
+                            .build())
                     .build();
             inputStreamObserver.onNext(reduceRequest);
         }
@@ -132,7 +139,11 @@ public class ServerErrTest {
         try {
             t.join();
         } catch (InterruptedException e) {
-            fail("Thread interrupted");
+            fail("Thread got interrupted before test assertion.");
+        }
+        // Fail the test if any exception caught in the thread
+        if (exceptionInThread.get() != null) {
+            fail("Assertion failed in the thread: " + exceptionInThread.get().getMessage());
         }
     }
 }

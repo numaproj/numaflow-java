@@ -5,12 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * ActorResponse is to store the response from ReduceActors.
+ * ActorRequest is to store the request sent to ReduceActors.
  */
 @Getter
 @AllArgsConstructor
-class ActorResponse {
-    ReduceOuterClass.ReduceResponse response;
+class ActorRequest {
+    ReduceOuterClass.ReduceRequest request;
 
     // TODO - do we need to include window information in the id?
     // for aligned reducer, there is always single window.
@@ -19,6 +19,10 @@ class ActorResponse {
     public String getUniqueIdentifier() {
         return String.join(
                 Constants.DELIMITER,
-                this.getResponse().getResult().getKeysList().toArray(new String[0]));
+                this.getRequest().getPayload().getKeysList().toArray(new String[0]));
+    }
+    
+    public String[] getKeySet() {
+        return this.getRequest().getPayload().getKeysList().toArray(new String[0]);
     }
 }
