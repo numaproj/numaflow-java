@@ -89,12 +89,12 @@ class Service extends ReduceGrpc.ReduceImplBase {
                         responseObserver));
 
 
-        return new StreamObserver<ReduceOuterClass.ReduceRequest>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(ReduceOuterClass.ReduceRequest datum) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
-                    supervisorActor.tell(datum, ActorRef.noSender());
+                    supervisorActor.tell(new ActorRequest(datum), ActorRef.noSender());
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }
@@ -110,7 +110,6 @@ class Service extends ReduceGrpc.ReduceImplBase {
             public void onCompleted() {
                 // indicate the end of input to the supervisor
                 supervisorActor.tell(Constants.EOF, ActorRef.noSender());
-
             }
         };
     }

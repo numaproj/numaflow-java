@@ -22,11 +22,12 @@ public class ShutDownActorTest {
     @Test
     public void testFailure() {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
-        CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         String reduceKey = "reduce-key";
-        ReduceOuterClass.ReduceRequest.Builder requestBuilder = ReduceOuterClass.ReduceRequest.
-                newBuilder().addKeys(reduceKey);
+        ReduceOuterClass.ReduceRequest.Payload.Builder payloadBuilder = ReduceOuterClass.ReduceRequest.Payload
+                .newBuilder()
+                .addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ReduceShutdownActor
@@ -43,10 +44,12 @@ public class ShutDownActorTest {
                                 shutdownActor,
                                 new ReduceOutputStreamObserver()));
 
-        ReduceOuterClass.ReduceRequest reduceRequest = requestBuilder
-                .addKeys("reduce-test")
-                .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
-                .build();
+        ActorRequest reduceRequest = new ActorRequest(ReduceOuterClass.ReduceRequest.newBuilder()
+                .setPayload(payloadBuilder
+                        .addKeys("reduce-test")
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                        .build())
+                .build());
         supervisor.tell(reduceRequest, ActorRef.noSender());
 
         try {
