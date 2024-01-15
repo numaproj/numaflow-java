@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.reducestreamer;
+package io.numaproj.numaflow.reducestreamer.model;
 
 /**
  * Metadata contains methods to get the metadata for the reduce operation.

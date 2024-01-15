@@ -1,7 +1,5 @@
-package io.numaproj.numaflow.reducestreamer.metadata;
+package io.numaproj.numaflow.reducestreamer.model;
 
-import io.numaproj.numaflow.reducestreamer.IntervalWindow;
-import io.numaproj.numaflow.reducestreamer.Metadata;
 import lombok.AllArgsConstructor;
 
 /**

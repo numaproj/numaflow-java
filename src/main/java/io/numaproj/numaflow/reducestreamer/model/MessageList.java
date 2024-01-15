@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.reducestreamer;
+package io.numaproj.numaflow.reducestreamer.model;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * ActorRequest is to store the request sent to ReduceActors.
+ * ActorRequest is to store the request sent to ReduceStreamActors.
  */
 @Getter
 @AllArgsConstructor

@@ -6,10 +6,11 @@ import lombok.Getter;
 
 /**
  * ActorResponse is to store the response from ReduceActors.
+ * TODO - not required. Remove
  */
 @Getter
 @AllArgsConstructor
-class ActorResponse {
+class ActorEOFResponse {
     ReduceOuterClass.ReduceResponse response;
 
     // TODO - do we need to include window information in the id?

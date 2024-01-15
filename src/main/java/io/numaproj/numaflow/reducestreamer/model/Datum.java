@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.reducestreamer;
+package io.numaproj.numaflow.reducestreamer.model;
 
 import java.time.Instant;
 
@@ -12,19 +12,19 @@ public interface Datum {
      *
      * @return returns the payload value in byte array
      */
-    public byte[] getValue();
+    byte[] getValue();
 
     /**
      * method to get the event time of the payload
      *
      * @return returns the event time of the payload
      */
-    public Instant getEventTime();
+    Instant getEventTime();
 
     /**
      * method to get the watermark information
      *
      * @return returns the watermark
      */
-    public Instant getWatermark();
+    Instant getWatermark();
 }

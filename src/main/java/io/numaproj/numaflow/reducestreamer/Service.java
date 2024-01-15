@@ -8,8 +8,12 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducestreamer.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.reducestreamer.metadata.MetadataImpl;
+import io.numaproj.numaflow.reducestreamer.model.IntervalWindow;
+import io.numaproj.numaflow.reducestreamer.model.IntervalWindowImpl;
+import io.numaproj.numaflow.reducestreamer.model.Metadata;
+import io.numaproj.numaflow.reducestreamer.model.MetadataImpl;
+import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,12 +25,12 @@ import static io.numaproj.numaflow.reduce.v1.ReduceGrpc.getReduceFnMethod;
 @Slf4j
 class Service extends ReduceGrpc.ReduceImplBase {
 
-    public static final ActorSystem reduceActorSystem = ActorSystem.create("reduce");
+    public static final ActorSystem reduceActorSystem = ActorSystem.create("reducestream");
 
-    private ReducerFactory<? extends Reducer> reducerFactory;
+    private ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
 
-    public Service(ReducerFactory<? extends Reducer> reducerFactory) {
-        this.reducerFactory = reducerFactory;
+    public Service(ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory) {
+        this.reduceStreamerFactory = reduceStreamerFactory;
     }
 
     static void handleFailure(
@@ -49,7 +53,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
     @Override
     public StreamObserver<ReduceOuterClass.ReduceRequest> reduceFn(final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
 
-        if (this.reducerFactory == null) {
+        if (this.reduceStreamerFactory == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
                     responseObserver);
@@ -83,7 +87,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
         */
         ActorRef supervisorActor = reduceActorSystem
                 .actorOf(ReduceSupervisorActor.props(
-                        reducerFactory,
+                        reduceStreamerFactory,
                         md,
                         shutdownActorRef,
                         responseObserver));

@@ -5,13 +5,15 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
+import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Server is the gRPC server for executing reduce operation.
+ * Server is the gRPC server for executing reduce stream operation.
  */
 @Slf4j
 public class Server {
@@ -24,20 +26,22 @@ public class Server {
     /**
      * constructor to create gRPC server.
      *
-     * @param reducerFactory to process the message
+     * @param reduceStreamerFactory to process the message
      */
-    public Server(ReducerFactory<? extends Reducer> reducerFactory) {
-        this(reducerFactory, GRPCConfig.defaultGrpcConfig());
+    public Server(ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory) {
+        this(reduceStreamerFactory, GRPCConfig.defaultGrpcConfig());
     }
 
     /**
      * constructor to create gRPC server with gRPC config.
      *
      * @param grpcConfig to configure the max message size for grpc
-     * @param reducerFactory to process the message
+     * @param reduceStreamerFactory to process the message
      */
-    public Server(ReducerFactory<? extends Reducer> reducerFactory, GRPCConfig grpcConfig) {
-        this.service = new Service(reducerFactory);
+    public Server(
+            ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
+            GRPCConfig grpcConfig) {
+        this.service = new Service(reduceStreamerFactory);
         this.grpcConfig = grpcConfig;
     }
 

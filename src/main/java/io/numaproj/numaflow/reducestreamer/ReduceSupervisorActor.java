@@ -10,6 +10,10 @@ import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.reducestreamer.model.HandlerDatum;
+import io.numaproj.numaflow.reducestreamer.model.Metadata;
+import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
 import scala.collection.Iterable;
@@ -24,31 +28,31 @@ import java.util.Optional;
  */
 @Slf4j
 class ReduceSupervisorActor extends AbstractActor {
-    private final ReducerFactory<? extends Reducer> reducerFactory;
+    private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
     private final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
     public ReduceSupervisorActor(
-            ReducerFactory<? extends Reducer> reducerFactory,
+            ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
-        this.reducerFactory = reducerFactory;
+        this.reduceStreamerFactory = reduceStreamerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
         this.responseObserver = responseObserver;
     }
 
     public static Props props(
-            ReducerFactory<? extends Reducer> reducerFactory,
+            ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
         return Props.create(
                 ReduceSupervisorActor.class,
-                reducerFactory,
+                reduceStreamerFactory,
                 md,
                 shutdownActor,
                 responseObserver);
@@ -80,7 +84,7 @@ class ReduceSupervisorActor extends AbstractActor {
                 .create()
                 .match(ActorRequest.class, this::invokeActors)
                 .match(String.class, this::sendEOF)
-                .match(ActorResponse.class, this::responseListener)
+                .match(ActorEOFResponse.class, this::eofResponseListener)
                 .build();
     }
 
@@ -93,9 +97,13 @@ class ReduceSupervisorActor extends AbstractActor {
         String[] keys = actorRequest.getKeySet();
         String uniqueId = actorRequest.getUniqueIdentifier();
         if (!actorsMap.containsKey(uniqueId)) {
-            Reducer reduceHandler = reducerFactory.createReducer();
+            ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
             ActorRef actorRef = getContext()
-                    .actorOf(ReduceActor.props(keys, md, reduceHandler));
+                    .actorOf(ReduceStreamerActor.props(
+                            keys,
+                            md,
+                            reduceStreamerHandler,
+                            responseObserver));
             actorsMap.put(uniqueId, actorRef);
         }
 
@@ -110,20 +118,18 @@ class ReduceSupervisorActor extends AbstractActor {
     }
 
     // listen to child actors for the result.
-    private void responseListener(ActorResponse actorResponse) {
+    private void eofResponseListener(ActorEOFResponse actorEOFResponse) {
         /*
             send the result back to the client
             remove the child entry from the map after getting result.
             if there are no entries in the map, that means processing is
             done we can close the stream.
          */
-        responseObserver.onNext(actorResponse.getResponse());
-        if (actorResponse.getResponse().getEOF()) {
-            actorsMap.remove(actorResponse.getUniqueIdentifier());
-            if (actorsMap.isEmpty()) {
-                responseObserver.onCompleted();
-                getContext().getSystem().stop(getSelf());
-            }
+        responseObserver.onNext(actorEOFResponse.getResponse());
+        actorsMap.remove(actorEOFResponse.getUniqueIdentifier());
+        if (actorsMap.isEmpty()) {
+            responseObserver.onCompleted();
+            getContext().getSystem().stop(getSelf());
         }
     }
 
