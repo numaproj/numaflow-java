@@ -3,7 +3,7 @@ package io.numaproj.numaflow.reducestreamer.user;
 import io.numaproj.numaflow.reducestreamer.model.Message;
 
 /**
- * OutputObserver receives messages from the MapStreamer.
+ * OutputObserver receives messages from the ReduceStreamer.
  */
 public interface OutputStreamObserver {
     /**

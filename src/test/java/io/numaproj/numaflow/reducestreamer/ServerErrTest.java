@@ -151,13 +151,13 @@ public class ServerErrTest {
         }
     }
 
-    public static class ReduceStreamerErrTestFactory extends ReduceStreamerFactory<ServerErrTest.ReduceStreamerErrTestFactory.TestReduceHandler> {
+    public static class ReduceStreamerErrTestFactory extends ReduceStreamerFactory<ServerErrTest.ReduceStreamerErrTestFactory.TestReduceStreamHandler> {
         @Override
-        public TestReduceHandler createReduceStreamer() {
-            return new ServerErrTest.ReduceStreamerErrTestFactory.TestReduceHandler();
+        public TestReduceStreamHandler createReduceStreamer() {
+            return new ServerErrTest.ReduceStreamerErrTestFactory.TestReduceStreamHandler();
         }
 
-        public static class TestReduceHandler extends ReduceStreamer {
+        public static class TestReduceStreamHandler extends ReduceStreamer {
             @Override
             public void processMessage(
                     String[] keys,
@@ -165,6 +165,14 @@ public class ServerErrTest {
                     OutputStreamObserver outputStream,
                     io.numaproj.numaflow.reducestreamer.model.Metadata md) {
                 throw new RuntimeException("unknown exception");
+            }
+
+            @Override
+            public void handleEndOfStream(
+                    String[] keys,
+                    OutputStreamObserver outputStreamObserver,
+                    io.numaproj.numaflow.reducestreamer.model.Metadata md) {
+
             }
         }
     }

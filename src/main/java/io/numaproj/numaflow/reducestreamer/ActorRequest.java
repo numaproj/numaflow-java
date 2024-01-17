@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * ActorRequest is to store the request sent to ReduceStreamActors.
+ * ActorRequest is a wrapper of the gRpc input request.
+ * It is constructed by the service when service receives an input request and then sent to
+ * the supervisor actor.
  */
 @Getter
 @AllArgsConstructor

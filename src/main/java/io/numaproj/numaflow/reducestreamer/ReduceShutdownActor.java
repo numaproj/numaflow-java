@@ -13,8 +13,6 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Shutdown actor, listens to exceptions and handles shutdown.
  */
-
-
 @Slf4j
 @AllArgsConstructor
 class ReduceShutdownActor extends AbstractActor {

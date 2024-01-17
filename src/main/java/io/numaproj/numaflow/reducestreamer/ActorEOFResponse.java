@@ -5,8 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * ActorResponse is to store the response from ReduceActors.
- * TODO - not required. Remove
+ * ActorEOFResponse is to store the EOF signal from a ReduceStreamerActor.
+ * ReduceStreamerActor sends it back to the supervisor actor to indicate that
+ * the streamer actor itself has finished processing the data and is ready to be
+ * released.
  */
 @Getter
 @AllArgsConstructor

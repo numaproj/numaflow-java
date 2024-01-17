@@ -111,7 +111,7 @@ public class ServerTest {
                 .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 11; i++) {
             ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest.newBuilder()
                     .setPayload(ReduceOuterClass.ReduceRequest.Payload
                             .newBuilder()
@@ -126,11 +126,13 @@ public class ServerTest {
 
         String[] expectedKeys = new String[]{reduceKey + REDUCE_PROCESSED_KEY_SUFFIX};
         // sum of first 10 numbers 1 to 10 -> 55
-        ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
+        ByteString expectedFirstResponse = ByteString.copyFromUtf8(String.valueOf(55));
+        // after the sum reaches 55, the test reducer reset the sum, hence when EOF is sent from input stream, the sum is 11 and gets sent to output stream.
+        ByteString expectedSecondResponse = ByteString.copyFromUtf8(String.valueOf(11));
         while (!outputStreamObserver.completed.get()) ;
 
         // Expect 2 responses, one containing the aggregated data and the other indicating EOF.
-        assertEquals(2, outputStreamObserver.resultDatum.get().size());
+        assertEquals(3, outputStreamObserver.resultDatum.get().size());
         assertEquals(
                 expectedKeys,
                 outputStreamObserver.resultDatum
@@ -140,13 +142,28 @@ public class ServerTest {
                         .getKeysList()
                         .toArray(new String[0]));
         assertEquals(
-                expectedValue,
+                expectedFirstResponse,
                 outputStreamObserver.resultDatum
                         .get()
                         .get(0)
                         .getResult()
                         .getValue());
-        assertTrue(outputStreamObserver.resultDatum.get().get(1).getEOF());
+        assertEquals(
+                expectedKeys,
+                outputStreamObserver.resultDatum
+                        .get()
+                        .get(1)
+                        .getResult()
+                        .getKeysList()
+                        .toArray(new String[0]));
+        assertEquals(
+                expectedSecondResponse,
+                outputStreamObserver.resultDatum
+                        .get()
+                        .get(1)
+                        .getResult()
+                        .getValue());
+        assertTrue(outputStreamObserver.resultDatum.get().get(2).getEOF());
     }
 
     @Test
@@ -168,7 +185,7 @@ public class ServerTest {
 
         // send messages with keyCount different keys
         for (int j = 0; j < keyCount; j++) {
-            for (int i = 1; i <= 10; i++) {
+            for (int i = 1; i <= 11; i++) {
                 ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
                         .newBuilder()
                         .setPayload(ReduceOuterClass.ReduceRequest.Payload.newBuilder()
@@ -183,31 +200,36 @@ public class ServerTest {
         inputStreamObserver.onCompleted();
 
         // sum of first 10 numbers 1 to 10 -> 55
-        ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
+        ByteString expectedFirstResponse = ByteString.copyFromUtf8(String.valueOf(55));
+        // after the sum reaches 55, the test reducer reset the sum, hence when EOF is sent from input stream, the sum is 11 and gets sent to output stream.
+        ByteString expectedSecondResponse = ByteString.copyFromUtf8(String.valueOf(11));
 
         while (!outputStreamObserver.completed.get()) ;
         List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
-        // the outputStreamObserver should have observed 2*keyCount responses, because for each key set, one response for the aggregated result, the other for EOF.
-        assertEquals(keyCount * 2, result.size());
+        // the outputStreamObserver should have observed 3*keyCount responses, 2 with real output sum data, one as EOF.
+        assertEquals(keyCount * 3, result.size());
         result.forEach(response -> {
-            assertTrue(response.getResult().getValue().equals(expectedValue) || response.getEOF());
+            assertTrue(response.getResult().getValue().equals(expectedFirstResponse) ||
+                    response.getResult().getValue().equals(expectedSecondResponse)
+                    || response.getEOF());
+
         });
     }
 
-    public static class ReduceStreamerTestFactory extends ReduceStreamerFactory<ServerTest.ReduceStreamerTestFactory.TestReduceHandler> {
+    public static class ReduceStreamerTestFactory extends ReduceStreamerFactory<ServerTest.ReduceStreamerTestFactory.TestReduceStreamHandler> {
         @Override
-        public ServerTest.ReduceStreamerTestFactory.TestReduceHandler createReduceStreamer() {
-            return new ServerTest.ReduceStreamerTestFactory.TestReduceHandler();
+        public ServerTest.ReduceStreamerTestFactory.TestReduceStreamHandler createReduceStreamer() {
+            return new ServerTest.ReduceStreamerTestFactory.TestReduceStreamHandler();
         }
 
-        public static class TestReduceHandler extends ReduceStreamer {
+        public static class TestReduceStreamHandler extends ReduceStreamer {
             private int sum = 0;
 
             @Override
             public void processMessage(
                     String[] keys,
                     Datum datum,
-                    OutputStreamObserver outputStream,
+                    OutputStreamObserver outputStreamObserver,
                     io.numaproj.numaflow.reducestreamer.model.Metadata md) {
                 sum += Integer.parseInt(new String(datum.getValue()));
                 if (sum > 50) {
@@ -216,8 +238,23 @@ public class ServerTest {
                             .map(c -> c + "-processed")
                             .toArray(String[]::new);
                     Message message = new Message(String.valueOf(sum).getBytes(), updatedKeys);
-                    outputStream.send(message);
+                    outputStreamObserver.send(message);
+                    // reset sum
+                    sum = 0;
                 }
+            }
+
+            @Override
+            public void handleEndOfStream(
+                    String[] keys,
+                    OutputStreamObserver outputStreamObserver,
+                    io.numaproj.numaflow.reducestreamer.model.Metadata md) {
+                String[] updatedKeys = Arrays
+                        .stream(keys)
+                        .map(c -> c + "-processed")
+                        .toArray(String[]::new);
+                Message message = new Message(String.valueOf(sum).getBytes(), updatedKeys);
+                outputStreamObserver.send(message);
             }
         }
     }

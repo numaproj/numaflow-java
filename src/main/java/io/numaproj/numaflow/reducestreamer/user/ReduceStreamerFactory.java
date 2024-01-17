@@ -2,9 +2,7 @@ package io.numaproj.numaflow.reducestreamer.user;
 
 
 /**
- * ReducerFactory is the factory for Reducer.
- * <p>
- * TODO - do we need this?
+ * ReduceStreamerFactory is the factory for ReduceStreamer.
  */
 
 public abstract class ReduceStreamerFactory<ReduceStreamerT extends ReduceStreamer> {

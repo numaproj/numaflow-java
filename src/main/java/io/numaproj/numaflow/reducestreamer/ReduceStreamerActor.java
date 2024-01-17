@@ -17,9 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 /**
- * Reduce stream actor invokes the reducer and returns the result.
+ * Reduce stream actor invokes user defined functions to handle reduce request.
+ * When receiving an input request, it invokes the processMessage to handle the datum.
+ * When receiving an EOF signal from the supervisor, it invokes the handleEndOfStream to execute
+ * the user-defined end of stream processing logics.
  */
-
 @Slf4j
 @AllArgsConstructor
 public class ReduceStreamerActor extends AbstractActor {
@@ -53,6 +55,7 @@ public class ReduceStreamerActor extends AbstractActor {
     }
 
     private void sendEOF(String EOF) {
+        this.groupBy.handleEndOfStream(keys, outputStream, md);
         getSender().tell(buildEOFResponse(), getSelf());
     }
 

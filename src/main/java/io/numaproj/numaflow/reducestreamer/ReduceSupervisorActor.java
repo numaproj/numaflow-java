@@ -98,6 +98,7 @@ class ReduceSupervisorActor extends AbstractActor {
         String uniqueId = actorRequest.getUniqueIdentifier();
         if (!actorsMap.containsKey(uniqueId)) {
             ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
+            // FIXME - the responseObserver is NOT thread-safe but multiple actors are sharing it.
             ActorRef actorRef = getContext()
                     .actorOf(ReduceStreamerActor.props(
                             keys,
