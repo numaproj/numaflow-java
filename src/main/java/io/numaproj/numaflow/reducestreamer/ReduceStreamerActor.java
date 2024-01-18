@@ -1,10 +1,10 @@
 package io.numaproj.numaflow.reducestreamer;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.Timestamp;
-import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducestreamer.model.HandlerDatum;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
@@ -31,14 +31,13 @@ public class ReduceStreamerActor extends AbstractActor {
     private OutputStreamObserver outputStream;
 
     public static Props props(
-            String[] keys, Metadata md, ReduceStreamer groupBy,
-            StreamObserver<ReduceOuterClass.ReduceResponse> responseStreamObserver) {
+            String[] keys, Metadata md, ReduceStreamer groupBy, ActorRef responseStreamActor) {
         return Props.create(
                 ReduceStreamerActor.class,
                 keys,
                 md,
                 groupBy,
-                new OutputStreamObserverImpl(md, responseStreamObserver));
+                new OutputStreamObserverImpl(responseStreamActor));
     }
 
     @Override
@@ -55,11 +54,13 @@ public class ReduceStreamerActor extends AbstractActor {
     }
 
     private void sendEOF(String EOF) {
+        // constructing final responses based on the messages processed so far and sending them out.
         this.groupBy.handleEndOfStream(keys, outputStream, md);
+        // constructing an EOF response and sending it back to the supervisor actor.
         getSender().tell(buildEOFResponse(), getSelf());
     }
 
-    private ActorEOFResponse buildEOFResponse() {
+    private ActorResponse buildEOFResponse() {
         ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
         responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
                 .setStart(Timestamp.newBuilder()
@@ -75,6 +76,6 @@ public class ReduceStreamerActor extends AbstractActor {
                 .newBuilder()
                 .addAllKeys(List.of(this.keys))
                 .build());
-        return new ActorEOFResponse(responseBuilder.build());
+        return new ActorResponse(responseBuilder.build(), ActorResponseType.EOF_RESPONSE);
     }
 }

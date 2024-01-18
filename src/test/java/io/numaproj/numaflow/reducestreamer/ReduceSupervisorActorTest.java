@@ -36,7 +36,10 @@ public class ReduceSupervisorActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
-        io.numaproj.numaflow.reducer.ReduceOutputStreamObserver outputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
+        io.numaproj.numaflow.reducer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
+
+        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+                .props(reduceOutputStreamObserver, md));
 
         ActorRef supervisor = actorSystem
                 .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
@@ -44,7 +47,8 @@ public class ReduceSupervisorActorTest {
                                 new TestReduceStreamerFactory(),
                                 md,
                                 shutdownActor,
-                                outputStreamObserver));
+                                responseStreamActor,
+                                reduceOutputStreamObserver));
 
         for (int i = 1; i <= 10; i++) {
             io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
@@ -64,14 +68,14 @@ public class ReduceSupervisorActorTest {
         try {
             completableFuture.get();
             // the observer should receive 2 messages, one is the aggregated result, the other is the EOF response.
-            assertEquals(2, outputStreamObserver.resultDatum.get().size());
-            assertEquals("10", outputStreamObserver.resultDatum
+            assertEquals(2, reduceOutputStreamObserver.resultDatum.get().size());
+            assertEquals("10", reduceOutputStreamObserver.resultDatum
                     .get()
                     .get(0)
                     .getResult()
                     .getValue()
                     .toStringUtf8());
-            assertEquals(true, outputStreamObserver.resultDatum
+            assertEquals(true, reduceOutputStreamObserver.resultDatum
                     .get()
                     .get(1)
                     .getEOF());
@@ -92,14 +96,17 @@ public class ReduceSupervisorActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
-        io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+        io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
+        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+                .props(reduceOutputStreamObserver, md));
         ActorRef supervisor = actorSystem
                 .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
                         .props(
                                 new TestReduceStreamerFactory(),
                                 md,
                                 shutdownActor,
-                                outputStreamObserver)
+                                responseStreamActor,
+                                reduceOutputStreamObserver)
                 );
 
         for (int i = 1; i <= 10; i++) {
@@ -120,9 +127,9 @@ public class ReduceSupervisorActorTest {
         try {
             completableFuture.get();
             // each reduce request generates two reduce responses, one containing the data and the other one indicating EOF.
-            assertEquals(20, outputStreamObserver.resultDatum.get().size());
+            assertEquals(20, reduceOutputStreamObserver.resultDatum.get().size());
             for (int i = 0; i < 20; i++) {
-                ReduceOuterClass.ReduceResponse response = outputStreamObserver.resultDatum
+                ReduceOuterClass.ReduceResponse response = reduceOutputStreamObserver.resultDatum
                         .get()
                         .get(i);
                 assertTrue(response.getResult().getValue().toStringUtf8().equals("1")

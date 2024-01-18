@@ -26,7 +26,7 @@ public abstract class ReduceStreamer {
     /**
      * handleEndOfStream handles the closure of the reduce input stream.
      * This method is invoked when the input reduce stream is closed.
-     * It provides the capability of constructing a final response based on the messages processed so far.
+     * It provides the capability of constructing final responses based on the messages processed so far.
      *
      * @param keys message keys
      * @param outputStreamObserver observer of the reduce result, which is used to send back reduce responses

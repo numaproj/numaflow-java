@@ -31,6 +31,7 @@ class ReduceSupervisorActor extends AbstractActor {
     private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
+    private final ActorRef responseStreamActor;
     private final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
@@ -38,10 +39,12 @@ class ReduceSupervisorActor extends AbstractActor {
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
+            ActorRef responseStreamActor,
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
         this.reduceStreamerFactory = reduceStreamerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
+        this.responseStreamActor = responseStreamActor;
         this.responseObserver = responseObserver;
     }
 
@@ -49,12 +52,14 @@ class ReduceSupervisorActor extends AbstractActor {
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
+            ActorRef responseStreamActor,
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
         return Props.create(
                 ReduceSupervisorActor.class,
                 reduceStreamerFactory,
                 md,
                 shutdownActor,
+                responseStreamActor,
                 responseObserver);
     }
 
@@ -84,13 +89,13 @@ class ReduceSupervisorActor extends AbstractActor {
                 .create()
                 .match(ActorRequest.class, this::invokeActors)
                 .match(String.class, this::sendEOF)
-                .match(ActorEOFResponse.class, this::eofResponseListener)
+                .match(ActorResponse.class, this::handleActorResponse)
                 .build();
     }
 
     /*
-        based on the keys of the input message invoke the right actor
-        if there is no actor for an incoming set of keys, create a new actor
+        based on the keys of the input message invoke the right reduce streamer actor
+        if there is no actor for an incoming set of keys, create a new reduce streamer actor
         track all the child actors using actors map
      */
     private void invokeActors(ActorRequest actorRequest) {
@@ -98,13 +103,12 @@ class ReduceSupervisorActor extends AbstractActor {
         String uniqueId = actorRequest.getUniqueIdentifier();
         if (!actorsMap.containsKey(uniqueId)) {
             ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
-            // FIXME - the responseObserver is NOT thread-safe but multiple actors are sharing it.
             ActorRef actorRef = getContext()
                     .actorOf(ReduceStreamerActor.props(
                             keys,
-                            md,
+                            this.md,
                             reduceStreamerHandler,
-                            responseObserver));
+                            this.responseStreamActor));
             actorsMap.put(uniqueId, actorRef);
         }
 
@@ -118,19 +122,24 @@ class ReduceSupervisorActor extends AbstractActor {
         }
     }
 
-    // listen to child actors for the result.
-    private void eofResponseListener(ActorEOFResponse actorEOFResponse) {
-        /*
-            send the result back to the client
-            remove the child entry from the map after getting result.
-            if there are no entries in the map, that means processing is
-            done we can close the stream.
-         */
-        responseObserver.onNext(actorEOFResponse.getResponse());
-        actorsMap.remove(actorEOFResponse.getUniqueIdentifier());
-        if (actorsMap.isEmpty()) {
-            responseObserver.onCompleted();
-            getContext().getSystem().stop(getSelf());
+    private void handleActorResponse(ActorResponse actorResponse) {
+        if (actorResponse.getType() == ActorResponseType.EOF_RESPONSE) {
+            // forward the response to the response stream actor to send back to gRPC output stream.
+            this.responseStreamActor.tell(actorResponse, getSelf());
+        } else if (actorResponse.getType() == ActorResponseType.READY_FOR_CLEAN_UP_SIGNAL) {
+            // the corresponding actor is ready to be cleaned up.
+            // remove the child entry from the map.
+            // if there are no entries in the map, that means processing is
+            // done we can close the entire stream.
+            actorsMap.remove(actorResponse.getActorUniqueIdentifier());
+            if (actorsMap.isEmpty()) {
+                responseObserver.onCompleted();
+                getContext().getSystem().stop(getSelf());
+            }
+        } else {
+            throw new RuntimeException(
+                    "Supervisor actor received an actor response with unsupported type: "
+                            + actorResponse.getType());
         }
     }
 

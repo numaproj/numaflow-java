@@ -52,7 +52,6 @@ class Service extends ReduceGrpc.ReduceImplBase {
      */
     @Override
     public StreamObserver<ReduceOuterClass.ReduceRequest> reduceFn(final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
-
         if (this.reduceStreamerFactory == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
@@ -81,15 +80,20 @@ class Service extends ReduceGrpc.ReduceImplBase {
         reduceActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
         handleFailure(failureFuture, responseObserver);
+
+        // create a response stream actor that ensures synchronized delivery of reduce responses.
+        ActorRef responseStreamActor = reduceActorSystem.
+                actorOf(ResponseStreamActor.props(responseObserver, md));
         /*
             create a supervisor actor which assign the tasks to child actors.
-            we create a child actor for every unique set of keys in a window
+            we create a child actor for every unique set of keys in a window.
         */
         ActorRef supervisorActor = reduceActorSystem
                 .actorOf(ReduceSupervisorActor.props(
                         reduceStreamerFactory,
                         md,
                         shutdownActorRef,
+                        responseStreamActor,
                         responseObserver));
 
 

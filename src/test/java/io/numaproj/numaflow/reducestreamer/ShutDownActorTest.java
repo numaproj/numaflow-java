@@ -41,12 +41,18 @@ public class ShutDownActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
+        io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
+
+        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+                .props(reduceOutputStreamObserver, md));
+
         ActorRef supervisor = actorSystem
                 .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
                         .props(
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
+                                responseStreamActor,
                                 new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver()));
 
         io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
@@ -80,13 +86,19 @@ public class ShutDownActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
+        io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
+
+        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+                .props(reduceOutputStreamObserver, md));
+
         ActorRef supervisor = actorSystem
                 .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
                         .props(
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                new ReduceOutputStreamObserver()));
+                                responseStreamActor,
+                                reduceOutputStreamObserver));
 
         DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisor);
         supervisor.tell(deadLetter, ActorRef.noSender());
