@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * ActorResponse is for child actors to report back to the supervisor actor about the status of the data processing.
+ * ActorResponse is for child reduce streamer actors to report back to the supervisor actor about the status of the data processing.
  * It serves two purposes:
  * 1. Send to the supervisor an EOF response, which is to be sent to the gRPC output stream.
  * 2. Send to the supervisor a signal, indicating that the actor has finished all its processing work,

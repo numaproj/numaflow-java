@@ -5,13 +5,11 @@ import akka.actor.ActorSystem;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducestreamer.model.Datum;
-import io.numaproj.numaflow.reducestreamer.model.IntervalWindowImpl;
 import io.numaproj.numaflow.reducestreamer.model.Message;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
-import io.numaproj.numaflow.reducestreamer.model.MetadataImpl;
-import io.numaproj.numaflow.reducestreamer.user.OutputStreamObserver;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
+import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
 import org.junit.Test;
 
 import java.time.Instant;

@@ -5,11 +5,9 @@ import lombok.Getter;
 /**
  * Message is used to wrap the data returned by Reducer functions.
  */
-
 @Getter
 public class Message {
     public static final String DROP = "U+005C__DROP__";
-
     private final String[] keys;
     private final byte[] value;
     private final String[] tags;

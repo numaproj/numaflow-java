@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.examples.reducestreamer.sum;
 
 import io.numaproj.numaflow.reducestreamer.Server;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

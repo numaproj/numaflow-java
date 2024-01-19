@@ -7,7 +7,7 @@ import lombok.Getter;
 /**
  * ActorRequest is a wrapper of the gRpc input request.
  * It is constructed by the service when service receives an input request and then sent to
- * the supervisor actor, to be distributed to reduce stream actors.
+ * the supervisor actor, to be distributed to reduce streamer actors.
  */
 @Getter
 @AllArgsConstructor

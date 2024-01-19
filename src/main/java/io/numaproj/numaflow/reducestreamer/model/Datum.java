@@ -5,7 +5,6 @@ import java.time.Instant;
 /**
  * Datum contains methods to get the payload information.
  */
-
 public interface Datum {
     /**
      * method to get the payload value

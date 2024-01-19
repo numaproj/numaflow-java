@@ -6,25 +6,23 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducestreamer.model.HandlerDatum;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
-import io.numaproj.numaflow.reducestreamer.user.OutputStreamObserver;
-import io.numaproj.numaflow.reducestreamer.user.OutputStreamObserverImpl;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 /**
- * Reduce stream actor invokes user defined functions to handle reduce request.
+ * Reduce streamer actor invokes user defined functions to handle reduce requests.
  * When receiving an input request, it invokes the processMessage to handle the datum.
  * When receiving an EOF signal from the supervisor, it invokes the handleEndOfStream to execute
  * the user-defined end of stream processing logics.
  */
 @Slf4j
 @AllArgsConstructor
-public class ReduceStreamerActor extends AbstractActor {
+class ReduceStreamerActor extends AbstractActor {
     private String[] keys;
     private Metadata md;
     private ReduceStreamer groupBy;

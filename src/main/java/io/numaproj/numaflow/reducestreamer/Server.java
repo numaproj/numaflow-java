@@ -5,8 +5,8 @@ import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class Server {
-
     private final GRPCConfig grpcConfig;
     private final Service service;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());

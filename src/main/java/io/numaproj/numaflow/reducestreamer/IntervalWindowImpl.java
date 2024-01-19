@@ -1,15 +1,12 @@
-package io.numaproj.numaflow.reducestreamer.model;
+package io.numaproj.numaflow.reducestreamer;
 
+import io.numaproj.numaflow.reducestreamer.model.IntervalWindow;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
 
-/**
- * IntervalWindowImpl implements IntervalWindow interface which will be passed as metadata to reduce
- * handlers
- */
 @AllArgsConstructor
-public class IntervalWindowImpl implements IntervalWindow {
+class IntervalWindowImpl implements IntervalWindow {
     private final Instant startTime;
     private final Instant endTime;
 

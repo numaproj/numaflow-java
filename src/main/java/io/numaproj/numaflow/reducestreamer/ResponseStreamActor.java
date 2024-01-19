@@ -16,14 +16,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * ResponseStreamActor is dedicated to ensure synchronized calls to the responseObserver onNext().
- * ALL the responses are sent to ResponseStreamActor before getting sent to output gRPC stream.
+ * Response stream actor is dedicated to ensure synchronized calls to the responseObserver onNext().
+ * ALL the responses are sent to the response stream actor before getting forwarded to the output gRPC stream.
  * <p>
  * More details about gRPC StreamObserver concurrency: https://grpc.github.io/grpc-java/javadoc/io/grpc/stub/StreamObserver.html
  */
 @Slf4j
 @AllArgsConstructor
-public class ResponseStreamActor extends AbstractActor {
+class ResponseStreamActor extends AbstractActor {
     StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
     Metadata md;
 
@@ -42,7 +42,7 @@ public class ResponseStreamActor extends AbstractActor {
     }
 
     private void sendMessage(Message message) {
-        // Synchronized access to the output stream
+        // Synchronized the access to the output stream
         synchronized (responseObserver) {
             responseObserver.onNext(this.buildResponse(message));
         }
@@ -54,7 +54,7 @@ public class ResponseStreamActor extends AbstractActor {
                     "Unexpected behavior - Response Stream actor received a non-eof response. Response type is: "
                             + actorResponse.getType());
         }
-        // Synchronized access to the output stream
+        // Synchronized the access to the output stream
         synchronized (responseObserver) {
             responseObserver.onNext(actorResponse.getResponse());
         }

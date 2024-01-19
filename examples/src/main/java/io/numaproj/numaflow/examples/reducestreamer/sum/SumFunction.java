@@ -2,8 +2,8 @@ package io.numaproj.numaflow.examples.reducestreamer.sum;
 
 import io.numaproj.numaflow.reducestreamer.model.Message;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
-import io.numaproj.numaflow.reducestreamer.user.OutputStreamObserver;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
 import lombok.extern.slf4j.Slf4j;
 
 /**

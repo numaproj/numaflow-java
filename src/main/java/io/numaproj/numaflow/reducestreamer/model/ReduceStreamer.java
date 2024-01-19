@@ -1,7 +1,4 @@
-package io.numaproj.numaflow.reducestreamer.user;
-
-import io.numaproj.numaflow.reducestreamer.model.Datum;
-import io.numaproj.numaflow.reducestreamer.model.Metadata;
+package io.numaproj.numaflow.reducestreamer.model;
 
 /**
  * ReduceStreamer exposes methods for performing reduce streaming operations.

@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Shutdown actor, listens to exceptions and handles shutdown.
+ * Reduce shutdown actor, listens to exceptions and handles shutdown.
  */
 @Slf4j
 @AllArgsConstructor

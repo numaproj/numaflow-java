@@ -10,10 +10,9 @@ import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducestreamer.model.HandlerDatum;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamer;
-import io.numaproj.numaflow.reducestreamer.user.ReduceStreamerFactory;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
 import scala.collection.Iterable;
@@ -24,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * ReduceSupervisorActor actor distributes the messages to actors and handles failure.
+ * Reduce supervisor actor distributes the messages to other actors and handles failures.
  */
 @Slf4j
 class ReduceSupervisorActor extends AbstractActor {

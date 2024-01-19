@@ -1,11 +1,11 @@
-package io.numaproj.numaflow.reducestreamer.user;
+package io.numaproj.numaflow.reducestreamer;
 
 import akka.actor.ActorRef;
 import io.numaproj.numaflow.reducestreamer.model.Message;
+import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public
 class OutputStreamObserverImpl implements OutputStreamObserver {
     private final ActorRef responseStreamActor;
 

@@ -1,12 +1,12 @@
-package io.numaproj.numaflow.reducestreamer.model;
+package io.numaproj.numaflow.reducestreamer;
 
-
+import io.numaproj.numaflow.reducestreamer.model.Datum;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
 
 @AllArgsConstructor
-public class HandlerDatum implements Datum {
+class HandlerDatum implements Datum {
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
