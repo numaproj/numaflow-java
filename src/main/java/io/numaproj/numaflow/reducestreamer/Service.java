@@ -90,8 +90,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
                         reduceStreamerFactory,
                         md,
                         shutdownActorRef,
-                        responseStreamActor,
-                        responseObserver));
+                        responseStreamActor));
 
 
         return new StreamObserver<>() {

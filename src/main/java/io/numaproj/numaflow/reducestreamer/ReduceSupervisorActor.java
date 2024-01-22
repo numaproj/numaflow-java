@@ -8,7 +8,6 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
-import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
@@ -31,35 +30,30 @@ class ReduceSupervisorActor extends AbstractActor {
     private final Metadata md;
     private final ActorRef shutdownActor;
     private final ActorRef responseStreamActor;
-    private final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
     public ReduceSupervisorActor(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
-            ActorRef responseStreamActor,
-            StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
+            ActorRef responseStreamActor) {
         this.reduceStreamerFactory = reduceStreamerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
         this.responseStreamActor = responseStreamActor;
-        this.responseObserver = responseObserver;
     }
 
     public static Props props(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
-            ActorRef responseStreamActor,
-            StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
+            ActorRef responseStreamActor) {
         return Props.create(
                 ReduceSupervisorActor.class,
                 reduceStreamerFactory,
                 md,
                 shutdownActor,
-                responseStreamActor,
-                responseObserver);
+                responseStreamActor);
     }
 
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
@@ -86,7 +80,7 @@ class ReduceSupervisorActor extends AbstractActor {
     public Receive createReceive() {
         return ReceiveBuilder
                 .create()
-                .match(ActorRequest.class, this::invokeActors)
+                .match(ActorRequest.class, this::invokeActor)
                 .match(String.class, this::sendEOF)
                 .match(ActorResponse.class, this::handleActorResponse)
                 .build();
@@ -97,7 +91,7 @@ class ReduceSupervisorActor extends AbstractActor {
         if there is no actor for an incoming set of keys, create a new reduce streamer actor
         track all the child actors using actors map
      */
-    private void invokeActors(ActorRequest actorRequest) {
+    private void invokeActor(ActorRequest actorRequest) {
         String[] keys = actorRequest.getKeySet();
         String uniqueId = actorRequest.getUniqueIdentifier();
         if (!actorsMap.containsKey(uniqueId)) {
@@ -110,7 +104,6 @@ class ReduceSupervisorActor extends AbstractActor {
                             this.responseStreamActor));
             actorsMap.put(uniqueId, actorRef);
         }
-
         HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getRequest().getPayload());
         actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
     }
@@ -122,23 +115,16 @@ class ReduceSupervisorActor extends AbstractActor {
     }
 
     private void handleActorResponse(ActorResponse actorResponse) {
-        if (actorResponse.getType() == ActorResponseType.EOF_RESPONSE) {
-            // forward the response to the response stream actor to send back to gRPC output stream.
+        // when the supervisor receives an actor response, it means the corresponding
+        // reduce streamer actor has finished its job.
+        // we remove the entry from the actors map.
+        actorsMap.remove(actorResponse.getActorUniqueIdentifier());
+        if (actorsMap.isEmpty()) {
+            // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
+            actorResponse.setLast(true);
             this.responseStreamActor.tell(actorResponse, getSelf());
-        } else if (actorResponse.getType() == ActorResponseType.READY_FOR_CLEAN_UP_SIGNAL) {
-            // the corresponding actor is ready to be cleaned up.
-            // remove the child entry from the map.
-            // if there are no entries in the map, that means processing is
-            // done we can close the entire stream.
-            actorsMap.remove(actorResponse.getActorUniqueIdentifier());
-            if (actorsMap.isEmpty()) {
-                responseObserver.onCompleted();
-                getContext().getSystem().stop(getSelf());
-            }
         } else {
-            throw new RuntimeException(
-                    "Supervisor actor received an actor response with unsupported type: "
-                            + actorResponse.getType());
+            this.responseStreamActor.tell(actorResponse, getSelf());
         }
     }
 

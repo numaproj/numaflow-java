@@ -3,19 +3,19 @@ package io.numaproj.numaflow.reducestreamer;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
- * ActorResponse is for child reduce streamer actors to report back to the supervisor actor about the status of the data processing.
- * It serves two purposes:
- * 1. Send to the supervisor an EOF response, which is to be sent to the gRPC output stream.
- * 2. Send to the supervisor a signal, indicating that the actor has finished all its processing work,
- * and it's ready to be cleaned up by the supervisor actor.
+ * The actor response holds the final EOF response for a particular key set.
+ * The isLast attribute indicates whether the response is the last one to be sent to
+ * the output gRPC stream.
  */
 @Getter
+@Setter
 @AllArgsConstructor
 class ActorResponse {
     ReduceOuterClass.ReduceResponse response;
-    ActorResponseType type;
+    boolean isLast;
 
     // TODO - do we need to include window information in the id?
     // for aligned reducer, there is always single window.

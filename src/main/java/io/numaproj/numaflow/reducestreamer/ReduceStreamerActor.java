@@ -10,7 +10,6 @@ import io.numaproj.numaflow.reducestreamer.model.Metadata;
 import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
@@ -20,7 +19,6 @@ import java.util.List;
  * When receiving an EOF signal from the supervisor, it invokes the handleEndOfStream to execute
  * the user-defined end of stream processing logics.
  */
-@Slf4j
 @AllArgsConstructor
 class ReduceStreamerActor extends AbstractActor {
     private String[] keys;
@@ -52,9 +50,10 @@ class ReduceStreamerActor extends AbstractActor {
     }
 
     private void sendEOF(String EOF) {
-        // constructing final responses based on the messages processed so far and sending them out.
+        // invoke handleEndOfStream to materialize the messages received so far.
         this.groupBy.handleEndOfStream(keys, outputStream, md);
-        // constructing an EOF response and sending it back to the supervisor actor.
+        // construct an actor response and send it back to the supervisor actor, indicating the actor
+        // has finished processing all the messages for the corresponding key set.
         getSender().tell(buildEOFResponse(), getSelf());
     }
 
@@ -74,6 +73,6 @@ class ReduceStreamerActor extends AbstractActor {
                 .newBuilder()
                 .addAllKeys(List.of(this.keys))
                 .build());
-        return new ActorResponse(responseBuilder.build(), ActorResponseType.EOF_RESPONSE);
+        return new ActorResponse(responseBuilder.build(), false);
     }
 }

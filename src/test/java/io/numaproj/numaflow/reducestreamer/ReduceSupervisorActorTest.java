@@ -45,8 +45,7 @@ public class ReduceSupervisorActorTest {
                                 new TestReduceStreamerFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor,
-                                reduceOutputStreamObserver));
+                                responseStreamActor));
 
         for (int i = 1; i <= 10; i++) {
             io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
@@ -103,8 +102,7 @@ public class ReduceSupervisorActorTest {
                                 new TestReduceStreamerFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor,
-                                reduceOutputStreamObserver)
+                                responseStreamActor)
                 );
 
         for (int i = 1; i <= 10; i++) {

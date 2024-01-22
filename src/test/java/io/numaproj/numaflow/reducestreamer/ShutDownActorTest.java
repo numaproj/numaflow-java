@@ -50,8 +50,7 @@ public class ShutDownActorTest {
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor,
-                                new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver()));
+                                responseStreamActor));
 
         io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
                 ReduceOuterClass.ReduceRequest.newBuilder()
@@ -95,8 +94,7 @@ public class ShutDownActorTest {
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor,
-                                reduceOutputStreamObserver));
+                                responseStreamActor));
 
         DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisor);
         supervisor.tell(deadLetter, ActorRef.noSender());

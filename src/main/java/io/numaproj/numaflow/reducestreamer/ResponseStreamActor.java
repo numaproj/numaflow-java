@@ -47,19 +47,18 @@ class ResponseStreamActor extends AbstractActor {
     }
 
     private void sendEOF(ActorResponse actorResponse) {
-        if (actorResponse.getType() != ActorResponseType.EOF_RESPONSE) {
-            throw new RuntimeException(
-                    "Unexpected behavior - Response Stream actor received a non-eof response. Response type is: "
-                            + actorResponse.getType());
+        if (actorResponse.isLast()) {
+            // handle the very last response.
+            responseObserver.onNext(actorResponse.getResponse());
+            // close the output stream.
+            responseObserver.onCompleted();
+            // stop the AKKA system right after we close the output stream.
+            // note: could make more sense if the supervisor actor stops the system,
+            // but it requires an extra tell.
+            getContext().getSystem().stop(getSender());
+        } else {
+            responseObserver.onNext(actorResponse.getResponse());
         }
-        responseObserver.onNext(actorResponse.getResponse());
-        // After the EOF response gets sent to gRPC output stream,
-        // tell the supervisor that the actor is ready to be cleaned up.
-        getSender().tell(
-                new ActorResponse(
-                        actorResponse.getResponse(),
-                        ActorResponseType.READY_FOR_CLEAN_UP_SIGNAL),
-                getSelf());
     }
 
     private ReduceOuterClass.ReduceResponse buildResponse(Message message) {
