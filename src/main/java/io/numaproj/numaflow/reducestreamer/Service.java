@@ -71,26 +71,26 @@ class Service extends ReduceGrpc.ReduceImplBase {
 
         // create a shutdown actor that listens to exceptions.
         ActorRef shutdownActorRef = reduceActorSystem.
-                actorOf(ReduceShutdownActor.props(failureFuture));
+                actorOf(ShutdownActor.props(failureFuture));
 
         // subscribe for dead letters
         reduceActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
 
         handleFailure(failureFuture, responseObserver);
 
-        // create a response stream actor that ensures synchronized delivery of reduce responses.
-        ActorRef responseStreamActor = reduceActorSystem.
-                actorOf(ResponseStreamActor.props(responseObserver, md));
+        // create an output actor that ensures synchronized delivery of reduce responses.
+        ActorRef outputActor = reduceActorSystem.
+                actorOf(OutputActor.props(responseObserver, md));
         /*
             create a supervisor actor which assign the tasks to child actors.
             we create a child actor for every unique set of keys in a window.
         */
         ActorRef supervisorActor = reduceActorSystem
-                .actorOf(ReduceSupervisorActor.props(
+                .actorOf(SupervisorActor.props(
                         reduceStreamerFactory,
                         md,
                         shutdownActorRef,
-                        responseStreamActor));
+                        outputActor));
 
 
         return new StreamObserver<>() {

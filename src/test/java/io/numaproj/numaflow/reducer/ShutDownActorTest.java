@@ -36,7 +36,7 @@ public class ShutDownActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
-        ActorRef supervisor = actorSystem
+        ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(
                                 new TestExceptionFactory(),
@@ -50,7 +50,7 @@ public class ShutDownActorTest {
                         .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                         .build())
                 .build());
-        supervisor.tell(reduceRequest, ActorRef.noSender());
+        supervisorActor.tell(reduceRequest, ActorRef.noSender());
 
         try {
             completableFuture.get();
@@ -74,7 +74,7 @@ public class ShutDownActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
-        ActorRef supervisor = actorSystem
+        ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(
                                 new TestExceptionFactory(),
@@ -82,8 +82,8 @@ public class ShutDownActorTest {
                                 shutdownActor,
                                 new ReduceOutputStreamObserver()));
 
-        DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisor);
-        supervisor.tell(deadLetter, ActorRef.noSender());
+        DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisorActor);
+        supervisorActor.tell(deadLetter, ActorRef.noSender());
 
         try {
             completableFuture.get();

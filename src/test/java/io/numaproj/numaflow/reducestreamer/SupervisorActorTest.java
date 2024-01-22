@@ -21,14 +21,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ReduceSupervisorActorTest {
+public class SupervisorActorTest {
     @Test
     public void given_inputRequestsShareSameKeys_when_supervisorActorBroadcasts_then_onlyOneReducerActorGetsCreatedAndAggregatesAllRequests() throws RuntimeException {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
-        CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceShutdownActor
+                .actorOf(ShutdownActor
                         .props(completableFuture));
 
         Metadata md = new MetadataImpl(
@@ -36,16 +36,16 @@ public class ReduceSupervisorActorTest {
 
         io.numaproj.numaflow.reducer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
 
-        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
                 .props(reduceOutputStreamObserver, md));
 
-        ActorRef supervisor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
+        ActorRef supervisorActor = actorSystem
+                .actorOf(SupervisorActor
                         .props(
                                 new TestReduceStreamerFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor));
+                                outputActor));
 
         for (int i = 1; i <= 10; i++) {
             io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
@@ -58,9 +58,11 @@ public class ReduceSupervisorActorTest {
                                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                     .build())
                             .build());
-            supervisor.tell(reduceRequest, ActorRef.noSender());
+            supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
-        supervisor.tell(io.numaproj.numaflow.reducestreamer.Constants.EOF, ActorRef.noSender());
+        supervisorActor.tell(
+                io.numaproj.numaflow.reducestreamer.Constants.EOF,
+                ActorRef.noSender());
 
         try {
             completableFuture.get();
@@ -72,7 +74,7 @@ public class ReduceSupervisorActorTest {
                     .getResult()
                     .getValue()
                     .toStringUtf8());
-            assertEquals(true, reduceOutputStreamObserver.resultDatum
+            assertTrue(reduceOutputStreamObserver.resultDatum
                     .get()
                     .get(1)
                     .getEOF());
@@ -84,25 +86,25 @@ public class ReduceSupervisorActorTest {
     @Test
     public void given_inputRequestsHaveDifferentKeySets_when_supervisorActorBroadcasts_then_multipleReducerActorsHandleKeySetsSeparately() throws RuntimeException {
         final ActorSystem actorSystem = ActorSystem.create("test-system-2");
-        CompletableFuture<Void> completableFuture = new CompletableFuture<Void>();
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceShutdownActor
+                .actorOf(ShutdownActor
                         .props(completableFuture));
 
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
-        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
                 .props(reduceOutputStreamObserver, md));
-        ActorRef supervisor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
+        ActorRef supervisorActor = actorSystem
+                .actorOf(SupervisorActor
                         .props(
                                 new TestReduceStreamerFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor)
+                                outputActor)
                 );
 
         for (int i = 1; i <= 10; i++) {
@@ -116,10 +118,12 @@ public class ReduceSupervisorActorTest {
                                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                     .build())
                             .build());
-            supervisor.tell(reduceRequest, ActorRef.noSender());
+            supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
 
-        supervisor.tell(io.numaproj.numaflow.reducestreamer.Constants.EOF, ActorRef.noSender());
+        supervisorActor.tell(
+                io.numaproj.numaflow.reducestreamer.Constants.EOF,
+                ActorRef.noSender());
         try {
             completableFuture.get();
             // each reduce request generates two reduce responses, one containing the data and the other one indicating EOF.

@@ -11,16 +11,16 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Reduce shutdown actor, listens to exceptions and handles shutdown.
+ * Shutdown actor, listens to exceptions and handles shutdown.
  */
 @Slf4j
 @AllArgsConstructor
-class ReduceShutdownActor extends AbstractActor {
+class ShutdownActor extends AbstractActor {
     private final CompletableFuture<Void> failureFuture;
 
     public static Props props(
             CompletableFuture<Void> failureFuture) {
-        return Props.create(ReduceShutdownActor.class, failureFuture);
+        return Props.create(ShutdownActor.class, failureFuture);
     }
 
     @Override

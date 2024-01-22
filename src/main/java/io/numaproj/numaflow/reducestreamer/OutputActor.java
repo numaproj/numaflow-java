@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Response stream actor is a wrapper around the gRPC output stream.
+ * Output actor is a wrapper around the gRPC output stream.
  * It ensures synchronized calls to the responseObserver onNext() and invokes onComplete at the end of the stream.
  * ALL reduce responses are sent to the response stream actor before getting forwarded to the output gRPC stream.
  * <p>
@@ -24,14 +24,14 @@ import java.util.List;
  */
 @Slf4j
 @AllArgsConstructor
-class ResponseStreamActor extends AbstractActor {
+class OutputActor extends AbstractActor {
     StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
     Metadata md;
 
     public static Props props(
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver,
             Metadata md) {
-        return Props.create(ResponseStreamActor.class, responseObserver, md);
+        return Props.create(OutputActor.class, responseObserver, md);
     }
 
     @Override
@@ -48,7 +48,7 @@ class ResponseStreamActor extends AbstractActor {
 
     private void sendEOF(ActorResponse actorResponse) {
         if (actorResponse.isLast()) {
-            // handle the very last response.
+            // send the very last response.
             responseObserver.onNext(actorResponse.getResponse());
             // close the output stream.
             responseObserver.onCompleted();

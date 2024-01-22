@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 
-public class ShutDownActorTest {
+public class ShutdownActorTest {
     @Test
     public void testFailure() {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
@@ -33,7 +33,7 @@ public class ShutDownActorTest {
                 .addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceShutdownActor
+                .actorOf(ShutdownActor
                         .props(completableFuture));
 
         Metadata md = new MetadataImpl(
@@ -41,16 +41,16 @@ public class ShutDownActorTest {
 
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
 
-        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
                 .props(reduceOutputStreamObserver, md));
 
-        ActorRef supervisor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
+        ActorRef supervisorActor = actorSystem
+                .actorOf(SupervisorActor
                         .props(
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor));
+                                outputActor));
 
         io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
                 ReduceOuterClass.ReduceRequest.newBuilder()
@@ -59,7 +59,7 @@ public class ShutDownActorTest {
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                                 .build())
                         .build());
-        supervisor.tell(reduceRequest, ActorRef.noSender());
+        supervisorActor.tell(reduceRequest, ActorRef.noSender());
 
         try {
             completableFuture.get();
@@ -75,7 +75,7 @@ public class ShutDownActorTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceShutdownActor
+                .actorOf(ShutdownActor
                         .props(completableFuture));
 
         actorSystem.eventStream().subscribe(shutdownActor, AllDeadLetters.class);
@@ -85,19 +85,19 @@ public class ShutDownActorTest {
 
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
 
-        ActorRef responseStreamActor = actorSystem.actorOf(io.numaproj.numaflow.reducestreamer.ResponseStreamActor
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
                 .props(reduceOutputStreamObserver, md));
 
-        ActorRef supervisor = actorSystem
-                .actorOf(io.numaproj.numaflow.reducestreamer.ReduceSupervisorActor
+        ActorRef supervisorActor = actorSystem
+                .actorOf(SupervisorActor
                         .props(
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                responseStreamActor));
+                                outputActor));
 
-        DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisor);
-        supervisor.tell(deadLetter, ActorRef.noSender());
+        DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisorActor);
+        supervisorActor.tell(deadLetter, ActorRef.noSender());
 
         try {
             completableFuture.get();

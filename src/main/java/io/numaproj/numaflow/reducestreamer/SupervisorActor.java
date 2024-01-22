@@ -22,17 +22,17 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Reduce supervisor actor distributes the messages to other actors and handles failures.
+ * Supervisor actor distributes the messages to other actors and handles failures.
  */
 @Slf4j
-class ReduceSupervisorActor extends AbstractActor {
+class SupervisorActor extends AbstractActor {
     private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
     private final ActorRef responseStreamActor;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
-    public ReduceSupervisorActor(
+    public SupervisorActor(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
@@ -49,7 +49,7 @@ class ReduceSupervisorActor extends AbstractActor {
             ActorRef shutdownActor,
             ActorRef responseStreamActor) {
         return Props.create(
-                ReduceSupervisorActor.class,
+                SupervisorActor.class,
                 reduceStreamerFactory,
                 md,
                 shutdownActor,
