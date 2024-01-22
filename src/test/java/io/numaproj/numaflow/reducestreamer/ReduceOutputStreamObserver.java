@@ -19,7 +19,7 @@ public class ReduceOutputStreamObserver implements StreamObserver<ReduceOuterCla
     public Throwable t;
 
     @Override
-    public synchronized void onNext(ReduceOuterClass.ReduceResponse response) {
+    public void onNext(ReduceOuterClass.ReduceResponse response) {
         List<ReduceOuterClass.ReduceResponse> receivedResponses = resultDatum.get();
         receivedResponses.add(response);
         resultDatum.set(receivedResponses);
