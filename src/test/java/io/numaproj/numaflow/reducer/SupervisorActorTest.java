@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ReduceSupervisorActorTest {
+public class SupervisorActorTest {
 
     @Test
     public void given_inputRequestsShareSameKeys_when_supervisorActorBroadcasts_then_onlyOneReducerActorGetsCreatedAndAggregatesAllRequests() throws RuntimeException {
@@ -33,7 +33,7 @@ public class ReduceSupervisorActorTest {
 
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        ActorRef supervisor = actorSystem
+        ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(new TestReducerFactory(), md, shutdownActor, outputStreamObserver));
 
@@ -47,9 +47,9 @@ public class ReduceSupervisorActorTest {
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
                     .build());
-            supervisor.tell(reduceRequest, ActorRef.noSender());
+            supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
-        supervisor.tell(Constants.EOF, ActorRef.noSender());
+        supervisorActor.tell(Constants.EOF, ActorRef.noSender());
 
         try {
             completableFuture.get();
@@ -83,7 +83,7 @@ public class ReduceSupervisorActorTest {
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
-        ActorRef supervisor = actorSystem
+        ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(
                                 new TestReducerFactory(),
@@ -102,10 +102,10 @@ public class ReduceSupervisorActorTest {
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
                     .build());
-            supervisor.tell(reduceRequest, ActorRef.noSender());
+            supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
 
-        supervisor.tell(Constants.EOF, ActorRef.noSender());
+        supervisorActor.tell(Constants.EOF, ActorRef.noSender());
         try {
             completableFuture.get();
             // each reduce request generates two reduce responses, one containing the data and the other one indicating EOF.
