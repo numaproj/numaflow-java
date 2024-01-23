@@ -134,6 +134,23 @@
                             </to>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>reduce-stream-sum</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.reducestreamer.sum.SumFactory
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/reduce-stream-sum</image>
+                            </to>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.reducer;
+package io.numaproj.numaflow.reducestreamer;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -6,8 +6,12 @@ import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
+import io.numaproj.numaflow.reducestreamer.model.Datum;
+import io.numaproj.numaflow.reducestreamer.model.Message;
+import io.numaproj.numaflow.reducestreamer.model.Metadata;
+import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
+import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -17,8 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 
-public class ShutDownActorTest {
-
+public class ShutdownActorTest {
     @Test
     public void testFailure() {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
@@ -30,26 +33,32 @@ public class ShutDownActorTest {
                 .addKeys(reduceKey);
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(ReduceShutdownActor
+                .actorOf(ShutdownActor
                         .props(completableFuture));
 
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
+        io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
+
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
+                .props(reduceOutputStreamObserver));
+
         ActorRef supervisorActor = actorSystem
-                .actorOf(ReduceSupervisorActor
+                .actorOf(SupervisorActor
                         .props(
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                new ReduceOutputStreamObserver()));
+                                outputActor));
 
-        ActorRequest reduceRequest = new ActorRequest(ReduceOuterClass.ReduceRequest.newBuilder()
-                .setPayload(payloadBuilder
-                        .addKeys("reduce-test")
-                        .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
-                        .build())
-                .build());
+        io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
+                ReduceOuterClass.ReduceRequest.newBuilder()
+                        .setPayload(payloadBuilder
+                                .addKeys("reduce-test")
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                                .build())
+                        .build());
         supervisorActor.tell(reduceRequest, ActorRef.noSender());
 
         try {
@@ -66,7 +75,7 @@ public class ShutDownActorTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         ActorRef shutdownActor = actorSystem
-                .actorOf(ReduceShutdownActor
+                .actorOf(ShutdownActor
                         .props(completableFuture));
 
         actorSystem.eventStream().subscribe(shutdownActor, AllDeadLetters.class);
@@ -74,13 +83,18 @@ public class ShutDownActorTest {
         Metadata md = new MetadataImpl(
                 new IntervalWindowImpl(Instant.now(), Instant.now()));
 
+        io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
+
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
+                .props(reduceOutputStreamObserver));
+
         ActorRef supervisorActor = actorSystem
-                .actorOf(ReduceSupervisorActor
+                .actorOf(SupervisorActor
                         .props(
                                 new TestExceptionFactory(),
                                 md,
                                 shutdownActor,
-                                new ReduceOutputStreamObserver()));
+                                outputActor));
 
         DeadLetter deadLetter = new DeadLetter("dead-letter", shutdownActor, supervisorActor);
         supervisorActor.tell(deadLetter, ActorRef.noSender());
@@ -94,29 +108,33 @@ public class ShutDownActorTest {
     }
 
 
-    public static class TestExceptionFactory extends ReducerFactory<TestExceptionFactory.TestException> {
+    public static class TestExceptionFactory extends ReduceStreamerFactory<TestExceptionFactory.TestException> {
 
         @Override
-        public TestException createReducer() {
+        public TestException createReduceStreamer() {
             return new TestException();
         }
 
-        public static class TestException extends Reducer {
+        public static class TestException extends ReduceStreamer {
 
             int count = 0;
 
             @Override
-            public void addMessage(String[] keys, Datum datum, Metadata md) {
+            public void processMessage(
+                    String[] keys,
+                    Datum datum,
+                    OutputStreamObserver outputStream,
+                    Metadata md) {
                 count += 1;
                 throw new RuntimeException("UDF Failure");
             }
 
             @Override
-            public MessageList getOutput(String[] keys, Metadata md) {
-                return MessageList
-                        .newBuilder()
-                        .addMessage(new Message(String.valueOf(count).getBytes()))
-                        .build();
+            public void handleEndOfStream(
+                    String[] keys,
+                    OutputStreamObserver outputStreamObserver,
+                    Metadata md) {
+                outputStreamObserver.send(new Message(String.valueOf(count).getBytes()));
             }
         }
     }
