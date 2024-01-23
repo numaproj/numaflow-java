@@ -37,7 +37,7 @@ public class SupervisorActorTest {
         io.numaproj.numaflow.reducer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
-                .props(reduceOutputStreamObserver, md));
+                .props(reduceOutputStreamObserver));
 
         ActorRef supervisorActor = actorSystem
                 .actorOf(SupervisorActor
@@ -97,7 +97,7 @@ public class SupervisorActorTest {
 
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
         ActorRef outputActor = actorSystem.actorOf(OutputActor
-                .props(reduceOutputStreamObserver, md));
+                .props(reduceOutputStreamObserver));
         ActorRef supervisorActor = actorSystem
                 .actorOf(SupervisorActor
                         .props(

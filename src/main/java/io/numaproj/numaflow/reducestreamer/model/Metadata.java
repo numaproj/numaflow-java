@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.reducestreamer.model;
 
 /**
- * Metadata contains methods to get the metadata for the reduce operation.
+ * Metadata contains methods to get the metadata for the reduce stream operation.
  */
 public interface Metadata {
     /**

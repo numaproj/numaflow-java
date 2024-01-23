@@ -3,7 +3,7 @@ package io.numaproj.numaflow.reducestreamer.model;
 import lombok.Getter;
 
 /**
- * Message is used to wrap the data returned by Reducer functions.
+ * Message is used to wrap the data returned by Reduce Streamer functions.
  */
 @Getter
 public class Message {

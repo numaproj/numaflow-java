@@ -80,7 +80,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
 
         // create an output actor that ensures synchronized delivery of reduce responses.
         ActorRef outputActor = reduceActorSystem.
-                actorOf(OutputActor.props(responseObserver, md));
+                actorOf(OutputActor.props(responseObserver));
         /*
             create a supervisor actor which assign the tasks to child actors.
             we create a child actor for every unique set of keys in a window.

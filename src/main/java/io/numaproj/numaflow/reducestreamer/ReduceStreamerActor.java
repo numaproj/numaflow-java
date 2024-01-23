@@ -33,7 +33,7 @@ class ReduceStreamerActor extends AbstractActor {
                 keys,
                 md,
                 groupBy,
-                new OutputStreamObserverImpl(responseStreamActor));
+                new OutputStreamObserverImpl(md, responseStreamActor));
     }
 
     @Override

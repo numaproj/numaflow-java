@@ -42,7 +42,7 @@ public class ShutdownActorTest {
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
-                .props(reduceOutputStreamObserver, md));
+                .props(reduceOutputStreamObserver));
 
         ActorRef supervisorActor = actorSystem
                 .actorOf(SupervisorActor
@@ -86,7 +86,7 @@ public class ShutdownActorTest {
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
-                .props(reduceOutputStreamObserver, md));
+                .props(reduceOutputStreamObserver));
 
         ActorRef supervisorActor = actorSystem
                 .actorOf(SupervisorActor
