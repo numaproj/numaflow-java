@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.reducestreamer;
+package io.numaproj.numaflow.sessionreducer;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
@@ -9,9 +9,8 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducestreamer.model.Metadata;
-import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
-import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
+import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
+import io.numaproj.numaflow.sessionreducer.model.SessionReducerFactory;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
 import scala.collection.Iterable;
@@ -26,33 +25,28 @@ import java.util.Optional;
  */
 @Slf4j
 class SupervisorActor extends AbstractActor {
-    private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
-    private final Metadata md;
+    private final SessionReducerFactory<? extends SessionReducer> sessionReducerFactory;
     private final ActorRef shutdownActor;
     private final ActorRef responseStreamActor;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
     // TODO - do we need this one? use @AllArgsConstructor
     public SupervisorActor(
-            ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
-            Metadata md,
+            SessionReducerFactory<? extends SessionReducer> sessionReducerFactory,
             ActorRef shutdownActor,
             ActorRef responseStreamActor) {
-        this.reduceStreamerFactory = reduceStreamerFactory;
-        this.md = md;
+        this.sessionReducerFactory = sessionReducerFactory;
         this.shutdownActor = shutdownActor;
         this.responseStreamActor = responseStreamActor;
     }
 
     public static Props props(
-            ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
-            Metadata md,
+            SessionReducerFactory<? extends SessionReducer> sessionReducerFactory,
             ActorRef shutdownActor,
             ActorRef responseStreamActor) {
         return Props.create(
                 SupervisorActor.class,
-                reduceStreamerFactory,
-                md,
+                sessionReducerFactory,
                 shutdownActor,
                 responseStreamActor);
     }
@@ -62,7 +56,7 @@ class SupervisorActor extends AbstractActor {
     public void preRestart(Throwable reason, Optional<Object> message) {
         log.debug("supervisor pre restart was executed");
         shutdownActor.tell(reason, ActorRef.noSender());
-        Service.reduceActorSystem.stop(getSelf());
+        Service.sessionReduceActorSystem.stop(getSelf());
     }
 
     @Override
@@ -96,12 +90,11 @@ class SupervisorActor extends AbstractActor {
         String[] keys = actorRequest.getKeySet();
         String uniqueId = actorRequest.getUniqueIdentifier();
         if (!actorsMap.containsKey(uniqueId)) {
-            ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
+            SessionReducer sessionReducerHandler = sessionReducerFactory.createSessionReducer();
             ActorRef actorRef = getContext()
-                    .actorOf(ReduceStreamerActor.props(
+                    .actorOf(SessionReducerActor.props(
                             keys,
-                            this.md,
-                            reduceStreamerHandler,
+                            sessionReducerHandler,
                             this.responseStreamActor));
             actorsMap.put(uniqueId, actorRef);
         }

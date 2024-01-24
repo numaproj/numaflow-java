@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.reducestreamer;
+package io.numaproj.numaflow.sessionreducer;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;

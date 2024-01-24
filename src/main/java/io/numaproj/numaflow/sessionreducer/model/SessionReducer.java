@@ -11,12 +11,12 @@ public abstract class SessionReducer {
      *
      * @param keys message keys
      * @param datum current message to be processed
-     * @param outputStream observer of the reduce result, which is used to send back session reduce responses
+     * @param outputStreamObserver observer of the reduce result, which is used to send back session reduce responses
      */
     public abstract void processMessage(
             String[] keys,
             Datum datum,
-            OutputStreamObserver outputStream);
+            OutputStreamObserver outputStreamObserver);
 
     /**
      * handleEndOfStream handles the closure of the session reduce input stream.
