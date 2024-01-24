@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.sideinput;
 
+import io.numaproj.numaflow.info.ServerInfoAccessor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -9,6 +10,9 @@ public class GRPCConfigTest {
     public void testDefaultGrpcConfig() {
         GRPCConfig grpcConfig = GRPCConfig.defaultGrpcConfig();
         Assert.assertNotNull(grpcConfig);
+        Assert.assertEquals(
+                ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH,
+                grpcConfig.getInfoFilePath());
         Assert.assertEquals(Constants.DEFAULT_MESSAGE_SIZE, grpcConfig.getMaxMessageSize());
         Assert.assertEquals(Constants.DEFAULT_SOCKET_PATH, grpcConfig.getSocketPath());
     }

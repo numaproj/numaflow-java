@@ -28,6 +28,7 @@ public class ServerTest {
         GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
                 .socketPath(Constants.DEFAULT_SOCKET_PATH)
+                .infoFilePath("/tmp/numaflow-test-server-info)")
                 .build();
 
         server = new Server(
