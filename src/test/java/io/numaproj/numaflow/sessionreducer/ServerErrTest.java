@@ -12,8 +12,8 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.SessionReduceGrpc;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Datum;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
@@ -102,14 +102,14 @@ public class ServerErrTest {
         });
         t.start();
 
-        StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
+        StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
                 .newStub(inProcessChannel)
-                .reduceFn(outputStreamObserver);
+                .sessionReduceFn(outputStreamObserver);
 
         for (int i = 1; i <= 10; i++) {
-            ReduceOuterClass.ReduceRequest reduceRequest = ReduceOuterClass.ReduceRequest
+            Sessionreduce.SessionReduceRequest reduceRequest = Sessionreduce.SessionReduceRequest
                     .newBuilder()
-                    .setPayload(ReduceOuterClass.ReduceRequest.Payload
+                    .setPayload(Sessionreduce.SessionReduceRequest.Payload
                             .newBuilder()
                             .addKeys("reduce-key")
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))

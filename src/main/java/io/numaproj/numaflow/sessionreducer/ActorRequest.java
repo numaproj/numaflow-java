@@ -1,6 +1,6 @@
 package io.numaproj.numaflow.sessionreducer;
 
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 class ActorRequest {
-    ReduceOuterClass.ReduceRequest request;
+    Sessionreduce.SessionReduceRequest request;
 
     // TODO - do we need to include window information in the id?
     // for aligned reducer, there is always single window.

@@ -8,7 +8,7 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducerFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -122,7 +122,7 @@ class SupervisorActor extends AbstractActor {
         }
     }
 
-    private HandlerDatum constructHandlerDatum(ReduceOuterClass.ReduceRequest.Payload payload) {
+    private HandlerDatum constructHandlerDatum(Sessionreduce.SessionReduceRequest.Payload payload) {
         return new HandlerDatum(
                 payload.getValue().toByteArray(),
                 Instant.ofEpochSecond(

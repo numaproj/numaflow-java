@@ -3,7 +3,7 @@ package io.numaproj.numaflow.sessionreducer;
 import akka.actor.AbstractActor;
 import akka.actor.Props;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,10 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor
 class OutputActor extends AbstractActor {
-    StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
+    StreamObserver<Sessionreduce.SessionReduceResponse> responseObserver;
 
     public static Props props(
-            StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
+            StreamObserver<Sessionreduce.SessionReduceResponse> responseObserver) {
         return Props.create(OutputActor.class, responseObserver);
     }
 

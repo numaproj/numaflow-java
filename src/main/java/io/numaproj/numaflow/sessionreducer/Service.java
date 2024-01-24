@@ -6,8 +6,8 @@ import akka.actor.AllDeadLetters;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.SessionReduceGrpc;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducerFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import static io.numaproj.numaflow.reduce.v1.ReduceGrpc.getReduceFnMethod;
 
 @Slf4j
-class Service extends ReduceGrpc.ReduceImplBase {
+class Service extends SessionReduceGrpc.SessionReduceImplBase {
     public static final ActorSystem sessionReduceActorSystem = ActorSystem.create("sessionreduce");
 
     private SessionReducerFactory<? extends SessionReducer> sessionReducerFactory;
@@ -28,7 +28,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
 
     static void handleFailure(
             CompletableFuture<Void> failureFuture,
-            StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
+            StreamObserver<Sessionreduce.SessionReduceResponse> responseObserver) {
         new Thread(() -> {
             try {
                 failureFuture.get();
@@ -41,10 +41,10 @@ class Service extends ReduceGrpc.ReduceImplBase {
     }
 
     /**
-     * Streams input data to reduceFn and returns the result.
+     * Streams input data to the session reducer functions and returns the result.
      */
     @Override
-    public StreamObserver<ReduceOuterClass.ReduceRequest> reduceFn(final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
+    public StreamObserver<Sessionreduce.SessionReduceRequest> sessionReduceFn(final StreamObserver<Sessionreduce.SessionReduceResponse> responseObserver) {
         if (this.sessionReducerFactory == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getReduceFnMethod(),
@@ -62,7 +62,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
 
         handleFailure(failureFuture, responseObserver);
 
-        // TODO - create an output actor that ensures synchronized delivery of reduce responses.
+        // create an output actor that ensures synchronized delivery of reduce responses.
         ActorRef outputActor = sessionReduceActorSystem.actorOf(OutputActor.props(responseObserver));
         /*
             create a supervisor actor which assign the tasks to child actors.
@@ -74,10 +74,9 @@ class Service extends ReduceGrpc.ReduceImplBase {
                         shutdownActorRef,
                         outputActor));
 
-
         return new StreamObserver<>() {
             @Override
-            public void onNext(ReduceOuterClass.ReduceRequest datum) {
+            public void onNext(Sessionreduce.SessionReduceRequest datum) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
                     supervisorActor.tell(new ActorRequest(datum), ActorRef.noSender());
@@ -106,8 +105,8 @@ class Service extends ReduceGrpc.ReduceImplBase {
     @Override
     public void isReady(
             Empty request,
-            StreamObserver<ReduceOuterClass.ReadyResponse> responseObserver) {
-        responseObserver.onNext(ReduceOuterClass.ReadyResponse.newBuilder().setReady(true).build());
+            StreamObserver<Sessionreduce.ReadyResponse> responseObserver) {
+        responseObserver.onNext(Sessionreduce.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
     }
 }

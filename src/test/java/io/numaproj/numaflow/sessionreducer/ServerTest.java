@@ -12,8 +12,8 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.SessionReduceGrpc;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Datum;
 import io.numaproj.numaflow.sessionreducer.model.Message;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
@@ -85,15 +85,16 @@ public class ServerTest {
         String reduceKey = "reduce-key";
 
         // create an output stream observer
-        io.numaproj.numaflow.reducer.ReduceOutputStreamObserver outputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
+        StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
                 .newStub(inProcessChannel)
-                .reduceFn(outputStreamObserver);
+                .sessionReduceFn(outputStreamObserver);
 
         for (int i = 1; i <= 11; i++) {
-            ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest.newBuilder()
-                    .setPayload(ReduceOuterClass.ReduceRequest.Payload
+            Sessionreduce.SessionReduceRequest request = Sessionreduce.SessionReduceRequest
+                    .newBuilder()
+                    .setPayload(Sessionreduce.SessionReduceRequest.Payload
                             .newBuilder()
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .addAllKeys(Arrays.asList(reduceKey))
@@ -154,16 +155,16 @@ public class ServerTest {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
-        StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
+        StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
                 .newStub(inProcessChannel)
-                .reduceFn(outputStreamObserver);
+                .sessionReduceFn(outputStreamObserver);
 
         // send messages with keyCount different keys
         for (int j = 0; j < keyCount; j++) {
             for (int i = 1; i <= 11; i++) {
-                ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
+                Sessionreduce.SessionReduceRequest request = Sessionreduce.SessionReduceRequest
                         .newBuilder()
-                        .setPayload(ReduceOuterClass.ReduceRequest.Payload.newBuilder()
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
                                 .addAllKeys(Arrays.asList(reduceKey + j))
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                 .build())
@@ -180,7 +181,7 @@ public class ServerTest {
         ByteString expectedSecondResponse = ByteString.copyFromUtf8(String.valueOf(11));
 
         while (!outputStreamObserver.completed.get()) ;
-        List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
+        List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
         // the outputStreamObserver should have observed 3*keyCount responses, 2 with real output sum data, one as EOF.
         assertEquals(keyCount * 3, result.size());
         result.forEach(response -> {

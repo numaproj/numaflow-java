@@ -5,7 +5,7 @@ import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Datum;
 import io.numaproj.numaflow.sessionreducer.model.Message;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
@@ -26,7 +26,7 @@ public class ShutdownActorTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         String reduceKey = "reduce-key";
-        ReduceOuterClass.ReduceRequest.Payload.Builder payloadBuilder = ReduceOuterClass.ReduceRequest.Payload
+        Sessionreduce.SessionReduceRequest.Payload.Builder payloadBuilder = Sessionreduce.SessionReduceRequest.Payload
                 .newBuilder()
                 .addKeys(reduceKey);
 
@@ -47,7 +47,7 @@ public class ShutdownActorTest {
                                 outputActor));
 
         ActorRequest reduceRequest = new ActorRequest(
-                ReduceOuterClass.ReduceRequest.newBuilder()
+                Sessionreduce.SessionReduceRequest.newBuilder()
                         .setPayload(payloadBuilder
                                 .addKeys("reduce-test")
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(1)))

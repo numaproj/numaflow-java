@@ -2,7 +2,7 @@ package io.numaproj.numaflow.sessionreducer;
 
 import akka.actor.ActorRef;
 import com.google.protobuf.ByteString;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Message;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
 import lombok.AllArgsConstructor;
@@ -21,7 +21,7 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
     }
 
     private ActorResponse buildResponse(Message message) {
-        ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
+        Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
         // set the window using the actor metadata.
         /*
         responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
@@ -35,7 +35,7 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
          */
         responseBuilder.setEOF(false);
         // set the result.
-        responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
+        responseBuilder.setResult(Sessionreduce.SessionReduceResponse.Result
                 .newBuilder()
                 .setValue(ByteString.copyFrom(message.getValue()))
                 .addAllKeys(message.getKeys()

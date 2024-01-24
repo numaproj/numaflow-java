@@ -4,7 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import lombok.AllArgsConstructor;
@@ -54,7 +54,7 @@ class SessionReducerActor extends AbstractActor {
     }
 
     private ActorResponse buildEOFResponse() {
-        ReduceOuterClass.ReduceResponse.Builder responseBuilder = ReduceOuterClass.ReduceResponse.newBuilder();
+        Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
         /*
         responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
                 .setStart(Timestamp.newBuilder()
@@ -67,7 +67,7 @@ class SessionReducerActor extends AbstractActor {
          */
         responseBuilder.setEOF(true);
         // set a dummy result with the keys.
-        responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
+        responseBuilder.setResult(Sessionreduce.SessionReduceResponse.Result
                 .newBuilder()
                 .addAllKeys(List.of(this.keys))
                 .build());

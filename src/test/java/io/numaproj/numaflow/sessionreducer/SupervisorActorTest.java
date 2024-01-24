@@ -3,7 +3,7 @@ package io.numaproj.numaflow.sessionreducer;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.google.protobuf.ByteString;
-import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Datum;
 import io.numaproj.numaflow.sessionreducer.model.Message;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
@@ -29,7 +29,7 @@ public class SupervisorActorTest {
                 .actorOf(ShutdownActor
                         .props(completableFuture));
 
-        io.numaproj.numaflow.reducer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
+        ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
                 .props(reduceOutputStreamObserver));
@@ -43,9 +43,9 @@ public class SupervisorActorTest {
 
         for (int i = 1; i <= 10; i++) {
             ActorRequest reduceRequest = new ActorRequest(
-                    ReduceOuterClass.ReduceRequest
+                    Sessionreduce.SessionReduceRequest
                             .newBuilder()
-                            .setPayload(ReduceOuterClass.ReduceRequest.Payload
+                            .setPayload(Sessionreduce.SessionReduceRequest.Payload
                                     .newBuilder()
                                     // all reduce requests share same set of keys.
                                     .addAllKeys(Arrays.asList("key-1", "key-2"))
@@ -99,9 +99,9 @@ public class SupervisorActorTest {
 
         for (int i = 1; i <= 10; i++) {
             ActorRequest reduceRequest = new ActorRequest(
-                    ReduceOuterClass.ReduceRequest
+                    Sessionreduce.SessionReduceRequest
                             .newBuilder()
-                            .setPayload(ReduceOuterClass.ReduceRequest.Payload
+                            .setPayload(Sessionreduce.SessionReduceRequest.Payload
                                     .newBuilder()
                                     // each request contain a unique set of keys.
                                     .addAllKeys(Arrays.asList("shared-key", "unique-key-" + i))
@@ -119,7 +119,7 @@ public class SupervisorActorTest {
             // each reduce request generates two reduce responses, one containing the data and the other one indicating EOF.
             assertEquals(20, reduceOutputStreamObserver.resultDatum.get().size());
             for (int i = 0; i < 20; i++) {
-                ReduceOuterClass.ReduceResponse response = reduceOutputStreamObserver.resultDatum
+                Sessionreduce.SessionReduceResponse response = reduceOutputStreamObserver.resultDatum
                         .get()
                         .get(i);
                 assertTrue(response.getResult().getValue().toStringUtf8().equals("1")
