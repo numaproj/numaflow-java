@@ -29,10 +29,6 @@ public class ShutdownActorTest {
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
         List<String> keys = List.of("reduceKey");
-        Sessionreduce.SessionReduceRequest.Payload.Builder payloadBuilder = Sessionreduce.SessionReduceRequest.Payload
-                .newBuilder()
-                .addAllKeys(keys);
-
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
                         .props(completableFuture));

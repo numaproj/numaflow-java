@@ -115,7 +115,21 @@ public class ServerTest {
             inputStreamObserver.onNext(request);
         }
 
-        inputStreamObserver.onCompleted();
+        Sessionreduce.SessionReduceRequest closeRequest = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.CLOSE_VALUE)
+                        .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                .addAllKeys(List.of(reduceKey))
+                                .setSlot("test-slot")
+                                .setStart(Timestamp
+                                        .newBuilder().setSeconds(6000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                .build()))
+                        .build())
+                .build();
+        inputStreamObserver.onNext(closeRequest);
 
         String[] expectedKeys = new String[]{reduceKey + REDUCE_PROCESSED_KEY_SUFFIX};
         // sum of first 10 numbers 1 to 10 -> 55
@@ -194,9 +208,25 @@ public class ServerTest {
                 inputStreamObserver.onNext(request);
             }
         }
-
-        inputStreamObserver.onCompleted();
-
+        // close the keyed windows.
+        for (int i = 0; i < keyCount; i++) {
+            Sessionreduce.SessionReduceRequest closeRequest = Sessionreduce.SessionReduceRequest
+                    .newBuilder()
+                    .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                            .newBuilder()
+                            .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.CLOSE_VALUE)
+                            .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                    .addAllKeys(List.of(reduceKey + i))
+                                    .setSlot("test-slot")
+                                    .setStart(Timestamp
+                                            .newBuilder().setSeconds(6000).build())
+                                    .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                    .build()))
+                            .build())
+                    .build();
+            inputStreamObserver.onNext(closeRequest);
+        }
+        
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedFirstResponse = ByteString.copyFromUtf8(String.valueOf(55));
         // after the sum reaches 55, the test reducer reset the sum, hence when EOF is sent from input stream, the sum is 11 and gets sent to output stream.
