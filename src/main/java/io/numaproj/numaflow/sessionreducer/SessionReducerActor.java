@@ -18,7 +18,6 @@ import lombok.AllArgsConstructor;
  */
 @AllArgsConstructor
 class SessionReducerActor extends AbstractActor {
-
     private Sessionreduce.KeyedWindow keyedWindow;
     private SessionReducer groupBy;
     private OutputStreamObserver outputStream;
@@ -31,16 +30,25 @@ class SessionReducerActor extends AbstractActor {
                 SessionReducerActor.class,
                 keyedWindow,
                 groupBy,
-                new OutputStreamObserverImpl(responseStreamActor));
+                new OutputStreamObserverImpl(responseStreamActor, keyedWindow));
     }
 
     @Override
     public Receive createReceive() {
         return ReceiveBuilder
                 .create()
+                .match(Sessionreduce.KeyedWindow.class, this::updateKeyedWindow)
                 .match(HandlerDatum.class, this::invokeHandler)
                 .match(String.class, this::handleEOF)
                 .build();
+    }
+
+    private void updateKeyedWindow(Sessionreduce.KeyedWindow newKeyedWindow) {
+        this.keyedWindow = newKeyedWindow;
+        // TODO - can we figure out a better way to update the output stream with the new keyed window?
+        OutputStreamObserverImpl newOutputStream = (OutputStreamObserverImpl) this.outputStream;
+        newOutputStream.setKeyedWindow(newKeyedWindow);
+        this.outputStream = newOutputStream;
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {

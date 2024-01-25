@@ -6,6 +6,7 @@ import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Message;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
 import lombok.AllArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,25 +15,21 @@ import java.util.List;
 @AllArgsConstructor
 class OutputStreamObserverImpl implements OutputStreamObserver {
     private final ActorRef responseStreamActor;
+    @Setter
+    private Sessionreduce.KeyedWindow keyedWindow;
 
     @Override
     public void send(Message message) {
-        this.responseStreamActor.tell(buildResponse(message), ActorRef.noSender());
+        this.responseStreamActor.tell(
+                buildResponse(message, this.keyedWindow),
+                ActorRef.noSender());
     }
 
-    private ActorResponse buildResponse(Message message) {
+    private ActorResponse buildResponse(Message message, Sessionreduce.KeyedWindow keyedWindow) {
         Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
-        // set the window using the actor metadata.
-        /*
-        responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
-                .setStart(Timestamp.newBuilder()
-                        .setSeconds(this.md.getIntervalWindow().getStartTime().getEpochSecond())
-                        .setNanos(this.md.getIntervalWindow().getStartTime().getNano()))
-                .setEnd(Timestamp.newBuilder()
-                        .setSeconds(this.md.getIntervalWindow().getEndTime().getEpochSecond())
-                        .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
-                .setSlot("slot-0").build());
-         */
+        // set the window
+        responseBuilder.setKeyedWindow(keyedWindow);
+        // set EOF to false
         responseBuilder.setEOF(false);
         // set the result.
         responseBuilder.setResult(Sessionreduce.SessionReduceResponse.Result

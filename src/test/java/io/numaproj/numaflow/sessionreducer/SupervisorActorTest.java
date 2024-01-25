@@ -24,6 +24,122 @@ import static org.junit.Assert.fail;
 public class SupervisorActorTest {
     @Test
     // TODO - update test name - fall ALL
+    public void open_expand_close() throws RuntimeException {
+        final ActorSystem actorSystem = ActorSystem.create("test-system-1");
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+
+        ActorRef shutdownActor = actorSystem
+                .actorOf(ShutdownActor
+                        .props(completableFuture));
+
+        ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
+
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
+                .props(reduceOutputStreamObserver));
+
+        ActorRef supervisorActor = actorSystem
+                .actorOf(SupervisorActor
+                        .props(
+                                new TestSessionReducerFactory(),
+                                shutdownActor,
+                                outputActor));
+
+        // send an OPEN request for key-1
+        Sessionreduce.SessionReduceRequest openRequest = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                        .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                .addAllKeys(List.of("key-1"))
+                                .setStart(Timestamp
+                                        .newBuilder().setSeconds(60000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                .setSlot("slot-0").build()))
+                        .build())
+                .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                        .addAllKeys(List.of("key-1"))
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(10)))
+                        .build())
+                .build();
+        supervisorActor.tell(openRequest, ActorRef.noSender());
+
+        // send an expand request for key-1
+        Sessionreduce.SessionReduceRequest expandRequest = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.EXPAND_VALUE)
+                        .addAllKeyedWindows(List.of(
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("key-1"))
+                                        .setSlot("slot-0")
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(60000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                        .build(),
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("key-1"))
+                                        .setSlot("slot-0")
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(60000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(75000).build())
+                                        .build()))
+                        .build())
+                .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                        .addAllKeys(List.of("key-1"))
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(10)))
+                        .build())
+                .build();
+        supervisorActor.tell(expandRequest, ActorRef.noSender());
+
+        // send a close request for key-1
+        Sessionreduce.SessionReduceRequest closeRequest = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.CLOSE_VALUE)
+                        .addAllKeyedWindows(List.of(
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("key-1"))
+                                        .setSlot("slot-0")
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(60000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(75000).build())
+                                        .build()))
+                        .build())
+                .build();
+        supervisorActor.tell(closeRequest, ActorRef.noSender());
+
+        // close the stream - TODO can I not close but still verify?
+        /*
+        supervisorActor.tell(
+                Constants.EOF,
+                ActorRef.noSender());
+                */
+        try {
+            completableFuture.get();
+            System.out.println(reduceOutputStreamObserver.resultDatum.toString());
+            // the observer should receive 2 messages, one is the aggregated result, the other is the EOF response.
+            assertEquals(2, reduceOutputStreamObserver.resultDatum.get().size());
+            assertEquals("2", reduceOutputStreamObserver.resultDatum
+                    .get()
+                    .get(0)
+                    .getResult()
+                    .getValue()
+                    .toStringUtf8());
+            assertTrue(reduceOutputStreamObserver.resultDatum
+                    .get()
+                    .get(1)
+                    .getEOF());
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Expected the future to complete without exception");
+        }
+    }
+
+
+    @Test
+    // TODO - update test name - fall ALL
     public void given_inputRequestsShareSameKeys_when_supervisorActorBroadcasts_then_onlyOneReducerActorGetsCreatedAndAggregatesAllRequests() throws RuntimeException {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();

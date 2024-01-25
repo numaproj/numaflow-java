@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ShutdownActorTest {
+    // TODO - rename - UDF throws
+    // TODO - add one more - supervisor throws
     @Test
     public void testFailure() {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");

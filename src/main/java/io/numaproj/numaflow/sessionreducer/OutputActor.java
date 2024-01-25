@@ -32,6 +32,7 @@ class OutputActor extends AbstractActor {
     }
 
     private void handleResponse(ActorResponse actorResponse) {
+        log.info("sending to the output: " + actorResponse.getResponse().toString());
         if (actorResponse.isLast()) {
             // send the very last response.
             responseObserver.onNext(actorResponse.getResponse());

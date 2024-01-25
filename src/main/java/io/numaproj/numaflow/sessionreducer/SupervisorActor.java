@@ -83,51 +83,96 @@ class SupervisorActor extends AbstractActor {
 
     private void handleEOF(String EOF) {
         // At Go sdk side, the server relies on the CLOSE request to close a session.
-        // Here at Java, we broadcast the EOF.
-        for (Map.Entry<String, ActorRef> entry : actorsMap.entrySet()) {
-            entry.getValue().tell(EOF, getSelf());
-        }
+        // To reflect the same behaviour, we define handleEOF as a no-op.
     }
 
     private void handleReduceRequest(Sessionreduce.SessionReduceRequest request) {
         Sessionreduce.SessionReduceRequest.WindowOperation windowOperation = request.getOperation();
         switch (windowOperation.getEvent()) {
-            case OPEN:
+            case OPEN: {
+                log.info("supervisor received an open request\n");
                 if (windowOperation.getKeyedWindowsCount() != 1) {
                     // TODO - test exception scenario.
                     throw new RuntimeException(
-                            "open operation error: invalid number of windows, should be 1");
+                            "open operation error: expected exactly one window");
                 }
                 ActorRequest createRequest = new ActorRequest(
                         ActorRequestType.OPEN,
                         windowOperation.getKeyedWindows(0),
+                        null,
                         request.getPayload());
                 this.invokeActor(createRequest);
                 break;
-            case APPEND:
+            }
+            case APPEND: {
                 log.info("supervisor received an append request\n");
                 if (windowOperation.getKeyedWindowsCount() != 1) {
                     throw new RuntimeException(
-                            "append operation error: invalid number of windows, should be 1");
+                            "append operation error: expected exactly one window");
                 }
                 ActorRequest appendRequest = new ActorRequest(
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(0),
+                        null,
                         request.getPayload());
                 this.invokeActor(appendRequest);
                 break;
-            case CLOSE:
+            }
+            case CLOSE: {
+                log.info("supervisor received a close request\n");
                 windowOperation.getKeyedWindowsList().forEach(
                         keyedWindow -> {
                             ActorRequest closeRequest = new ActorRequest(
                                     ActorRequestType.CLOSE,
                                     keyedWindow,
+                                    null,
                                     // since it's a close request, we don't expect a real payload
                                     null
                             );
                             this.invokeActor(closeRequest);
                         });
                 break;
+            }
+            case EXPAND: {
+                log.info("supervisor received an expand request\n");
+                if (windowOperation.getKeyedWindowsCount() != 2) {
+                    throw new RuntimeException(
+                            "expand operation error: expected exactly two windows");
+                }
+                String currentId = UniqueIdGenerator.getUniqueIdentifier(windowOperation.getKeyedWindows(
+                        0));
+                String newId = UniqueIdGenerator.getUniqueIdentifier(windowOperation.getKeyedWindows(
+                        1));
+                if (!this.actorsMap.containsKey(currentId)) {
+                    throw new RuntimeException(
+                            "expand operation error: session not found for id: " + currentId);
+                }
+                // we divide the EXPAND request to two. One is to update the actor, the other is to send the payload to the updated actor.
+                // because in AKKA's actor model, message processing within a single actor is sequential, we ensure that the payload is handled using the updated keyed window.
+
+                // 1. ask the session reducer actor to update its keyed window.
+                // update the map to use the new id to point to the actor.
+                ActorRequest expandRequest = new ActorRequest(
+                        ActorRequestType.EXPAND,
+                        windowOperation.getKeyedWindows(0),
+                        windowOperation.getKeyedWindows(1),
+                        // do not send payload
+                        null);
+                this.invokeActor(expandRequest);
+                this.actorsMap.put(newId, this.actorsMap.get(currentId));
+                this.actorsMap.remove(currentId);
+
+                // 2. send the payload to the updated actor.
+                ActorRequest appendRequest = new ActorRequest(
+                        ActorRequestType.APPEND,
+                        windowOperation.getKeyedWindows(1),
+                        null,
+                        request.getPayload()
+                );
+                this.invokeActor(appendRequest);
+                break;
+            }
+
             default:
                 throw new RuntimeException(
                         "received an unsupported window operation: " + windowOperation.getEvent());
@@ -135,10 +180,10 @@ class SupervisorActor extends AbstractActor {
     }
 
     private void invokeActor(ActorRequest actorRequest) {
-        String uniqueId = actorRequest.getUniqueIdentifier();
+        String uniqueId = UniqueIdGenerator.getUniqueIdentifier(actorRequest.getKeyedWindow());
         switch (actorRequest.type) {
             case OPEN: {
-                if (actorsMap.containsKey(uniqueId)) {
+                if (this.actorsMap.containsKey(uniqueId)) {
                     throw new RuntimeException(
                             "received an OPEN request but the session reducer actor already exists");
                 }
@@ -148,11 +193,12 @@ class SupervisorActor extends AbstractActor {
                                 actorRequest.getKeyedWindow(),
                                 sessionReducer,
                                 this.responseStreamActor));
-                actorsMap.put(uniqueId, actorRef);
+                log.info("putting id: " + uniqueId);
+                this.actorsMap.put(uniqueId, actorRef);
                 break;
             }
             case APPEND: {
-                if (!actorsMap.containsKey(uniqueId)) {
+                if (!this.actorsMap.containsKey(uniqueId)) {
                     log.info(
                             "supervisor received an append request, but actor doesn't exist, creating one...\n");
                     SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
@@ -161,24 +207,27 @@ class SupervisorActor extends AbstractActor {
                                     actorRequest.getKeyedWindow(),
                                     sessionReducer,
                                     this.responseStreamActor));
-                    actorsMap.put(uniqueId, actorRef);
+                    this.actorsMap.put(uniqueId, actorRef);
                 }
                 break;
             }
-
             case CLOSE: {
                 // if I can find an active actor, I close it. otherwise, skip.
-                if (actorsMap.containsKey(uniqueId)) {
-                    actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
+                if (this.actorsMap.containsKey(uniqueId)) {
+                    this.actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
                 }
                 break;
+            }
+            case EXPAND: {
+                // ask the session reducer actor to update its keyed window.
+                this.actorsMap.get(uniqueId).tell(actorRequest.getNewKeyedWindow(), getSelf());
             }
         }
 
         if (actorRequest.getPayload() != null) {
             log.info("sending the payload to the session reducer actor...");
             HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getPayload());
-            actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
+            this.actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
         }
     }
 
@@ -187,8 +236,9 @@ class SupervisorActor extends AbstractActor {
         // session reducer actor has finished its job.
         // we remove the entry from the actors map.
         log.info("I am removing an actor...");
-        actorsMap.remove(actorResponse.getActorUniqueIdentifier());
-        if (actorsMap.isEmpty()) {
+        this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(actorResponse.getResponse()
+                .getKeyedWindow()));
+        if (this.actorsMap.isEmpty()) {
             // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
             log.info("I am cleaning up the system...");
             actorResponse.setLast(true);

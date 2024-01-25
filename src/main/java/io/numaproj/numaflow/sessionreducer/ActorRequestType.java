@@ -4,4 +4,5 @@ public enum ActorRequestType {
     OPEN,
     APPEND,
     CLOSE,
+    EXPAND,
 }
