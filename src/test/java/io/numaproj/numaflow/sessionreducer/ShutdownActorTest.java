@@ -5,6 +5,7 @@ import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.Datum;
 import io.numaproj.numaflow.sessionreducer.model.Message;
@@ -13,11 +14,11 @@ import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducerFactory;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-
 
 public class ShutdownActorTest {
     @Test
@@ -25,10 +26,10 @@ public class ShutdownActorTest {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
-        String reduceKey = "reduce-key";
+        List<String> keys = List.of("reduceKey");
         Sessionreduce.SessionReduceRequest.Payload.Builder payloadBuilder = Sessionreduce.SessionReduceRequest.Payload
                 .newBuilder()
-                .addKeys(reduceKey);
+                .addAllKeys(keys);
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
@@ -46,14 +47,25 @@ public class ShutdownActorTest {
                                 shutdownActor,
                                 outputActor));
 
-        ActorRequest reduceRequest = new ActorRequest(
-                Sessionreduce.SessionReduceRequest.newBuilder()
-                        .setPayload(payloadBuilder
-                                .addKeys("reduce-test")
-                                .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
-                                .build())
-                        .build());
-        supervisorActor.tell(reduceRequest, ActorRef.noSender());
+        Sessionreduce.SessionReduceRequest request = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.APPEND_VALUE)
+                        .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                .addAllKeys(keys)
+                                .setStart(Timestamp
+                                        .newBuilder().setSeconds(6000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                .setSlot("test-slot").build()))
+                        .build())
+                .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                        .addAllKeys(keys)
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                        .build())
+                .build();
+
+        supervisorActor.tell(request, ActorRef.noSender());
 
         try {
             completableFuture.get();
@@ -115,6 +127,7 @@ public class ShutdownActorTest {
                     Datum datum,
                     OutputStreamObserver outputStreamObserver) {
                 count += 1;
+                System.out.println("I am throwing.");
                 throw new RuntimeException("UDF Failure");
             }
 

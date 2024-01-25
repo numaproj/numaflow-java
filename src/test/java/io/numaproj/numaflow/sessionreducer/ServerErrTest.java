@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sessionreducer;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
@@ -23,6 +24,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
@@ -106,12 +108,23 @@ public class ServerErrTest {
                 .newStub(inProcessChannel)
                 .sessionReduceFn(outputStreamObserver);
 
+        List<String> testKeys = List.of("reduce-key");
         for (int i = 1; i <= 10; i++) {
             Sessionreduce.SessionReduceRequest reduceRequest = Sessionreduce.SessionReduceRequest
                     .newBuilder()
+                    .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                            .newBuilder()
+                            .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.APPEND_VALUE)
+                            .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                    .addAllKeys(testKeys)
+                                    .setStart(Timestamp
+                                            .newBuilder().setSeconds(6000).build())
+                                    .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                    .setSlot("test-slot").build()))
+                            .build())
                     .setPayload(Sessionreduce.SessionReduceRequest.Payload
                             .newBuilder()
-                            .addKeys("reduce-key")
+                            .addAllKeys(testKeys)
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
                     .build();

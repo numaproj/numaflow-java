@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sessionreducer;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
@@ -80,6 +81,7 @@ public class ServerTest {
         server.stop();
     }
 
+    // TODO - rename
     @Test
     public void given_inputReduceRequestsShareSameKey_when_serverStarts_then_allRequestsGetAggregatedToOneResponse() {
         String reduceKey = "reduce-key";
@@ -94,10 +96,20 @@ public class ServerTest {
         for (int i = 1; i <= 11; i++) {
             Sessionreduce.SessionReduceRequest request = Sessionreduce.SessionReduceRequest
                     .newBuilder()
+                    .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                            .newBuilder()
+                            .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.APPEND_VALUE)
+                            .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                    .addAllKeys(List.of(reduceKey))
+                                    .setStart(Timestamp
+                                            .newBuilder().setSeconds(6000).build())
+                                    .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                    .setSlot("test-slot").build()))
+                            .build())
                     .setPayload(Sessionreduce.SessionReduceRequest.Payload
                             .newBuilder()
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                            .addAllKeys(Arrays.asList(reduceKey))
+                            .addAllKeys(List.of(reduceKey))
                             .build())
                     .build();
             inputStreamObserver.onNext(request);
@@ -164,8 +176,18 @@ public class ServerTest {
             for (int i = 1; i <= 11; i++) {
                 Sessionreduce.SessionReduceRequest request = Sessionreduce.SessionReduceRequest
                         .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.APPEND_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of(reduceKey + j))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(6000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                        .setSlot("test-slot").build()))
+                                .build())
                         .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
-                                .addAllKeys(Arrays.asList(reduceKey + j))
+                                .addAllKeys(List.of(reduceKey + j))
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                 .build())
                         .build();
@@ -184,12 +206,10 @@ public class ServerTest {
         List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
         // the outputStreamObserver should have observed 3*keyCount responses, 2 with real output sum data, one as EOF.
         assertEquals(keyCount * 3, result.size());
-        result.forEach(response -> {
-            assertTrue(response.getResult().getValue().equals(expectedFirstResponse) ||
-                    response.getResult().getValue().equals(expectedSecondResponse)
-                    || response.getEOF());
-
-        });
+        result.forEach(response -> assertTrue(
+                response.getResult().getValue().equals(expectedFirstResponse) ||
+                        response.getResult().getValue().equals(expectedSecondResponse)
+                        || response.getEOF()));
     }
 
     public static class SessionReducerTestFactory extends SessionReducerFactory<SessionReducerTestFactory.TestSessionReducerHandler> {

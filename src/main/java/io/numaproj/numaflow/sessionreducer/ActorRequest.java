@@ -1,30 +1,34 @@
 package io.numaproj.numaflow.sessionreducer;
 
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.Instant;
+
 /**
- * ActorRequest is a wrapper of the gRpc input request.
- * It is constructed by the service when service receives an input request and then sent to
- * the supervisor actor, to be distributed to reduce streamer actors.
+ * ActorRequest is used by the supervisor actor to distribute session reduce operations to individual session reducer actors.
+ * One actor request is sent to only one session reducer actor.
  */
 @Getter
 @AllArgsConstructor
 class ActorRequest {
-    Sessionreduce.SessionReduceRequest request;
+    ActorRequestType type;
+    Sessionreduce.KeyedWindow keyedWindow;
+    Sessionreduce.SessionReduceRequest.Payload payload;
 
-    // TODO - do we need to include window information in the id?
-    // for aligned reducer, there is always single window.
-    // but at the same time, would like to be consistent with GO SDK implementation.
-    // we will revisit this one later.
     public String getUniqueIdentifier() {
-        return String.join(
-                Constants.DELIMITER,
-                this.getRequest().getPayload().getKeysList().toArray(new String[0]));
+        long startMillis = convertToEpochMilli(this.keyedWindow.getStart());
+        long endMillis = convertToEpochMilli(this.keyedWindow.getEnd());
+        return String.format(
+                "%d:%d:%s",
+                startMillis,
+                endMillis,
+                String.join(Constants.DELIMITER, this.keyedWindow.getKeysList()));
     }
 
-    public String[] getKeySet() {
-        return this.getRequest().getPayload().getKeysList().toArray(new String[0]);
+    private long convertToEpochMilli(Timestamp timestamp) {
+        return Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos()).toEpochMilli();
     }
 }

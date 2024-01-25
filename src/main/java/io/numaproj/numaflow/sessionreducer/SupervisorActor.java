@@ -75,46 +75,122 @@ class SupervisorActor extends AbstractActor {
     public Receive createReceive() {
         return ReceiveBuilder
                 .create()
-                .match(ActorRequest.class, this::invokeActor)
-                .match(String.class, this::sendEOF)
+                .match(String.class, this::handleEOF)
+                .match(Sessionreduce.SessionReduceRequest.class, this::handleReduceRequest)
                 .match(ActorResponse.class, this::handleActorResponse)
                 .build();
     }
 
-    /*
-        based on the keys of the input message invoke the right reduce streamer actor
-        if there is no actor for an incoming set of keys, create a new reduce streamer actor
-        track all the child actors using actors map
-     */
-    private void invokeActor(ActorRequest actorRequest) {
-        String[] keys = actorRequest.getKeySet();
-        String uniqueId = actorRequest.getUniqueIdentifier();
-        if (!actorsMap.containsKey(uniqueId)) {
-            SessionReducer sessionReducerHandler = sessionReducerFactory.createSessionReducer();
-            ActorRef actorRef = getContext()
-                    .actorOf(SessionReducerActor.props(
-                            keys,
-                            sessionReducerHandler,
-                            this.responseStreamActor));
-            actorsMap.put(uniqueId, actorRef);
-        }
-        HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getRequest().getPayload());
-        actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
-    }
-
-    private void sendEOF(String EOF) {
+    private void handleEOF(String EOF) {
+        // At Go sdk side, the server relies on the CLOSE request to close a session.
+        // Here at Java, we broadcast the EOF.
         for (Map.Entry<String, ActorRef> entry : actorsMap.entrySet()) {
             entry.getValue().tell(EOF, getSelf());
         }
     }
 
+    private void handleReduceRequest(Sessionreduce.SessionReduceRequest request) {
+        Sessionreduce.SessionReduceRequest.WindowOperation windowOperation = request.getOperation();
+        switch (windowOperation.getEvent()) {
+            case OPEN:
+                if (windowOperation.getKeyedWindowsCount() != 1) {
+                    // TODO - test exception scenario.
+                    throw new RuntimeException(
+                            "open operation error: invalid number of windows, should be 1");
+                }
+                ActorRequest createRequest = new ActorRequest(
+                        ActorRequestType.OPEN,
+                        windowOperation.getKeyedWindows(0),
+                        request.getPayload());
+                this.invokeActor(createRequest);
+                break;
+            case APPEND:
+                log.info("supervisor received an append request\n");
+                if (windowOperation.getKeyedWindowsCount() != 1) {
+                    throw new RuntimeException(
+                            "append operation error: invalid number of windows, should be 1");
+                }
+                ActorRequest appendRequest = new ActorRequest(
+                        ActorRequestType.APPEND,
+                        windowOperation.getKeyedWindows(0),
+                        request.getPayload());
+                this.invokeActor(appendRequest);
+                break;
+            case CLOSE:
+                windowOperation.getKeyedWindowsList().forEach(
+                        keyedWindow -> {
+                            ActorRequest closeRequest = new ActorRequest(
+                                    ActorRequestType.CLOSE,
+                                    keyedWindow,
+                                    // since it's a close request, we don't expect a real payload
+                                    null
+                            );
+                            this.invokeActor(closeRequest);
+                        });
+                break;
+            default:
+                throw new RuntimeException(
+                        "received an unsupported window operation: " + windowOperation.getEvent());
+        }
+    }
+
+    private void invokeActor(ActorRequest actorRequest) {
+        String uniqueId = actorRequest.getUniqueIdentifier();
+        switch (actorRequest.type) {
+            case OPEN: {
+                if (actorsMap.containsKey(uniqueId)) {
+                    throw new RuntimeException(
+                            "received an OPEN request but the session reducer actor already exists");
+                }
+                SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
+                ActorRef actorRef = getContext()
+                        .actorOf(SessionReducerActor.props(
+                                actorRequest.getKeyedWindow(),
+                                sessionReducer,
+                                this.responseStreamActor));
+                actorsMap.put(uniqueId, actorRef);
+                break;
+            }
+            case APPEND: {
+                if (!actorsMap.containsKey(uniqueId)) {
+                    log.info(
+                            "supervisor received an append request, but actor doesn't exist, creating one...\n");
+                    SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
+                    ActorRef actorRef = getContext()
+                            .actorOf(SessionReducerActor.props(
+                                    actorRequest.getKeyedWindow(),
+                                    sessionReducer,
+                                    this.responseStreamActor));
+                    actorsMap.put(uniqueId, actorRef);
+                }
+                break;
+            }
+
+            case CLOSE: {
+                // if I can find an active actor, I close it. otherwise, skip.
+                if (actorsMap.containsKey(uniqueId)) {
+                    actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
+                }
+                break;
+            }
+        }
+
+        if (actorRequest.getPayload() != null) {
+            log.info("sending the payload to the session reducer actor...");
+            HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getPayload());
+            actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
+        }
+    }
+
     private void handleActorResponse(ActorResponse actorResponse) {
         // when the supervisor receives an actor response, it means the corresponding
-        // reduce streamer actor has finished its job.
+        // session reducer actor has finished its job.
         // we remove the entry from the actors map.
+        log.info("I am removing an actor...");
         actorsMap.remove(actorResponse.getActorUniqueIdentifier());
         if (actorsMap.isEmpty()) {
             // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
+            log.info("I am cleaning up the system...");
             actorResponse.setLast(true);
             this.responseStreamActor.tell(actorResponse, getSelf());
         } else {

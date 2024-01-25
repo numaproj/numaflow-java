@@ -9,9 +9,8 @@ import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import lombok.AllArgsConstructor;
 
-import java.util.List;
-
 /**
+ * TODO - update it
  * Reduce streamer actor invokes user defined functions to handle reduce requests.
  * When receiving an input request, it invokes the processMessage to handle the datum.
  * When receiving an EOF signal from the supervisor, it invokes the handleEndOfStream to execute
@@ -19,15 +18,18 @@ import java.util.List;
  */
 @AllArgsConstructor
 class SessionReducerActor extends AbstractActor {
-    private String[] keys;
+
+    private Sessionreduce.KeyedWindow keyedWindow;
     private SessionReducer groupBy;
     private OutputStreamObserver outputStream;
 
     public static Props props(
-            String[] keys, SessionReducer groupBy, ActorRef responseStreamActor) {
+            Sessionreduce.KeyedWindow keyedWindow,
+            SessionReducer groupBy,
+            ActorRef responseStreamActor) {
         return Props.create(
                 SessionReducerActor.class,
-                keys,
+                keyedWindow,
                 groupBy,
                 new OutputStreamObserverImpl(responseStreamActor));
     }
@@ -37,40 +39,31 @@ class SessionReducerActor extends AbstractActor {
         return ReceiveBuilder
                 .create()
                 .match(HandlerDatum.class, this::invokeHandler)
-                .match(String.class, this::sendEOF)
+                .match(String.class, this::handleEOF)
                 .build();
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {
-        this.groupBy.processMessage(keys, handlerDatum, outputStream);
+        this.groupBy.processMessage(
+                keyedWindow.getKeysList().toArray(new String[0]),
+                handlerDatum,
+                outputStream);
     }
 
-    private void sendEOF(String EOF) {
+    private void handleEOF(String EOF) {
         // invoke handleEndOfStream to materialize the messages received so far.
-        this.groupBy.handleEndOfStream(keys, outputStream);
+        this.groupBy.handleEndOfStream(
+                keyedWindow.getKeysList().toArray(new String[0]),
+                outputStream);
         // construct an actor response and send it back to the supervisor actor, indicating the actor
-        // has finished processing all the messages for the corresponding key set.
+        // has finished processing all the messages for the corresponding keyed window.
         getSender().tell(buildEOFResponse(), getSelf());
     }
 
     private ActorResponse buildEOFResponse() {
         Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
-        /*
-        responseBuilder.setWindow(ReduceOuterClass.Window.newBuilder()
-                .setStart(Timestamp.newBuilder()
-                        .setSeconds(this.md.getIntervalWindow().getStartTime().getEpochSecond())
-                        .setNanos(this.md.getIntervalWindow().getStartTime().getNano()))
-                .setEnd(Timestamp.newBuilder()
-                        .setSeconds(this.md.getIntervalWindow().getEndTime().getEpochSecond())
-                        .setNanos(this.md.getIntervalWindow().getEndTime().getNano()))
-                .setSlot("slot-0").build());
-         */
+        responseBuilder.setKeyedWindow(this.keyedWindow);
         responseBuilder.setEOF(true);
-        // set a dummy result with the keys.
-        responseBuilder.setResult(Sessionreduce.SessionReduceResponse.Result
-                .newBuilder()
-                .addAllKeys(List.of(this.keys))
-                .build());
         return new ActorResponse(
                 responseBuilder.build(),
                 false);

@@ -76,10 +76,10 @@ class Service extends SessionReduceGrpc.SessionReduceImplBase {
 
         return new StreamObserver<>() {
             @Override
-            public void onNext(Sessionreduce.SessionReduceRequest datum) {
+            public void onNext(Sessionreduce.SessionReduceRequest sessionReduceRequest) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
-                    supervisorActor.tell(new ActorRequest(datum), ActorRef.noSender());
+                    supervisorActor.tell(sessionReduceRequest, ActorRef.noSender());
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }
