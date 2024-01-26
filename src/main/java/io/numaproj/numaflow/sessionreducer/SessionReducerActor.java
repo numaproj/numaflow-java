@@ -21,16 +21,20 @@ class SessionReducerActor extends AbstractActor {
     private Sessionreduce.KeyedWindow keyedWindow;
     private SessionReducer groupBy;
     private OutputStreamObserver outputStream;
+    // when true, it means the corresponding session is in the process of merging with other windows.
+    private boolean isMerging;
 
     public static Props props(
             Sessionreduce.KeyedWindow keyedWindow,
             SessionReducer groupBy,
-            ActorRef responseStreamActor) {
+            ActorRef responseStreamActor,
+            boolean isMerging) {
         return Props.create(
                 SessionReducerActor.class,
                 keyedWindow,
                 groupBy,
-                new OutputStreamObserverImpl(responseStreamActor, keyedWindow));
+                new OutputStreamObserverImpl(responseStreamActor, keyedWindow),
+                isMerging);
     }
 
     @Override
@@ -40,10 +44,15 @@ class SessionReducerActor extends AbstractActor {
                 .match(Sessionreduce.KeyedWindow.class, this::updateKeyedWindow)
                 .match(HandlerDatum.class, this::invokeHandler)
                 .match(String.class, this::handleEOF)
+                .match(GetAccumulatorRequest.class, this::handleGetAccumulatorRequest)
+                .match(MergeAccumulatorRequest.class, this::handleMergeAccumulatorRequest)
                 .build();
     }
 
     private void updateKeyedWindow(Sessionreduce.KeyedWindow newKeyedWindow) {
+        if (this.isMerging) {
+            return;
+        }
         this.keyedWindow = newKeyedWindow;
         // TODO - can we figure out a better way to update the output stream with the new keyed window?
         OutputStreamObserverImpl newOutputStream = (OutputStreamObserverImpl) this.outputStream;
@@ -52,6 +61,9 @@ class SessionReducerActor extends AbstractActor {
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {
+        if (this.isMerging) {
+            return;
+        }
         this.groupBy.processMessage(
                 keyedWindow.getKeysList().toArray(new String[0]),
                 handlerDatum,
@@ -59,6 +71,11 @@ class SessionReducerActor extends AbstractActor {
     }
 
     private void handleEOF(String EOF) {
+        if (this.isMerging) {
+            System.out.println(
+                    "keran-merge-test: I received an EOF, but I am in the middle of merging. I am skipping handling EOF.");
+            return;
+        }
         // invoke handleEndOfStream to materialize the messages received so far.
         this.groupBy.handleEndOfStream(
                 keyedWindow.getKeysList().toArray(new String[0]),
@@ -66,6 +83,30 @@ class SessionReducerActor extends AbstractActor {
         // construct an actor response and send it back to the supervisor actor, indicating the actor
         // has finished processing all the messages for the corresponding keyed window.
         getSender().tell(buildEOFResponse(), getSelf());
+    }
+
+    private void handleGetAccumulatorRequest(GetAccumulatorRequest getAccumulatorRequest) {
+        this.isMerging = true;
+        getSender().tell(
+                new GetAccumulatorResponse(
+                        this.keyedWindow,
+                        getAccumulatorRequest.getMergeTaskId(),
+                        this.groupBy.accumulator()),
+                getSelf());
+    }
+
+    private void handleMergeAccumulatorRequest(MergeAccumulatorRequest mergeAccumulatorRequest) {
+        if (!this.isMerging) {
+            throw new RuntimeException(
+                    "received a merge accumulator request but the session is not in a merging process.");
+        }
+        System.out.println("keran-merge-test: I am merging an accumulator...");
+        this.groupBy.mergeAccumulator(mergeAccumulatorRequest.getAccumulator());
+        if (mergeAccumulatorRequest.isLast) {
+            System.out.println(
+                    "keran-merge-test: this is the last accumulator, I am marking myself as not in merging any more.");
+            this.isMerging = false;
+        }
     }
 
     private ActorResponse buildEOFResponse() {

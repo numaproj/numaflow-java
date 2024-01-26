@@ -18,4 +18,7 @@ class ActorRequest {
     // TODO - use builder pattern to ensure this is only set when type == EXPAND
     Sessionreduce.KeyedWindow newKeyedWindow;
     Sessionreduce.SessionReduceRequest.Payload payload;
+    // this is specified when the actor request is a GET_ACCUMULATOR.
+    // TODO - use builder pattern to ensure this is only set when type == GET_ACCUMULATOR
+    String mergeWindowId;
 }

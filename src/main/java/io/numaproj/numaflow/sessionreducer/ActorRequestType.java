@@ -5,4 +5,7 @@ public enum ActorRequestType {
     APPEND,
     CLOSE,
     EXPAND,
+    MERGE_OPEN,
+    GET_ACCUMULATOR,
+
 }

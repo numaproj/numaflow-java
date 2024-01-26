@@ -5,6 +5,8 @@ import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,6 +24,36 @@ public class ReduceOutputStreamObserver implements StreamObserver<Sessionreduce.
     public void onNext(Sessionreduce.SessionReduceResponse response) {
         List<Sessionreduce.SessionReduceResponse> receivedResponses = resultDatum.get();
         receivedResponses.add(response);
+        // sort the list for unit tests.
+        Collections.sort(receivedResponses, new Comparator<Sessionreduce.SessionReduceResponse>() {
+            @Override
+            public int compare(
+                    Sessionreduce.SessionReduceResponse o1,
+                    Sessionreduce.SessionReduceResponse o2) {
+                // compare eof
+                if (o1.getEOF() && !o2.getEOF()) {
+                    return 1;
+                } else if (!o1.getEOF() && o2.getEOF()) {
+                    return -1;
+                }
+
+                // compare keys
+                int keyCompare = String
+                        .join("-", o1.getKeyedWindow().getKeysList())
+                        .compareTo(String
+                                .join("-", o2.getKeyedWindow().getKeysList()));
+                if (keyCompare != 0) {
+                    return keyCompare;
+                }
+
+                // compare value
+                return o1
+                        .getResult()
+                        .getValue()
+                        .toStringUtf8()
+                        .compareTo(o2.getResult().getValue().toStringUtf8());
+            }
+        });
         resultDatum.set(receivedResponses);
     }
 

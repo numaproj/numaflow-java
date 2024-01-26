@@ -8,6 +8,7 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducerFactory;
@@ -28,7 +29,10 @@ class SupervisorActor extends AbstractActor {
     private final SessionReducerFactory<? extends SessionReducer> sessionReducerFactory;
     private final ActorRef shutdownActor;
     private final ActorRef responseStreamActor;
+    // key is the unique id of a session reducer actor, value is the reference to the actor.
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
+    // key is the unique id of a merged window, value is how many accumulators are pending aggregation for this merge operation.
+    private final Map<String, Integer> mergeTracker = new HashMap<>();
 
     // TODO - do we need this one? use @AllArgsConstructor
     public SupervisorActor(
@@ -78,6 +82,7 @@ class SupervisorActor extends AbstractActor {
                 .match(String.class, this::handleEOF)
                 .match(Sessionreduce.SessionReduceRequest.class, this::handleReduceRequest)
                 .match(ActorResponse.class, this::handleActorResponse)
+                .match(GetAccumulatorResponse.class, this::handleGetAccumulatorResponse)
                 .build();
     }
 
@@ -100,7 +105,7 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.OPEN,
                         windowOperation.getKeyedWindows(0),
                         null,
-                        request.getPayload());
+                        request.getPayload(), "");
                 this.invokeActor(createRequest);
                 break;
             }
@@ -114,7 +119,7 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(0),
                         null,
-                        request.getPayload());
+                        request.getPayload(), "");
                 this.invokeActor(appendRequest);
                 break;
             }
@@ -127,7 +132,7 @@ class SupervisorActor extends AbstractActor {
                                     keyedWindow,
                                     null,
                                     // since it's a close request, we don't expect a real payload
-                                    null
+                                    null, ""
                             );
                             this.invokeActor(closeRequest);
                         });
@@ -147,8 +152,10 @@ class SupervisorActor extends AbstractActor {
                     throw new RuntimeException(
                             "expand operation error: session not found for id: " + currentId);
                 }
-                // we divide the EXPAND request to two. One is to update the actor, the other is to send the payload to the updated actor.
-                // because in AKKA's actor model, message processing within a single actor is sequential, we ensure that the payload is handled using the updated keyed window.
+                // we divide the EXPAND request to two. One is to update the actor.
+                // The other is to send the payload to the updated actor.
+                // because in AKKA's actor model, message processing within a single actor is sequential,
+                // we ensure that the payload is handled using the updated keyed window.
 
                 // 1. ask the session reducer actor to update its keyed window.
                 // update the map to use the new id to point to the actor.
@@ -157,7 +164,7 @@ class SupervisorActor extends AbstractActor {
                         windowOperation.getKeyedWindows(0),
                         windowOperation.getKeyedWindows(1),
                         // do not send payload
-                        null);
+                        null, "");
                 this.invokeActor(expandRequest);
                 this.actorsMap.put(newId, this.actorsMap.get(currentId));
                 this.actorsMap.remove(currentId);
@@ -167,9 +174,69 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(1),
                         null,
-                        request.getPayload()
+                        request.getPayload(), ""
                 );
                 this.invokeActor(appendRequest);
+                break;
+            }
+            case MERGE: {
+                Timestamp mergedStartTime = windowOperation.getKeyedWindows(0).getStart();
+                Timestamp mergedEndTime = windowOperation.getKeyedWindows(0).getEnd();
+                for (Sessionreduce.KeyedWindow window : windowOperation.getKeyedWindowsList()) {
+                    String id = UniqueIdGenerator.getUniqueIdentifier(window);
+                    if (!this.actorsMap.containsKey(id)) {
+                        throw new RuntimeException(
+                                "merge operation error: session not found for id: " + id);
+                    }
+                    // mergedWindow will be the largest window which contains all the windows.
+                    if (Instant
+                            .ofEpochSecond(
+                                    window.getStart().getSeconds(),
+                                    window.getStart().getNanos())
+                            .isBefore(Instant.ofEpochSecond(
+                                    mergedStartTime.getSeconds(),
+                                    mergedStartTime.getNanos()))) {
+                        mergedStartTime = window.getStart();
+                    }
+                    if (Instant
+                            .ofEpochSecond(
+                                    window.getEnd().getSeconds(),
+                                    window.getEnd().getNanos())
+                            .isAfter(Instant.ofEpochSecond(
+                                    mergedEndTime.getSeconds(),
+                                    mergedEndTime.getNanos()))) {
+                        mergedEndTime = window.getEnd();
+                    }
+                }
+
+                Sessionreduce.KeyedWindow mergedWindow = Sessionreduce.KeyedWindow.newBuilder().
+                        setStart(mergedStartTime)
+                        .setEnd(mergedEndTime)
+                        .addAllKeys(windowOperation.getKeyedWindows(0).getKeysList())
+                        .setSlot(windowOperation.getKeyedWindows(0).getSlot()).build();
+                // open a new session for the merged keyed window.
+                ActorRequest mergeOpenRequest = new ActorRequest(
+                        // TODO - is it possible that all window merged to the first window, hence the window already exists - handle this case.
+                        // if the window already exists, let's still create a new actor ref and change the reference. the existing one will close itself when returning accumulator.
+                        ActorRequestType.MERGE_OPEN,
+                        mergedWindow,
+                        null,
+                        null,
+                        "");
+                this.invokeActor(mergeOpenRequest);
+
+                String mergeTaskId = UniqueIdGenerator.getUniqueIdentifier(mergedWindow);
+                this.mergeTracker.put(mergeTaskId, windowOperation.getKeyedWindowsCount());
+
+
+                for (Sessionreduce.KeyedWindow window : windowOperation.getKeyedWindowsList()) {
+                    // tell the session reducer actor - "hey, you are about to be merged."
+                    ActorRequest getAccumulatorRequest = new ActorRequest(
+                            ActorRequestType.GET_ACCUMULATOR,
+                            window, null, null, mergeTaskId
+                    );
+                    this.invokeActor(getAccumulatorRequest);
+                }
                 break;
             }
 
@@ -192,9 +259,10 @@ class SupervisorActor extends AbstractActor {
                         .actorOf(SessionReducerActor.props(
                                 actorRequest.getKeyedWindow(),
                                 sessionReducer,
-                                this.responseStreamActor));
+                                this.responseStreamActor, false));
                 log.info("putting id: " + uniqueId);
                 this.actorsMap.put(uniqueId, actorRef);
+                System.out.println("putted in the map id: " + uniqueId);
                 break;
             }
             case APPEND: {
@@ -206,7 +274,7 @@ class SupervisorActor extends AbstractActor {
                             .actorOf(SessionReducerActor.props(
                                     actorRequest.getKeyedWindow(),
                                     sessionReducer,
-                                    this.responseStreamActor));
+                                    this.responseStreamActor, false));
                     this.actorsMap.put(uniqueId, actorRef);
                 }
                 break;
@@ -220,7 +288,32 @@ class SupervisorActor extends AbstractActor {
             }
             case EXPAND: {
                 // ask the session reducer actor to update its keyed window.
+                System.out.println("I am telling the actor to expand...");
                 this.actorsMap.get(uniqueId).tell(actorRequest.getNewKeyedWindow(), getSelf());
+                break;
+            }
+            case MERGE_OPEN: {
+                if (this.actorsMap.containsKey(uniqueId)) {
+                    log.info(
+                            "the merged keyed window is the same as one of the existing windows, replace.");
+                }
+                SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
+                ActorRef actorRef = getContext()
+                        .actorOf(SessionReducerActor.props(
+                                actorRequest.getKeyedWindow(),
+                                sessionReducer,
+                                this.responseStreamActor, true));
+                log.info("putting id: " + uniqueId);
+                this.actorsMap.put(uniqueId, actorRef);
+                break;
+            }
+            case GET_ACCUMULATOR: {
+                this.actorsMap
+                        .get(uniqueId)
+                        .tell(
+                                new GetAccumulatorRequest(actorRequest.getMergeWindowId()),
+                                getSelf());
+                break;
             }
         }
 
@@ -245,6 +338,24 @@ class SupervisorActor extends AbstractActor {
             this.responseStreamActor.tell(actorResponse, getSelf());
         } else {
             this.responseStreamActor.tell(actorResponse, getSelf());
+        }
+    }
+
+    private void handleGetAccumulatorResponse(GetAccumulatorResponse getAccumulatorResponse) {
+        String mergeTaskId = getAccumulatorResponse.getMergeTaskId();
+        if (!mergeTracker.containsKey(mergeTaskId)) {
+            throw new RuntimeException(
+                    "received an accumulator but the corresponding merge task doesn't exist.");
+        }
+        this.mergeTracker.put(mergeTaskId, this.mergeTracker.get(mergeTaskId) - 1);
+        // the supervisor gets the accumulator of the session and immediately releases the session.
+        // question: does java automatically clean up the lingering actor class?
+        this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(getAccumulatorResponse.getFromKeyedWindow()));
+        this.actorsMap.get(mergeTaskId).tell(new MergeAccumulatorRequest(
+                this.mergeTracker.get(mergeTaskId) == 0,
+                getAccumulatorResponse.getAccumulator()), getSelf());
+        if (this.mergeTracker.get(mergeTaskId) == 0) {
+            this.mergeTracker.remove(mergeTaskId);
         }
     }
 
