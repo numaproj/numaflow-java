@@ -115,11 +115,10 @@ class SessionReducerActor extends AbstractActor {
                             + " window info: " + this.keyedWindow.toString());
         }
         this.isMerging = true;
-        getSender().tell(
-                new GetAccumulatorResponse(
-                        this.keyedWindow,
-                        getAccumulatorRequest.getMergeTaskId(),
-                        this.sessionReducer.accumulator()),
+        getSender().tell(buildMergeResponse(
+                        this.sessionReducer.accumulator(),
+                        getAccumulatorRequest.getMergeTaskId())
+                ,
                 getSelf());
     }
 
@@ -163,6 +162,18 @@ class SessionReducerActor extends AbstractActor {
         responseBuilder.setEOF(true);
         return new ActorResponse(
                 responseBuilder.build(),
-                false);
+                false,
+                null,
+                "");
+    }
+
+    private ActorResponse buildMergeResponse(byte[] accumulator, String mergeTaskId) {
+        Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
+        responseBuilder.setKeyedWindow(this.keyedWindow);
+        return new ActorResponse(
+                responseBuilder.build(),
+                false,
+                accumulator,
+                mergeTaskId);
     }
 }

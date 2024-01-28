@@ -85,7 +85,6 @@ class SupervisorActor extends AbstractActor {
                 .match(String.class, this::handleEOF)
                 .match(Sessionreduce.SessionReduceRequest.class, this::handleReduceRequest)
                 .match(ActorResponse.class, this::handleActorResponse)
-                .match(GetAccumulatorResponse.class, this::handleGetAccumulatorResponse)
                 .build();
     }
 
@@ -335,52 +334,47 @@ class SupervisorActor extends AbstractActor {
     }
 
     private void handleActorResponse(ActorResponse actorResponse) {
-        // when the supervisor receives an actor response, it means the corresponding
-        // session reducer actor has finished its job.
-        // we remove the entry from the actors map.
-        log.info("I am removing an actor...");
-        this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(actorResponse.getResponse()
-                .getKeyedWindow()));
-        if (this.actorsMap.isEmpty() && this.isInputStreamClosed) {
-            // the actor map is empty and the gRPC input stream has been closed, hence this is the very last response of the entire system.
-            log.info("I am cleaning up the system...");
-            actorResponse.setLast(true);
-            this.outputActor.tell(actorResponse, getSelf());
+        String responseWindowId = UniqueIdGenerator.getUniqueIdentifier(actorResponse.getResponse()
+                .getKeyedWindow());
+        if (actorResponse.isEOFResponse()) {
+            // when the supervisor receives an EOF actor response,
+            // it means the corresponding session reducer actor has finished its job.
+            // we remove the entry from the actors map.
+            this.actorsMap.remove(responseWindowId);
+            if (this.actorsMap.isEmpty() && this.isInputStreamClosed) {
+                // the actor map is empty and the gRPC input stream has been closed, hence this is the very last response of the entire system.
+                // this is the only place to set last.
+                actorResponse.setLast(true);
+                this.outputActor.tell(actorResponse, getSelf());
+            } else {
+                this.outputActor.tell(actorResponse, getSelf());
+            }
         } else {
-            this.outputActor.tell(actorResponse, getSelf());
-        }
-    }
-
-    private void handleGetAccumulatorResponse(GetAccumulatorResponse getAccumulatorResponse) {
-        String mergeTaskId = getAccumulatorResponse.getMergeTaskId();
-        log.info("kerantest-merge: mergeTaskId: " + mergeTaskId);
-        if (!this.mergeTracker.containsKey(mergeTaskId)) {
-            throw new RuntimeException(
-                    "received an accumulator but the corresponding merge task doesn't exist.");
-        }
-        if (!this.actorsMap.containsKey(mergeTaskId)) {
-            log.info("kerantest-merge: not exist");
-            throw new RuntimeException(
-                    "received an accumulator but the corresponding parent merge session doesn't exist.");
-        }
-        this.mergeTracker.put(mergeTaskId, this.mergeTracker.get(mergeTaskId) - 1);
-        String sessionIdToRelease = UniqueIdGenerator.getUniqueIdentifier(getAccumulatorResponse.getFromKeyedWindow());
-        if (!sessionIdToRelease.equals(mergeTaskId)) {
-            log.info(
-                    "kerantest: I received a GetAccuResponse, I am removing a session from my map. Id: "
-                            + sessionIdToRelease);
-            // release the session that returns us the accumulator, indicating it has finished its lifecycle.
-            // the session is released without being explicitly closed because it has been merged and tracked by the newly merged session.
-            // we release a session by simply removing it from the actor map so that the corresponding actor
-            // gets de-referred and handled by Java GC.
-            this.actorsMap.remove(sessionIdToRelease);
-        }
-        this.actorsMap.get(mergeTaskId).tell(new MergeAccumulatorRequest(
-                this.mergeTracker.get(mergeTaskId) == 0,
-                getAccumulatorResponse.getAccumulator()), getSelf());
-        if (this.mergeTracker.get(mergeTaskId) == 0) {
-            // remove the task from the merge tracker when there is no more pending accumulators to merge.
-            this.mergeTracker.remove(mergeTaskId);
+            // handle get accumulator response
+            String mergeTaskId = actorResponse.getMergeTaskId();
+            if (!this.mergeTracker.containsKey(mergeTaskId)) {
+                throw new RuntimeException(
+                        "received an accumulator but the corresponding merge task doesn't exist.");
+            }
+            if (!this.actorsMap.containsKey(mergeTaskId)) {
+                throw new RuntimeException(
+                        "received an accumulator but the corresponding parent merge session doesn't exist.");
+            }
+            this.mergeTracker.put(mergeTaskId, this.mergeTracker.get(mergeTaskId) - 1);
+            if (!responseWindowId.equals(mergeTaskId)) {
+                // release the session that returns us the accumulator, indicating it has finished its lifecycle.
+                // the session is released without being explicitly closed because it has been merged and tracked by the newly merged session.
+                // we release a session by simply removing it from the actor map so that the corresponding actor
+                // gets de-referred and handled by Java GC.
+                this.actorsMap.remove(responseWindowId);
+            }
+            this.actorsMap.get(mergeTaskId).tell(new MergeAccumulatorRequest(
+                    this.mergeTracker.get(mergeTaskId) == 0,
+                    actorResponse.getAccumulator()), getSelf());
+            if (this.mergeTracker.get(mergeTaskId) == 0) {
+                // remove the task from the merge tracker when there is no more pending accumulators to merge.
+                this.mergeTracker.remove(mergeTaskId);
+            }
         }
     }
 

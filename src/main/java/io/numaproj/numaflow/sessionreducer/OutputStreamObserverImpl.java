@@ -45,6 +45,6 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
                 .addAllTags(
                         message.getTags() == null ? new ArrayList<>():List.of(message.getTags()))
                 .build());
-        return new ActorResponse(responseBuilder.build(), false);
+        return new ActorResponse(responseBuilder.build(), false, null, "");
     }
 }

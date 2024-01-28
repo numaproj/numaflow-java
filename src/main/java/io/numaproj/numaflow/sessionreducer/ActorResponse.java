@@ -19,4 +19,11 @@ import lombok.Setter;
 class ActorResponse {
     Sessionreduce.SessionReduceResponse response;
     boolean isLast;
+
+    byte[] accumulator;
+    String mergeTaskId;
+
+    public boolean isEOFResponse() {
+        return this.accumulator == null && this.mergeTaskId == "";
+    }
 }
