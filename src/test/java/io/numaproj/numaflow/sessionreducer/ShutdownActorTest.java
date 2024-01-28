@@ -21,10 +21,67 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ShutdownActorTest {
-    // TODO - rename - UDF throws
-    // TODO - add one more - supervisor throws
     @Test
-    public void testFailure() {
+    public void given_shutdownActor_when_supervisorActorThrows_thenFutureCompletesWithExpectedException() {
+        final ActorSystem actorSystem = ActorSystem.create("test-system-1");
+        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+
+        List<String> keys = List.of("reduceKey");
+        ActorRef shutdownActor = actorSystem
+                .actorOf(ShutdownActor
+                        .props(completableFuture));
+
+        ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
+
+        ActorRef outputActor = actorSystem.actorOf(OutputActor
+                .props(reduceOutputStreamObserver));
+
+        ActorRef supervisorActor = actorSystem
+                .actorOf(SupervisorActor
+                        .props(
+                                new TestExceptionFactory(),
+                                shutdownActor,
+                                outputActor));
+
+        Sessionreduce.SessionReduceRequest openRequest = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                        .addAllKeyedWindows(List.of(
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(keys)
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(6000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                        .setSlot("test-slot").build(),
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(keys)
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(7000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(8000).build())
+                                        .setSlot("test-slot").build()))
+                        .build())
+                .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                        .addAllKeys(keys)
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                        .build())
+                .build();
+
+        supervisorActor.tell(openRequest, ActorRef.noSender());
+
+        try {
+            completableFuture.get();
+            fail("Expected the future to complete with exception");
+        } catch (Exception e) {
+            assertEquals(
+                    e.getMessage(),
+                    "java.lang.RuntimeException: open operation error: expected exactly one window");
+        }
+    }
+
+    @Test
+    public void given_shutdownActor_when_udfThrows_thenFutureCompletesWithExpectedException() {
         final ActorSystem actorSystem = ActorSystem.create("test-system-1");
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 
@@ -74,7 +131,7 @@ public class ShutdownActorTest {
     }
 
     @Test
-    public void testDeadLetterHandling() {
+    public void given_shutdownActor_when_deadLetterReceived_thenFutureCompletesWithExpectedException() {
         final ActorSystem actorSystem = ActorSystem.create("test-system-2");
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
 

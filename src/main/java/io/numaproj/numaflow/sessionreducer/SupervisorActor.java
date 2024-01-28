@@ -101,7 +101,6 @@ class SupervisorActor extends AbstractActor {
             case OPEN: {
                 log.info("supervisor received an open request\n");
                 if (windowOperation.getKeyedWindowsCount() != 1) {
-                    // TODO - test exception scenario.
                     throw new RuntimeException(
                             "open operation error: expected exactly one window");
                 }
@@ -109,7 +108,8 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.OPEN,
                         windowOperation.getKeyedWindows(0),
                         null,
-                        request.getPayload(), "");
+                        request.hasPayload() ? request.getPayload():null,
+                        "");
                 this.invokeActor(createRequest);
                 break;
             }
@@ -123,7 +123,7 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(0),
                         null,
-                        request.getPayload(),
+                        request.hasPayload() ? request.getPayload():null,
                         "");
                 this.invokeActor(appendRequest);
                 break;
@@ -170,7 +170,8 @@ class SupervisorActor extends AbstractActor {
                         windowOperation.getKeyedWindows(0),
                         windowOperation.getKeyedWindows(1),
                         // do not send payload
-                        null, "");
+                        null,
+                        "");
                 this.invokeActor(expandRequest);
                 this.actorsMap.put(newId, this.actorsMap.get(currentId));
                 this.actorsMap.remove(currentId);
@@ -180,7 +181,7 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(1),
                         null,
-                        request.getPayload(),
+                        request.hasPayload() ? request.getPayload():null,
                         ""
                 );
                 this.invokeActor(appendRequest);
@@ -243,7 +244,10 @@ class SupervisorActor extends AbstractActor {
                     // tell the session reducer actor - "hey, you are about to be merged."
                     ActorRequest getAccumulatorRequest = new ActorRequest(
                             ActorRequestType.GET_ACCUMULATOR,
-                            window, null, null, mergeTaskId
+                            window,
+                            null,
+                            null,
+                            mergeTaskId
                     );
                     this.invokeActor(getAccumulatorRequest);
                 }
@@ -331,7 +335,8 @@ class SupervisorActor extends AbstractActor {
         }
 
         if (actorRequest.getPayload() != null) {
-            log.info("sending the payload to the session reducer actor...");
+            log.info("verifying payload content of a not-set one");
+            log.info(actorRequest.getPayload().toString());
             HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getPayload());
             this.actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
         }
@@ -345,6 +350,7 @@ class SupervisorActor extends AbstractActor {
         this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(actorResponse.getResponse()
                 .getKeyedWindow()));
         if (this.actorsMap.isEmpty()) {
+            // TODO - FIXME - only when received EOF can we clean up the system
             // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
             log.info("I am cleaning up the system...");
             actorResponse.setLast(true);

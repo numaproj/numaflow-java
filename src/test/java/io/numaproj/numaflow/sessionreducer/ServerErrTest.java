@@ -78,7 +78,79 @@ public class ServerErrTest {
         server.stop();
     }
 
-    // TODO - given actor throws
+    @Test
+    public void given_actorThrows_when_serverRuns_then_outputStreamContainsThrowable() {
+        // create an output stream observer
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+        // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
+        // the test can still succeed.
+        AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
+
+        Thread t = new Thread(() -> {
+            while (outputStreamObserver.t == null) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    exceptionInThread.set(e);
+                }
+            }
+            try {
+                // this test triggers a supervisor runtime exception by sending an OPEN request with 2 windows.
+                // we are expecting the error message below.
+                assertEquals(
+                        "UNKNOWN: java.lang.RuntimeException: open operation error: expected exactly one window",
+                        outputStreamObserver.t.getMessage());
+            } catch (Throwable e) {
+                exceptionInThread.set(e);
+            }
+        });
+        t.start();
+
+        StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
+                .newStub(inProcessChannel)
+                .sessionReduceFn(outputStreamObserver);
+
+        List<String> testKey = List.of("test-key");
+        // an open request with two windows is invalid
+        Sessionreduce.SessionReduceRequest openRequest = Sessionreduce.SessionReduceRequest
+                .newBuilder()
+                .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                        .newBuilder()
+                        .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                        .addAllKeyedWindows(List.of(
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(testKey)
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(6000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(7000).build())
+                                        .setSlot("test-slot").build(),
+                                Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(testKey)
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(8000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(9000).build())
+                                        .setSlot("test-slot").build()))
+                        .build())
+                .setPayload(Sessionreduce.SessionReduceRequest.Payload
+                        .newBuilder()
+                        .addAllKeys(testKey)
+                        .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                        .build())
+                .build();
+        inputStreamObserver.onNext(openRequest);
+
+        inputStreamObserver.onCompleted();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            fail("Thread got interrupted before test assertion.");
+        }
+        // Fail the test if any exception caught in the thread
+        if (exceptionInThread.get() != null) {
+            fail("Assertion failed in the thread: " + exceptionInThread.get().getMessage());
+        }
+    }
 
     @Test
     public void given_sessionReducerThrows_when_serverRuns_then_outputStreamContainsThrowable() {
