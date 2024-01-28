@@ -6,23 +6,20 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * The actor response holds the session reduce response for a particular session window.
+ * The actor response holds the session reduce response from a particular session window.
  */
 @Getter
 @Setter
 class ActorResponse {
     Sessionreduce.SessionReduceResponse response;
-    /**
-     * The isLast attribute indicates whether the response is globally the last one to be sent to
-     * the output gRPC stream, if set to true, it means the response is the very last response among
-     * all windows. When output actor receives an isLast response, it sends the response and immediately
-     * closes the output stream.
-     */
+    // The isLast attribute indicates whether the response is globally the last one to be sent to
+    // the output gRPC stream, if set to true, it means the response is the very last response among
+    // all windows. When output actor receives an isLast response, it sends the response to and immediately
+    // closes the output stream.
     boolean isLast;
-
     // The accumulator attribute holds the accumulator of the session.
     byte[] accumulator;
-    // The mergeTaskId attribute holds the merge task if this session is to be merged in.
+    // The mergeTaskId attribute holds the merge task id that this session is to be merged into.
     String mergeTaskId;
 
     @Builder
@@ -40,7 +37,8 @@ class ActorResponse {
 
     static class ActorResponseBuilder {
         ActorResponse build() {
-            if (accumulator != null && mergeTaskId == null) {
+            if ((accumulator != null && mergeTaskId == null) || (accumulator == null
+                    && mergeTaskId != null)) {
                 throw new IllegalStateException(
                         "attributes accumulator and mergeTaskId should be either both null or both non-null.");
             }

@@ -13,9 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * OutputStreamObserverImpl uses its assigned window to transform a message to
- * an ActorResponse. The send method sends the ActorResponse to the output actor to
- * forward to output gRPC stream.
+ * OutputStreamObserverImpl transforms a message to an ActorResponse.
+ * The send method sends the ActorResponse to the output actor to forward to output gRPC stream.
  */
 @AllArgsConstructor
 class OutputStreamObserverImpl implements OutputStreamObserver {

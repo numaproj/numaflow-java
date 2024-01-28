@@ -147,7 +147,7 @@ class SessionReducerActor extends AbstractActor {
                     "received a merge accumulator request but the session is not in a merging process.");
         }
         this.sessionReducer.mergeAccumulator(mergeAccumulatorRequest.getAccumulator());
-        if (mergeAccumulatorRequest.isLast) {
+        if (mergeAccumulatorRequest.isLast()) {
             // I have merged the last accumulator, I am no longer in a MERGE process.
             this.isMerging = false;
             if (this.eofPending) {

@@ -189,7 +189,7 @@ class SupervisorActor extends AbstractActor {
                         throw new RuntimeException(
                                 "merge operation error: session not found for id: " + id);
                     }
-                    // mergedWindow will be the largest window which contains all the windows.
+                    // merged window will be the largest window which contains all the windows.
                     if (Instant
                             .ofEpochSecond(
                                     window.getStart().getSeconds(),
@@ -231,7 +231,8 @@ class SupervisorActor extends AbstractActor {
                 // it's possible that merged keyed window is the same as one of the existing windows,
                 // in this case, since we already send out the GET_ACCUMULATOR request, it's ok to replace
                 // the existing window with the new one.
-                // the accumulator of the old window will get merged to the new window eventually.
+                // the accumulator of the old window will get merged to the new window eventually,
+                // when the supervisor receives the get accumulator response.
                 ActorRequest mergeOpenRequest = ActorRequest.builder()
                         .type(ActorRequestType.MERGE_OPEN)
                         .keyedWindow(mergedWindow)

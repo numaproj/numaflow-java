@@ -14,7 +14,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 class GetAccumulatorResponse {
-    Sessionreduce.KeyedWindow fromKeyedWindow;
-    String mergeTaskId;
-    byte[] accumulator;
+    private final Sessionreduce.KeyedWindow fromKeyedWindow;
+    private final String mergeTaskId;
+    private final byte[] accumulator;
 }

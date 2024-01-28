@@ -20,7 +20,7 @@ import static io.numaproj.numaflow.reduce.v1.ReduceGrpc.getReduceFnMethod;
 class Service extends SessionReduceGrpc.SessionReduceImplBase {
     public static final ActorSystem sessionReduceActorSystem = ActorSystem.create("sessionreduce");
 
-    private SessionReducerFactory<? extends SessionReducer> sessionReducerFactory;
+    private final SessionReducerFactory<? extends SessionReducer> sessionReducerFactory;
 
     public Service(SessionReducerFactory<? extends SessionReducer> sessionReducerFactory) {
         this.sessionReducerFactory = sessionReducerFactory;

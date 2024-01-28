@@ -101,7 +101,7 @@ public class Server {
     /**
      * Set server builder for testing.
      *
-     * @param serverBuilder
+     * @param serverBuilder for building the server
      */
     @VisibleForTesting
     void setServerBuilder(ServerBuilder<?> serverBuilder) {

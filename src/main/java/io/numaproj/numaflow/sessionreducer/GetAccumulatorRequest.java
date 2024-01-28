@@ -8,10 +8,11 @@ import lombok.Getter;
  * the window is to be merged with other windows.
  * <p>
  * "I am working on a merge task (mergeTaskId),
- * and you are one of the windows to be merged. Please give me your accumulator."
+ * and you are one of the windows to be merged.
+ * Please give me your accumulator."
  */
 @AllArgsConstructor
 @Getter
 class GetAccumulatorRequest {
-    String mergeTaskId;
+    private final String mergeTaskId;
 }

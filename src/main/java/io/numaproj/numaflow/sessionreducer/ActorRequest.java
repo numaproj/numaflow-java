@@ -3,26 +3,24 @@ package io.numaproj.numaflow.sessionreducer;
 import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * ActorRequest is used by the supervisor actor to distribute session reduce operations to
  * individual session reducer actors. One actor request is sent to only one session reducer actor.
  */
 @Getter
-@Setter
 class ActorRequest {
-    private ActorRequestType type;
+    private final ActorRequestType type;
     // the window of the target session the actor request is sent to
-    private Sessionreduce.KeyedWindow keyedWindow;
+    private final Sessionreduce.KeyedWindow keyedWindow;
     // the new keyed window the target session is to be expanded to
     // it is specified only when the actor request is an EXPAND
-    private Sessionreduce.KeyedWindow newKeyedWindow;
+    private final Sessionreduce.KeyedWindow newKeyedWindow;
     // the payload of the request
-    private Sessionreduce.SessionReduceRequest.Payload payload;
+    private final Sessionreduce.SessionReduceRequest.Payload payload;
     // the id of the merge task this request belongs to
     // it is specified only when the actor request is a GET_ACCUMULATOR
-    private String mergeTaskId;
+    private final String mergeTaskId;
 
     @Builder
     private ActorRequest(

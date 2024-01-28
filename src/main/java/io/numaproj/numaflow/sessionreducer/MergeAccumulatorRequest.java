@@ -14,6 +14,6 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 class MergeAccumulatorRequest {
-    boolean isLast;
-    byte[] accumulator;
+    private final boolean isLast;
+    private final byte[] accumulator;
 }
