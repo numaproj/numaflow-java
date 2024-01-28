@@ -16,14 +16,14 @@ import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 class SessionReducerActor extends AbstractActor {
     // the session window the actor is working on
     private Sessionreduce.KeyedWindow keyedWindow;
-    private SessionReducer sessionReducer;
+    private final SessionReducer sessionReducer;
     private OutputStreamObserver outputStream;
     // when set to true, it means the corresponding session is in the process of merging with other windows.
-    private boolean isMerging = false;
-    // when set to true, it means this session is pending EOF, it already received a CLOSE/EOF request, but it hasn't finished its MERGE job.
+    private boolean isMerging;
+    // when set to true, it means this session is pending EOF, it already received a CLOSE/EOF request, but it hasn't finished its MERGE job yet.
     private boolean eofPending = false;
     // when set to true, it means this session is already closed.
-    private boolean eofProcessed = false;
+    private boolean isClosed = false;
 
     public SessionReducerActor(
             Sessionreduce.KeyedWindow keyedWindow,
@@ -64,6 +64,10 @@ class SessionReducerActor extends AbstractActor {
     // receiving a new keyed window, update the keyed window.
     // this is for EXPAND operation.
     private void updateKeyedWindow(Sessionreduce.KeyedWindow newKeyedWindow) {
+        if (this.isClosed) {
+            throw new RuntimeException(
+                    "received an expand request but the session is already closed.");
+        }
         if (this.isMerging) {
             throw new RuntimeException(
                     "cannot expand a session window when it's in a merging process."
@@ -80,6 +84,10 @@ class SessionReducerActor extends AbstractActor {
     // when receiving a message, process it.
     // this is for OPEN/APPEND operation.
     private void invokeHandler(HandlerDatum handlerDatum) {
+        if (this.isClosed) {
+            throw new RuntimeException(
+                    "received a message but the session is already closed.");
+        }
         if (this.isMerging) {
             throw new RuntimeException(
                     "cannot process messages when the session window is in a merging process."
@@ -98,17 +106,20 @@ class SessionReducerActor extends AbstractActor {
             // the session is in a merging process, wait until it finishes before processing EOF.
             this.eofPending = true;
             return;
-        } else if (this.eofProcessed) {
+        } else if (this.isClosed) {
             // we only process EOF once.
             return;
         }
         this.processEOF();
-        this.eofProcessed = true;
     }
 
     // receiving a GetAccumulatorRequest, return the accumulator of the window.
     // this is for MERGE operation.
     private void handleGetAccumulatorRequest(GetAccumulatorRequest getAccumulatorRequest) {
+        if (this.isClosed) {
+            throw new RuntimeException(
+                    "received a get accumulator request but the session is already closed.");
+        }
         if (this.isMerging) {
             throw new RuntimeException(
                     "cannot process a GetAccumulatorRequest when the session window is already in a merging process."
@@ -120,28 +131,29 @@ class SessionReducerActor extends AbstractActor {
                         getAccumulatorRequest.getMergeTaskId())
                 ,
                 getSelf());
+        // after finishing handling a GetAccumulatorRequest, the session is considered closed.
+        this.isClosed = true;
     }
 
     // receiving a MergeAccumulatorRequest, merge the accumulator.
     // this is for MERGE operation.
     private void handleMergeAccumulatorRequest(MergeAccumulatorRequest mergeAccumulatorRequest) {
+        if (this.isClosed) {
+            throw new RuntimeException(
+                    "received a merge accumulator request but the session is already closed.");
+        }
         if (!this.isMerging) {
             throw new RuntimeException(
                     "received a merge accumulator request but the session is not in a merging process.");
         }
-        System.out.println("keran-merge-test: I am merging an accumulator...");
         this.sessionReducer.mergeAccumulator(mergeAccumulatorRequest.getAccumulator());
         if (mergeAccumulatorRequest.isLast) {
-            // TODO - remove test logs.
-            System.out.println(
-                    "keran-merge-test: this is the last accumulator, I am marking myself as not in merging any more.");
-            // this is the last accumulator to merge, mark the actor as no longer merging.
+            // I have merged the last accumulator, I am no longer in a MERGE process.
             this.isMerging = false;
             if (this.eofPending) {
-                // we finished merging, and we received an EOF/CLOSE request before, now let's release the session
+                // I was asked to close, now that I finished the MERGE operation,
+                // I can close myself.
                 this.processEOF();
-                this.eofPending = false;
-                this.eofProcessed = true;
             }
         }
     }
@@ -154,6 +166,8 @@ class SessionReducerActor extends AbstractActor {
         // construct an actor response and send it back to the supervisor actor, indicating the actor
         // has finished processing all the messages for the corresponding keyed window.
         getSender().tell(buildEOFResponse(), getSelf());
+        this.eofPending = false;
+        this.isClosed = true;
     }
 
     private ActorResponse buildEOFResponse() {

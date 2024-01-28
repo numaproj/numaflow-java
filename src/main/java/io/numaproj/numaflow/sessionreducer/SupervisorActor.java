@@ -99,11 +99,17 @@ class SupervisorActor extends AbstractActor {
         Sessionreduce.SessionReduceRequest.WindowOperation windowOperation = request.getOperation();
         switch (windowOperation.getEvent()) {
             case OPEN: {
-                log.info("supervisor received an open request\n");
                 if (windowOperation.getKeyedWindowsCount() != 1) {
                     throw new RuntimeException(
                             "open operation error: expected exactly one window");
                 }
+                String windowId = UniqueIdGenerator.getUniqueIdentifier(windowOperation.getKeyedWindows(
+                        0));
+                if (this.actorsMap.containsKey(windowId)) {
+                    throw new RuntimeException(
+                            "received an OPEN request but the session reducer actor already exists");
+                }
+
                 ActorRequest createRequest = ActorRequest.builder()
                         .type(ActorRequestType.OPEN)
                         .keyedWindow(windowOperation.getKeyedWindows(0))
@@ -113,7 +119,6 @@ class SupervisorActor extends AbstractActor {
                 break;
             }
             case APPEND: {
-                log.info("supervisor received an append request\n");
                 if (windowOperation.getKeyedWindowsCount() != 1) {
                     throw new RuntimeException(
                             "append operation error: expected exactly one window");
@@ -127,7 +132,6 @@ class SupervisorActor extends AbstractActor {
                 break;
             }
             case CLOSE: {
-                log.info("supervisor received a close request\n");
                 windowOperation.getKeyedWindowsList().forEach(
                         keyedWindow -> {
                             ActorRequest closeRequest = ActorRequest.builder()
@@ -139,7 +143,6 @@ class SupervisorActor extends AbstractActor {
                 break;
             }
             case EXPAND: {
-                log.info("supervisor received an expand request\n");
                 if (windowOperation.getKeyedWindowsCount() != 2) {
                     throw new RuntimeException(
                             "expand operation error: expected exactly two windows");
@@ -222,15 +225,6 @@ class SupervisorActor extends AbstractActor {
                             .keyedWindow(window)
                             .mergeTaskId(mergeTaskId)
                             .build();
-                    /*
-                    ActorRequest getAccumulatorRequest = new ActorRequest(
-                            ActorRequestType.GET_ACCUMULATOR,
-                            window,
-                            null,
-                            null,
-                            mergeTaskId
-                    );
-                     */
                     this.invokeActor(getAccumulatorRequest);
                 }
                 // open a new session for the merged keyed window.
@@ -255,10 +249,6 @@ class SupervisorActor extends AbstractActor {
         String uniqueId = UniqueIdGenerator.getUniqueIdentifier(actorRequest.getKeyedWindow());
         switch (actorRequest.getType()) {
             case OPEN: {
-                if (this.actorsMap.containsKey(uniqueId)) {
-                    throw new RuntimeException(
-                            "received an OPEN request but the session reducer actor already exists");
-                }
                 SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
                 ActorRef actorRef = getContext()
                         .actorOf(SessionReducerActor.props(
@@ -266,15 +256,11 @@ class SupervisorActor extends AbstractActor {
                                 sessionReducer,
                                 this.outputActor,
                                 false));
-                log.info("putting id: " + uniqueId);
                 this.actorsMap.put(uniqueId, actorRef);
-                System.out.println("putted in the map id: " + uniqueId);
                 break;
             }
             case APPEND: {
                 if (!this.actorsMap.containsKey(uniqueId)) {
-                    log.info(
-                            "supervisor received an APPEND request, but actor doesn't exist, creating one...\n");
                     SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
                     ActorRef actorRef = getContext()
                             .actorOf(SessionReducerActor.props(
@@ -287,15 +273,12 @@ class SupervisorActor extends AbstractActor {
                 break;
             }
             case CLOSE: {
-                // if the session exists, send EOF to it.
                 if (this.actorsMap.containsKey(uniqueId)) {
                     this.actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
                 }
                 break;
             }
             case EXPAND: {
-                // ask the session reducer actor to update its keyed window.
-                System.out.println("I am telling the actor to expand...");
                 this.actorsMap.get(uniqueId).tell(actorRequest.getNewKeyedWindow(), getSelf());
                 break;
             }
@@ -321,8 +304,6 @@ class SupervisorActor extends AbstractActor {
         }
 
         if (actorRequest.getPayload() != null) {
-            log.info("verifying payload content of a not-set one");
-            log.info(actorRequest.getPayload().toString());
             HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getPayload());
             this.actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
         }

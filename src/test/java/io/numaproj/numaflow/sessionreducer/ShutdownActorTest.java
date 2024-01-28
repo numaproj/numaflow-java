@@ -182,7 +182,6 @@ public class ShutdownActorTest {
                     Datum datum,
                     OutputStreamObserver outputStreamObserver) {
                 count += 1;
-                System.out.println("I am throwing.");
                 throw new RuntimeException("UDF Failure");
             }
 
