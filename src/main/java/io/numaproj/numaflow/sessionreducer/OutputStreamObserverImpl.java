@@ -12,15 +12,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * OutputStreamObserverImpl uses its assigned window to transform a message to
+ * an ActorResponse. The send method sends the ActorResponse to the output actor to
+ * forward to output gRPC stream.
+ */
 @AllArgsConstructor
 class OutputStreamObserverImpl implements OutputStreamObserver {
-    private final ActorRef responseStreamActor;
+    private final ActorRef outputActor;
     @Setter
     private Sessionreduce.KeyedWindow keyedWindow;
 
     @Override
     public void send(Message message) {
-        this.responseStreamActor.tell(
+        this.outputActor.tell(
                 buildResponse(message, this.keyedWindow),
                 ActorRef.noSender());
     }

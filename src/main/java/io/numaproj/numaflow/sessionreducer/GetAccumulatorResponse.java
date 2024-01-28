@@ -5,9 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * GetAccumulatorResponse is sent from a session reducer actor back to the supervisor actor the accumulator of the session.
+ * GetAccumulatorResponse is sent from a session reducer actor back to the supervisor actor,
+ * containing the accumulator of the session.
  * <p>
- * "Hey supervisor, I am fromKeyedWindow, I am returning my accumulator so that you can ask mergeTaskId to merge me."
+ * "Hey supervisor, I am the session window fromKeyedWindow,
+ * I am returning my accumulator so that you can ask mergeTaskId to merge me."
  */
 @AllArgsConstructor
 @Getter

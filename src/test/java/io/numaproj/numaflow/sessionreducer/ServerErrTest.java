@@ -78,6 +78,8 @@ public class ServerErrTest {
         server.stop();
     }
 
+    // TODO - given actor throws
+
     @Test
     public void given_sessionReducerThrows_when_serverRuns_then_outputStreamContainsThrowable() {
         // create an output stream observer

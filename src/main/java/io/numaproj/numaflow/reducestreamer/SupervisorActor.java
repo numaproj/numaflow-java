@@ -29,32 +29,31 @@ class SupervisorActor extends AbstractActor {
     private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
-    private final ActorRef responseStreamActor;
+    private final ActorRef outputActor;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
-    // TODO - do we need this one? use @AllArgsConstructor
     public SupervisorActor(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
-            ActorRef responseStreamActor) {
+            ActorRef outputActor) {
         this.reduceStreamerFactory = reduceStreamerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
-        this.responseStreamActor = responseStreamActor;
+        this.outputActor = outputActor;
     }
 
     public static Props props(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
             ActorRef shutdownActor,
-            ActorRef responseStreamActor) {
+            ActorRef outputActor) {
         return Props.create(
                 SupervisorActor.class,
                 reduceStreamerFactory,
                 md,
                 shutdownActor,
-                responseStreamActor);
+                outputActor);
     }
 
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
@@ -102,7 +101,7 @@ class SupervisorActor extends AbstractActor {
                             keys,
                             this.md,
                             reduceStreamerHandler,
-                            this.responseStreamActor));
+                            this.outputActor));
             actorsMap.put(uniqueId, actorRef);
         }
         HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getRequest().getPayload());
@@ -123,9 +122,9 @@ class SupervisorActor extends AbstractActor {
         if (actorsMap.isEmpty()) {
             // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
             actorResponse.setLast(true);
-            this.responseStreamActor.tell(actorResponse, getSelf());
+            this.outputActor.tell(actorResponse, getSelf());
         } else {
-            this.responseStreamActor.tell(actorResponse, getSelf());
+            this.outputActor.tell(actorResponse, getSelf());
         }
     }
 

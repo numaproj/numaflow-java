@@ -28,31 +28,32 @@ import java.util.Optional;
 class SupervisorActor extends AbstractActor {
     private final SessionReducerFactory<? extends SessionReducer> sessionReducerFactory;
     private final ActorRef shutdownActor;
-    private final ActorRef responseStreamActor;
-    // key is the unique id of a session reducer actor, value is the reference to the actor.
+    private final ActorRef outputActor;
+    // actorMap maintains a map of active sessions.
+    // key is the unique id of a session, value is the reference to the actor working on the session.
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
-    // key is the unique id of a merged window, value is how many accumulators are pending aggregation for this merge operation.
+    // mergeTracker keeps track of the merge tasks that are in progress.
+    // key is the unique id of a merged task, value is how many accumulators are pending aggregation for this task.
     private final Map<String, Integer> mergeTracker = new HashMap<>();
 
-    // TODO - do we need this one? use @AllArgsConstructor
     public SupervisorActor(
             SessionReducerFactory<? extends SessionReducer> sessionReducerFactory,
             ActorRef shutdownActor,
-            ActorRef responseStreamActor) {
+            ActorRef outputActor) {
         this.sessionReducerFactory = sessionReducerFactory;
         this.shutdownActor = shutdownActor;
-        this.responseStreamActor = responseStreamActor;
+        this.outputActor = outputActor;
     }
 
     public static Props props(
             SessionReducerFactory<? extends SessionReducer> sessionReducerFactory,
             ActorRef shutdownActor,
-            ActorRef responseStreamActor) {
+            ActorRef outputActor) {
         return Props.create(
                 SupervisorActor.class,
                 sessionReducerFactory,
                 shutdownActor,
-                responseStreamActor);
+                outputActor);
     }
 
     // if there is an uncaught exception stop in the supervisor actor, send a signal to shut down
@@ -89,6 +90,9 @@ class SupervisorActor extends AbstractActor {
     private void handleEOF(String EOF) {
         // At Go sdk side, the server relies on the CLOSE request to close a session.
         // To reflect the same behaviour, we define handleEOF as a no-op.
+
+        // TODO - should close all. - only when EOF is received can we shutdown the system by
+        // setting actorResponse isLast to true. - this can be achieved by add a isInputStreamClosed attribute to the supervisor.
     }
 
     private void handleReduceRequest(Sessionreduce.SessionReduceRequest request) {
@@ -119,7 +123,8 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(0),
                         null,
-                        request.getPayload(), "");
+                        request.getPayload(),
+                        "");
                 this.invokeActor(appendRequest);
                 break;
             }
@@ -132,7 +137,8 @@ class SupervisorActor extends AbstractActor {
                                     keyedWindow,
                                     null,
                                     // since it's a close request, we don't expect a real payload
-                                    null, ""
+                                    null,
+                                    ""
                             );
                             this.invokeActor(closeRequest);
                         });
@@ -174,7 +180,8 @@ class SupervisorActor extends AbstractActor {
                         ActorRequestType.APPEND,
                         windowOperation.getKeyedWindows(1),
                         null,
-                        request.getPayload(), ""
+                        request.getPayload(),
+                        ""
                 );
                 this.invokeActor(appendRequest);
                 break;
@@ -218,6 +225,9 @@ class SupervisorActor extends AbstractActor {
                 ActorRequest mergeOpenRequest = new ActorRequest(
                         // TODO - is it possible that all window merged to the first window, hence the window already exists - handle this case.
                         // if the window already exists, let's still create a new actor ref and change the reference. the existing one will close itself when returning accumulator.
+                        // wait, after we create the new ref, we lose the access to the existing ref?
+                        // hence we will never get the accumulator...
+                        // TODO - need to unit test it.
                         ActorRequestType.MERGE_OPEN,
                         mergedWindow,
                         null,
@@ -239,7 +249,6 @@ class SupervisorActor extends AbstractActor {
                 }
                 break;
             }
-
             default:
                 throw new RuntimeException(
                         "received an unsupported window operation: " + windowOperation.getEvent());
@@ -259,7 +268,8 @@ class SupervisorActor extends AbstractActor {
                         .actorOf(SessionReducerActor.props(
                                 actorRequest.getKeyedWindow(),
                                 sessionReducer,
-                                this.responseStreamActor, false));
+                                this.outputActor,
+                                false));
                 log.info("putting id: " + uniqueId);
                 this.actorsMap.put(uniqueId, actorRef);
                 System.out.println("putted in the map id: " + uniqueId);
@@ -268,13 +278,14 @@ class SupervisorActor extends AbstractActor {
             case APPEND: {
                 if (!this.actorsMap.containsKey(uniqueId)) {
                     log.info(
-                            "supervisor received an append request, but actor doesn't exist, creating one...\n");
+                            "supervisor received an APPEND request, but actor doesn't exist, creating one...\n");
                     SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
                     ActorRef actorRef = getContext()
                             .actorOf(SessionReducerActor.props(
                                     actorRequest.getKeyedWindow(),
                                     sessionReducer,
-                                    this.responseStreamActor, false));
+                                    this.outputActor,
+                                    false));
                     this.actorsMap.put(uniqueId, actorRef);
                 }
                 break;
@@ -294,6 +305,7 @@ class SupervisorActor extends AbstractActor {
             }
             case MERGE_OPEN: {
                 if (this.actorsMap.containsKey(uniqueId)) {
+                    // TODO - this is not right - we need to aggregate for the existing window.
                     log.info(
                             "the merged keyed window is the same as one of the existing windows, replace.");
                 }
@@ -302,7 +314,8 @@ class SupervisorActor extends AbstractActor {
                         .actorOf(SessionReducerActor.props(
                                 actorRequest.getKeyedWindow(),
                                 sessionReducer,
-                                this.responseStreamActor, true));
+                                this.outputActor,
+                                true));
                 log.info("putting id: " + uniqueId);
                 this.actorsMap.put(uniqueId, actorRef);
                 break;
@@ -311,7 +324,7 @@ class SupervisorActor extends AbstractActor {
                 this.actorsMap
                         .get(uniqueId)
                         .tell(
-                                new GetAccumulatorRequest(actorRequest.getMergeWindowId()),
+                                new GetAccumulatorRequest(actorRequest.getMergeTaskId()),
                                 getSelf());
                 break;
             }
@@ -335,9 +348,9 @@ class SupervisorActor extends AbstractActor {
             // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
             log.info("I am cleaning up the system...");
             actorResponse.setLast(true);
-            this.responseStreamActor.tell(actorResponse, getSelf());
+            this.outputActor.tell(actorResponse, getSelf());
         } else {
-            this.responseStreamActor.tell(actorResponse, getSelf());
+            this.outputActor.tell(actorResponse, getSelf());
         }
     }
 
@@ -349,12 +362,15 @@ class SupervisorActor extends AbstractActor {
         }
         this.mergeTracker.put(mergeTaskId, this.mergeTracker.get(mergeTaskId) - 1);
         // the supervisor gets the accumulator of the session and immediately releases the session.
-        // question: does java automatically clean up the lingering actor class?
+        // the session is released without being explicitly closed because it has been merged and tracked by the newly merged session.
+        // we release a session by simply removing it from the actor map so that the corresponding actor
+        // gets de-referred and handled by Java GC.
         this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(getAccumulatorResponse.getFromKeyedWindow()));
         this.actorsMap.get(mergeTaskId).tell(new MergeAccumulatorRequest(
                 this.mergeTracker.get(mergeTaskId) == 0,
                 getAccumulatorResponse.getAccumulator()), getSelf());
         if (this.mergeTracker.get(mergeTaskId) == 0) {
+            // remove the task from the merge tracker when there is no more pending accumulators to merge.
             this.mergeTracker.remove(mergeTaskId);
         }
     }

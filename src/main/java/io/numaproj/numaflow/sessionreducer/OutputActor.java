@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Output actor is a wrapper around the gRPC output stream.
  * It ensures synchronized calls to the responseObserver onNext() and invokes onComplete at the end of the stream.
- * ALL reduce responses are sent to the output actor before getting forwarded to the output gRPC stream.
+ * ALL session reduce responses are sent to the output actor before getting forwarded to the output gRPC stream.
  * <p>
  * More details about gRPC StreamObserver concurrency: https://grpc.github.io/grpc-java/javadoc/io/grpc/stub/StreamObserver.html
  */

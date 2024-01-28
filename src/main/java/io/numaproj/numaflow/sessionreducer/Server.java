@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Server is the gRPC server for executing reduce stream operation.
+ * Server is the gRPC server for executing session reduce operations.
  */
 @Slf4j
 public class Server {

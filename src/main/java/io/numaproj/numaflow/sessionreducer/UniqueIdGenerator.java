@@ -5,9 +5,12 @@ import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 
 import java.time.Instant;
 
+/**
+ * UniqueIdGenerator is a utility class to generate a unique id for a keyed session window.
+ */
 public class UniqueIdGenerator {
     private UniqueIdGenerator() {
-        throw new AssertionError("Utility class cannot be instantiated");
+        throw new AssertionError("utility class cannot be instantiated");
     }
 
     public static String getUniqueIdentifier(Sessionreduce.KeyedWindow keyedWindow) {

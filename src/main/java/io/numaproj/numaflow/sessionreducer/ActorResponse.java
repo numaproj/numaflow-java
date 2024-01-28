@@ -6,11 +6,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * The actor response holds the final EOF response for a particular key set.
+ * The actor response holds the session reduce response for a particular session window.
  * <p>
  * The isLast attribute indicates whether the response is globally the last one to be sent to
  * the output gRPC stream, if set to true, it means the response is the very last response among
- * all key sets. When output stream actor receives an isLast response, it sends the response and immediately
+ * all windows. When output actor receives an isLast response, it sends the response and immediately
  * closes the output stream.
  */
 @Getter

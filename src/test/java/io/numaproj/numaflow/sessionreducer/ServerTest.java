@@ -82,6 +82,7 @@ public class ServerTest {
         server.stop();
     }
 
+    // TODO - make it exactly same as golang
     @Test
     public void open_append_close() {
         String reduceKey = "reduce-key";
@@ -901,7 +902,7 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             // temporarily add a sleep to make sure the requests are sent one by one
             // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
-            Thread.sleep(1000);
+            Thread.sleep(100);
             inputStreamObserver.onNext(request);
         }
 

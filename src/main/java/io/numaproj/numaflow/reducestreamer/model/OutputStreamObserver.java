@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.reducestreamer.model;
 
 /**
- * OutputStreamObserver sends to the output stream, the messages generate by the reduce streamer.
+ * OutputStreamObserver sends to the output stream, the messages generate by the session reducer.
  */
 public interface OutputStreamObserver {
     /**

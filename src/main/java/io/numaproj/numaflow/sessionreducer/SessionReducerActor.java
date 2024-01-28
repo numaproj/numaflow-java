@@ -10,30 +10,29 @@ import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import lombok.AllArgsConstructor;
 
 /**
- * TODO - update it
- * Reduce streamer actor invokes user defined functions to handle reduce requests.
- * When receiving an input request, it invokes the processMessage to handle the datum.
- * When receiving an EOF signal from the supervisor, it invokes the handleEndOfStream to execute
- * the user-defined end of stream processing logics.
+ * Session reducer actor invokes user defined functions to handle session reduce requests.
+ * Session reducer actor and session window has a one-to-one relationship, meaning
+ * a session reducer actor only works on its assigned single session window.
  */
 @AllArgsConstructor
 class SessionReducerActor extends AbstractActor {
+    // the session window the actor is working on
     private Sessionreduce.KeyedWindow keyedWindow;
-    private SessionReducer groupBy;
+    private SessionReducer sessionReducer;
     private OutputStreamObserver outputStream;
-    // when true, it means the corresponding session is in the process of merging with other windows.
+    // when set to true, it means the corresponding session is in the process of merging with other windows.
     private boolean isMerging;
 
     public static Props props(
             Sessionreduce.KeyedWindow keyedWindow,
             SessionReducer groupBy,
-            ActorRef responseStreamActor,
+            ActorRef outputActor,
             boolean isMerging) {
         return Props.create(
                 SessionReducerActor.class,
                 keyedWindow,
                 groupBy,
-                new OutputStreamObserverImpl(responseStreamActor, keyedWindow),
+                new OutputStreamObserverImpl(outputActor, keyedWindow),
                 isMerging);
     }
 
@@ -49,35 +48,46 @@ class SessionReducerActor extends AbstractActor {
                 .build();
     }
 
+    // receiving a new keyed window, update the keyed window.
+    // this is for EXPAND operation.
     private void updateKeyedWindow(Sessionreduce.KeyedWindow newKeyedWindow) {
         if (this.isMerging) {
-            return;
+            throw new RuntimeException(
+                    "cannot expand a session window when it's in a merging process."
+                            + " window info: " + this.keyedWindow.toString());
         }
+        // update the keyed window
         this.keyedWindow = newKeyedWindow;
-        // TODO - can we figure out a better way to update the output stream with the new keyed window?
+        // update the output stream to use the new keyed window
         OutputStreamObserverImpl newOutputStream = (OutputStreamObserverImpl) this.outputStream;
         newOutputStream.setKeyedWindow(newKeyedWindow);
         this.outputStream = newOutputStream;
     }
 
+    // when receiving a message, process it.
+    // this is for OPEN/APPEND operation.
     private void invokeHandler(HandlerDatum handlerDatum) {
         if (this.isMerging) {
-            return;
+            throw new RuntimeException(
+                    "cannot process messages when the session window is in a merging process."
+                            + " window info: " + this.keyedWindow.toString());
         }
-        this.groupBy.processMessage(
+        this.sessionReducer.processMessage(
                 keyedWindow.getKeysList().toArray(new String[0]),
                 handlerDatum,
                 outputStream);
     }
 
+    // receiving an EOF signal, close the window.
+    // this is for CLOSE operation and the close of gRPC input stream.
     private void handleEOF(String EOF) {
         if (this.isMerging) {
-            System.out.println(
-                    "keran-merge-test: I received an EOF, but I am in the middle of merging. I am skipping handling EOF.");
-            return;
+            throw new RuntimeException(
+                    "cannot process EOF when the session window is in a merging process."
+                            + " window info: " + this.keyedWindow.toString());
         }
         // invoke handleEndOfStream to materialize the messages received so far.
-        this.groupBy.handleEndOfStream(
+        this.sessionReducer.handleEndOfStream(
                 keyedWindow.getKeysList().toArray(new String[0]),
                 outputStream);
         // construct an actor response and send it back to the supervisor actor, indicating the actor
@@ -85,26 +95,37 @@ class SessionReducerActor extends AbstractActor {
         getSender().tell(buildEOFResponse(), getSelf());
     }
 
+    // receiving a GetAccumulatorRequest, return the accumulator of the window.
+    // this is for MERGE operation.
     private void handleGetAccumulatorRequest(GetAccumulatorRequest getAccumulatorRequest) {
+        if (this.isMerging) {
+            throw new RuntimeException(
+                    "cannot process a GetAccumulatorRequest when the session window is already in a merging process."
+                            + " window info: " + this.keyedWindow.toString());
+        }
         this.isMerging = true;
         getSender().tell(
                 new GetAccumulatorResponse(
                         this.keyedWindow,
                         getAccumulatorRequest.getMergeTaskId(),
-                        this.groupBy.accumulator()),
+                        this.sessionReducer.accumulator()),
                 getSelf());
     }
 
+    // receiving a MergeAccumulatorRequest, merge the accumulator.
+    // this is for MERGE operation.
     private void handleMergeAccumulatorRequest(MergeAccumulatorRequest mergeAccumulatorRequest) {
         if (!this.isMerging) {
             throw new RuntimeException(
                     "received a merge accumulator request but the session is not in a merging process.");
         }
         System.out.println("keran-merge-test: I am merging an accumulator...");
-        this.groupBy.mergeAccumulator(mergeAccumulatorRequest.getAccumulator());
+        this.sessionReducer.mergeAccumulator(mergeAccumulatorRequest.getAccumulator());
         if (mergeAccumulatorRequest.isLast) {
+            // TODO - remove test logs.
             System.out.println(
                     "keran-merge-test: this is the last accumulator, I am marking myself as not in merging any more.");
+            // this is the last accumulator to merge, mark the actor as no longer merging.
             this.isMerging = false;
         }
     }
