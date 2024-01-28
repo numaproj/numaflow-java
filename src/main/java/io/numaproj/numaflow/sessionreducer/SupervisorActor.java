@@ -35,6 +35,8 @@ class SupervisorActor extends AbstractActor {
     // mergeTracker keeps track of the merge tasks that are in progress.
     // key is the unique id of a merged task, value is how many accumulators are pending aggregation for this task.
     private final Map<String, Integer> mergeTracker = new HashMap<>();
+    // when set to true, isInputStreamClosed means the gRPC input stream has reached EOF.
+    private boolean isInputStreamClosed = false;
 
     public SupervisorActor(
             SessionReducerFactory<? extends SessionReducer> sessionReducerFactory,
@@ -88,15 +90,10 @@ class SupervisorActor extends AbstractActor {
     }
 
     private void handleEOF(String EOF) {
-        // when receiving EOF, if there is no active session, immediately terminate the system.
-        if (actorsMap.isEmpty()) {
-
+        this.isInputStreamClosed = true;
+        for (Map.Entry<String, ActorRef> entry : actorsMap.entrySet()) {
+            entry.getValue().tell(EOF, getSelf());
         }
-        // At Go sdk side, the server relies on the CLOSE request to close a session.
-        // To reflect the same behaviour, we define handleEOF as a no-op.
-
-        // TODO - should close all. - only when EOF is received can we shutdown the system by
-        // setting actorResponse isLast to true. - this can be achieved by add a isInputStreamClosed attribute to the supervisor.
     }
 
     private void handleReduceRequest(Sessionreduce.SessionReduceRequest request) {
@@ -344,9 +341,8 @@ class SupervisorActor extends AbstractActor {
         log.info("I am removing an actor...");
         this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(actorResponse.getResponse()
                 .getKeyedWindow()));
-        if (this.actorsMap.isEmpty()) {
-            // TODO - FIXME - only when received EOF can we clean up the system
-            // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
+        if (this.actorsMap.isEmpty() && this.isInputStreamClosed) {
+            // the actor map is empty and the gRPC input stream has been closed, hence this is the very last response of the entire system.
             log.info("I am cleaning up the system...");
             actorResponse.setLast(true);
             this.outputActor.tell(actorResponse, getSelf());

@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 
 // TODO - add a couple of more tests.
 // 1. early return
-// 3. receive EOF of gRPC stream, automatically close all windows.
+
 public class ServerTest {
     private final static String REDUCE_PROCESSED_KEY_SUFFIX = "-processed";
     @Rule
@@ -185,6 +185,7 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
         }
+        inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
         List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
@@ -357,6 +358,7 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
         }
+        inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
         List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
@@ -585,6 +587,7 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
         }
+        inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
         List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
@@ -925,6 +928,7 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
         }
+        inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
         List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
@@ -1109,6 +1113,7 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
         }
+        inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
         List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
@@ -1139,6 +1144,178 @@ public class ServerTest {
                                 .build())
                         .build(),
                 result.get(1));
+    }
+
+    @Test
+    public void open_close_open_open_eof() {
+        // create an output stream observer
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+        StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
+                .newStub(inProcessChannel)
+                .sessionReduceFn(outputStreamObserver);
+
+        List<Sessionreduce.SessionReduceRequest> requests = List.of(
+                // open a window for key client1, value 10. window start 60000, end 70000
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("client1"))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(60000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                        .setSlot("slot-0").build()))
+                                .build())
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                                .addAllKeys(List.of("client1"))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(10)))
+                                .build())
+                        .build(),
+                // close the window for client1
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.CLOSE_VALUE)
+                                .addAllKeyedWindows(List.of(
+                                        Sessionreduce.KeyedWindow.newBuilder()
+                                                .addAllKeys(List.of("client1"))
+                                                .setStart(Timestamp
+                                                        .newBuilder().setSeconds(60000).build())
+                                                .setEnd(Timestamp
+                                                        .newBuilder()
+                                                        .setSeconds(70000)
+                                                        .build())
+                                                .setSlot("slot-0").build()
+                                ))
+                                .build())
+                        .build(),
+                // open a window for key client2, value 20. window start 61000, end 69000
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("client2"))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(61000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(69000).build())
+                                        .setSlot("slot-0").build()))
+                                .build())
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                                .addAllKeys(List.of("client2"))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(20)))
+                                .build())
+                        .build(),
+                // open a window for key client3, value 30. window start 62000, end 68000
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("client3"))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(62000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(68000).build())
+                                        .setSlot("slot-0").build()))
+                                .build())
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                                .addAllKeys(List.of("client3"))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(30)))
+                                .build())
+                        .build()
+
+        );
+
+        // send the test requests one by one to the input stream.
+        for (Sessionreduce.SessionReduceRequest request : requests) {
+            inputStreamObserver.onNext(request);
+        }
+        inputStreamObserver.onCompleted();
+
+        while (!outputStreamObserver.completed.get()) ;
+        List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
+
+        assertEquals(6, result.size());
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(false)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                .addAllKeys(List.of("client1"))
+                                .setSlot("slot-0")
+                                .build())
+                        .setResult(Sessionreduce.SessionReduceResponse.Result.newBuilder()
+                                .addAllKeys(List.of("client1" + REDUCE_PROCESSED_KEY_SUFFIX))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(10))))
+                        .build(),
+                result.get(0));
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(false)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(61000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(69000).build())
+                                .addAllKeys(List.of("client2"))
+                                .setSlot("slot-0")
+                                .build())
+                        .setResult(Sessionreduce.SessionReduceResponse.Result.newBuilder()
+                                .addAllKeys(List.of("client2" + REDUCE_PROCESSED_KEY_SUFFIX))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(20))))
+                        .build(),
+                result.get(1));
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(false)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(62000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(68000).build())
+                                .addAllKeys(List.of("client3"))
+                                .setSlot("slot-0")
+                                .build())
+                        .setResult(Sessionreduce.SessionReduceResponse.Result.newBuilder()
+                                .addAllKeys(List.of("client3" + REDUCE_PROCESSED_KEY_SUFFIX))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(30))))
+                        .build(),
+                result.get(2));
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(true)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                .addAllKeys(List.of("client1"))
+                                .setSlot("slot-0")
+                                .build())
+                        .build(),
+                result.get(3));
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(true)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(61000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(69000).build())
+                                .addAllKeys(List.of("client2"))
+                                .setSlot("slot-0")
+                                .build())
+                        .build(),
+                result.get(4));
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(true)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(62000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(68000).build())
+                                .addAllKeys(List.of("client3"))
+                                .setSlot("slot-0")
+                                .build())
+                        .build(),
+                result.get(5));
     }
 
 

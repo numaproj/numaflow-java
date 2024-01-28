@@ -22,6 +22,8 @@ class SessionReducerActor extends AbstractActor {
     private boolean isMerging = false;
     // when set to true, it means this session is pending EOF, it already received a CLOSE/EOF request, but it hasn't finished its MERGE job.
     private boolean eofPending = false;
+    // when set to true, it means this session is already closed.
+    private boolean eofProcessed = false;
 
     public SessionReducerActor(
             Sessionreduce.KeyedWindow keyedWindow,
@@ -93,10 +95,15 @@ class SessionReducerActor extends AbstractActor {
     // this is for CLOSE operation or for the close of gRPC input stream.
     private void handleEOF(String EOF) {
         if (this.isMerging) {
+            // the session is in a merging process, wait until it finishes before processing EOF.
             this.eofPending = true;
-        } else {
-            this.processEOF();
+            return;
+        } else if (this.eofProcessed) {
+            // we only process EOF once.
+            return;
         }
+        this.processEOF();
+        this.eofProcessed = true;
     }
 
     // receiving a GetAccumulatorRequest, return the accumulator of the window.
@@ -135,6 +142,7 @@ class SessionReducerActor extends AbstractActor {
                 // we finished merging, and we received an EOF/CLOSE request before, now let's release the session
                 this.processEOF();
                 this.eofPending = false;
+                this.eofProcessed = true;
             }
         }
     }
