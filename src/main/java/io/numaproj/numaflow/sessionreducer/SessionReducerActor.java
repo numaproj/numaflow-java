@@ -7,22 +7,32 @@ import akka.japi.pf.ReceiveBuilder;
 import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.OutputStreamObserver;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
-import lombok.AllArgsConstructor;
 
 /**
  * Session reducer actor invokes user defined functions to handle session reduce requests.
  * Session reducer actor and session window has a one-to-one relationship, meaning
  * a session reducer actor only works on its assigned single session window.
  */
-@AllArgsConstructor
 class SessionReducerActor extends AbstractActor {
     // the session window the actor is working on
     private Sessionreduce.KeyedWindow keyedWindow;
     private SessionReducer sessionReducer;
     private OutputStreamObserver outputStream;
     // when set to true, it means the corresponding session is in the process of merging with other windows.
-    private boolean isMerging;
-    // TODO - add a isClosed flag because both EOF and CLOSE operation can trigger EOF and a session should only deal with it once
+    private boolean isMerging = false;
+    // when set to true, it means this session is pending EOF, it already received a CLOSE/EOF request, but it hasn't finished its MERGE job.
+    private boolean eofPending = false;
+
+    public SessionReducerActor(
+            Sessionreduce.KeyedWindow keyedWindow,
+            SessionReducer sessionReducer,
+            OutputStreamObserver outputStream,
+            boolean isMerging) {
+        this.keyedWindow = keyedWindow;
+        this.sessionReducer = sessionReducer;
+        this.outputStream = outputStream;
+        this.isMerging = isMerging;
+    }
 
     public static Props props(
             Sessionreduce.KeyedWindow keyedWindow,
@@ -80,21 +90,13 @@ class SessionReducerActor extends AbstractActor {
     }
 
     // receiving an EOF signal, close the window.
-    // this is for CLOSE operation and the close of gRPC input stream.
+    // this is for CLOSE operation or for the close of gRPC input stream.
     private void handleEOF(String EOF) {
-        // FIXME: if a session receives an EOF, if it's in a merging process, it should finish merging and then close itself, instead of throws.
         if (this.isMerging) {
-            throw new RuntimeException(
-                    "cannot process EOF when the session window is in a merging process."
-                            + " window info: " + this.keyedWindow.toString());
+            this.eofPending = true;
+        } else {
+            this.processEOF();
         }
-        // invoke handleEndOfStream to materialize the messages received so far.
-        this.sessionReducer.handleEndOfStream(
-                keyedWindow.getKeysList().toArray(new String[0]),
-                outputStream);
-        // construct an actor response and send it back to the supervisor actor, indicating the actor
-        // has finished processing all the messages for the corresponding keyed window.
-        getSender().tell(buildEOFResponse(), getSelf());
     }
 
     // receiving a GetAccumulatorRequest, return the accumulator of the window.
@@ -129,7 +131,22 @@ class SessionReducerActor extends AbstractActor {
                     "keran-merge-test: this is the last accumulator, I am marking myself as not in merging any more.");
             // this is the last accumulator to merge, mark the actor as no longer merging.
             this.isMerging = false;
+            if (this.eofPending) {
+                // we finished merging, and we received an EOF/CLOSE request before, now let's release the session
+                this.processEOF();
+                this.eofPending = false;
+            }
         }
+    }
+
+    private void processEOF() {
+        // invoke handleEndOfStream to materialize the messages received so far.
+        this.sessionReducer.handleEndOfStream(
+                keyedWindow.getKeysList().toArray(new String[0]),
+                outputStream);
+        // construct an actor response and send it back to the supervisor actor, indicating the actor
+        // has finished processing all the messages for the corresponding keyed window.
+        getSender().tell(buildEOFResponse(), getSelf());
     }
 
     private ActorResponse buildEOFResponse() {

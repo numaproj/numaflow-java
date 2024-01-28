@@ -415,7 +415,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_merge_close() throws InterruptedException {
+    public void open_merge_close() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -583,8 +583,6 @@ public class ServerTest {
 
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
-            // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
-            Thread.sleep(100);
             inputStreamObserver.onNext(request);
         }
 
@@ -645,7 +643,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_expand_append_merge_close() throws InterruptedException {
+    public void open_expand_append_merge_close() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -925,8 +923,6 @@ public class ServerTest {
 
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
-            // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
-            Thread.sleep(100);
             inputStreamObserver.onNext(request);
         }
 
@@ -989,7 +985,7 @@ public class ServerTest {
     // till now, we have completed the Java version of the unit tests in Go SDK package: https://github.com/numaproj/numaflow-go/blob/main/pkg/sessionreducer/service_test.go
     // below are more tests that are NOT in the numaflow-go unit tests.
     @Test
-    public void open_merge_close_mergeIntoAnExistingWindow() throws InterruptedException {
+    public void open_merge_close_mergeIntoAnExistingWindow() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -1111,8 +1107,6 @@ public class ServerTest {
 
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
-            // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
-            Thread.sleep(100);
             inputStreamObserver.onNext(request);
         }
 
