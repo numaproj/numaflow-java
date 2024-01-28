@@ -22,6 +22,7 @@ class SessionReducerActor extends AbstractActor {
     private OutputStreamObserver outputStream;
     // when set to true, it means the corresponding session is in the process of merging with other windows.
     private boolean isMerging;
+    // TODO - add a isClosed flag because both EOF and CLOSE operation can trigger EOF and a session should only deal with it once
 
     public static Props props(
             Sessionreduce.KeyedWindow keyedWindow,
@@ -81,6 +82,7 @@ class SessionReducerActor extends AbstractActor {
     // receiving an EOF signal, close the window.
     // this is for CLOSE operation and the close of gRPC input stream.
     private void handleEOF(String EOF) {
+        // FIXME: if a session receives an EOF, if it's in a merging process, it should finish merging and then close itself, instead of throws.
         if (this.isMerging) {
             throw new RuntimeException(
                     "cannot process EOF when the session window is in a merging process."

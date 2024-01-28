@@ -31,10 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-// unit tests that are the Java version of https://github.com/numaproj/numaflow-go/blob/main/pkg/sessionreducer/service_test.go
 // TODO - add a couple of more tests.
 // 1. early return
-// 2. merge multiple windows, one of which become the final window
 // 3. receive EOF of gRPC stream, automatically close all windows.
 public class ServerTest {
     private final static String REDUCE_PROCESSED_KEY_SUFFIX = "-processed";
@@ -585,7 +583,6 @@ public class ServerTest {
 
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
-            // temporarily add a sleep to make sure the requests are sent one by one
             // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
             Thread.sleep(100);
             inputStreamObserver.onNext(request);
@@ -928,7 +925,6 @@ public class ServerTest {
 
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
-            // temporarily add a sleep to make sure the requests are sent one by one
             // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
             Thread.sleep(100);
             inputStreamObserver.onNext(request);
@@ -989,6 +985,168 @@ public class ServerTest {
                         .build(),
                 result.get(3));
     }
+
+    // till now, we have completed the Java version of the unit tests in Go SDK package: https://github.com/numaproj/numaflow-go/blob/main/pkg/sessionreducer/service_test.go
+    // below are more tests that are NOT in the numaflow-go unit tests.
+    @Test
+    public void open_merge_close_mergeIntoAnExistingWindow() throws InterruptedException {
+        // create an output stream observer
+        ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
+        StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
+                .newStub(inProcessChannel)
+                .sessionReduceFn(outputStreamObserver);
+
+        List<Sessionreduce.SessionReduceRequest> requests = List.of(
+                // open a window for key client1, value 10. window start 60000, end 70000
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("client1"))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(60000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                        .setSlot("slot-0").build()))
+                                .build())
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                                .addAllKeys(List.of("client1"))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(10)))
+                                .build())
+                        .build(),
+                // open a window for key client1, value 20. window start 61000, end 69000
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("client1"))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(61000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(69000).build())
+                                        .setSlot("slot-0").build()))
+                                .build())
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                                .addAllKeys(List.of("client1"))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(20)))
+                                .build())
+                        .build(),
+                // open a window for key client1, value 1. window start 62000, end 69500
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.OPEN_VALUE)
+                                .addAllKeyedWindows(List.of(Sessionreduce.KeyedWindow.newBuilder()
+                                        .addAllKeys(List.of("client1"))
+                                        .setStart(Timestamp
+                                                .newBuilder().setSeconds(62000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(69500).build())
+                                        .setSlot("slot-0").build()))
+                                .build())
+                        .setPayload(Sessionreduce.SessionReduceRequest.Payload.newBuilder()
+                                .addAllKeys(List.of("client1"))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
+                                .build())
+                        .build(),
+                // merge the windows for key client1
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.MERGE_VALUE)
+                                .addAllKeyedWindows(List.of(
+                                        Sessionreduce.KeyedWindow.newBuilder()
+                                                .addAllKeys(List.of("client1"))
+                                                .setStart(Timestamp
+                                                        .newBuilder().setSeconds(60000).build())
+                                                .setEnd(Timestamp
+                                                        .newBuilder()
+                                                        .setSeconds(70000)
+                                                        .build())
+                                                .setSlot("slot-0").build(),
+                                        Sessionreduce.KeyedWindow.newBuilder()
+                                                .addAllKeys(List.of("client1"))
+                                                .setStart(Timestamp
+                                                        .newBuilder().setSeconds(61000).build())
+                                                .setEnd(Timestamp
+                                                        .newBuilder()
+                                                        .setSeconds(69000)
+                                                        .build())
+                                                .setSlot("slot-0").build(),
+                                        Sessionreduce.KeyedWindow.newBuilder()
+                                                .addAllKeys(List.of("client1"))
+                                                .setStart(Timestamp
+                                                        .newBuilder().setSeconds(62000).build())
+                                                .setEnd(Timestamp
+                                                        .newBuilder()
+                                                        .setSeconds(69500)
+                                                        .build())
+                                                .setSlot("slot-0").build()
+                                ))
+                                .build())
+                        .build(),
+                // close the merged window
+                Sessionreduce.SessionReduceRequest
+                        .newBuilder()
+                        .setOperation(Sessionreduce.SessionReduceRequest.WindowOperation
+                                .newBuilder()
+                                .setEventValue(Sessionreduce.SessionReduceRequest.WindowOperation.Event.CLOSE_VALUE)
+                                .addAllKeyedWindows(List.of(
+                                        Sessionreduce.KeyedWindow.newBuilder()
+                                                .addAllKeys(List.of("client1"))
+                                                .setStart(Timestamp
+                                                        .newBuilder().setSeconds(60000).build())
+                                                .setEnd(Timestamp
+                                                        .newBuilder()
+                                                        .setSeconds(70000)
+                                                        .build())
+                                                .setSlot("slot-0").build()
+                                ))
+                                .build())
+                        .build()
+        );
+
+        // send the test requests one by one to the input stream.
+        for (Sessionreduce.SessionReduceRequest request : requests) {
+            // TODO - to fix this, we need to ensure close request gets properly processed even when the window is in the process of merging.
+            Thread.sleep(100);
+            inputStreamObserver.onNext(request);
+        }
+
+        while (!outputStreamObserver.completed.get()) ;
+        List<Sessionreduce.SessionReduceResponse> result = outputStreamObserver.resultDatum.get();
+
+        assertEquals(2, result.size());
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(false)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                .addAllKeys(List.of("client1"))
+                                .setSlot("slot-0")
+                                .build())
+                        .setResult(Sessionreduce.SessionReduceResponse.Result.newBuilder()
+                                .addAllKeys(List.of("client1" + REDUCE_PROCESSED_KEY_SUFFIX))
+                                .setValue(ByteString.copyFromUtf8(String.valueOf(31))))
+                        .build(),
+                result.get(0));
+        assertEquals(
+                Sessionreduce.SessionReduceResponse.newBuilder()
+                        .setEOF(true)
+                        .setKeyedWindow(Sessionreduce.KeyedWindow.newBuilder()
+                                .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                .setEnd(Timestamp.newBuilder().setSeconds(70000).build())
+                                .addAllKeys(List.of("client1"))
+                                .setSlot("slot-0")
+                                .build())
+                        .build(),
+                result.get(1));
+    }
+
 
     public static class SessionReducerTestFactory extends SessionReducerFactory<SessionReducerTestFactory.TestSessionReducerHandler> {
         @Override

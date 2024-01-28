@@ -88,6 +88,10 @@ class SupervisorActor extends AbstractActor {
     }
 
     private void handleEOF(String EOF) {
+        // when receiving EOF, if there is no active session, immediately terminate the system.
+        if (actorsMap.isEmpty()) {
+
+        }
         // At Go sdk side, the server relies on the CLOSE request to close a session.
         // To reflect the same behaviour, we define handleEOF as a no-op.
 
@@ -222,24 +226,9 @@ class SupervisorActor extends AbstractActor {
                         .setEnd(mergedEndTime)
                         .addAllKeys(windowOperation.getKeyedWindows(0).getKeysList())
                         .setSlot(windowOperation.getKeyedWindows(0).getSlot()).build();
-                // open a new session for the merged keyed window.
-                ActorRequest mergeOpenRequest = new ActorRequest(
-                        // TODO - is it possible that all window merged to the first window, hence the window already exists - handle this case.
-                        // if the window already exists, let's still create a new actor ref and change the reference. the existing one will close itself when returning accumulator.
-                        // wait, after we create the new ref, we lose the access to the existing ref?
-                        // hence we will never get the accumulator...
-                        // TODO - need to unit test it.
-                        ActorRequestType.MERGE_OPEN,
-                        mergedWindow,
-                        null,
-                        null,
-                        "");
-                this.invokeActor(mergeOpenRequest);
 
                 String mergeTaskId = UniqueIdGenerator.getUniqueIdentifier(mergedWindow);
                 this.mergeTracker.put(mergeTaskId, windowOperation.getKeyedWindowsCount());
-
-
                 for (Sessionreduce.KeyedWindow window : windowOperation.getKeyedWindowsList()) {
                     // tell the session reducer actor - "hey, you are about to be merged."
                     ActorRequest getAccumulatorRequest = new ActorRequest(
@@ -251,6 +240,18 @@ class SupervisorActor extends AbstractActor {
                     );
                     this.invokeActor(getAccumulatorRequest);
                 }
+                // open a new session for the merged keyed window.
+                // it's possible that merged keyed window is the same as one of the existing windows,
+                // in this case, since we already send out the GET_ACCUMULATOR request, it's ok to replace
+                // the existing window with the new one.
+                // the accumulator of the old window will get merged to the new window eventually.
+                ActorRequest mergeOpenRequest = new ActorRequest(
+                        ActorRequestType.MERGE_OPEN,
+                        mergedWindow,
+                        null,
+                        null,
+                        "");
+                this.invokeActor(mergeOpenRequest);
                 break;
             }
             default:
@@ -308,11 +309,6 @@ class SupervisorActor extends AbstractActor {
                 break;
             }
             case MERGE_OPEN: {
-                if (this.actorsMap.containsKey(uniqueId)) {
-                    // TODO - this is not right - we need to aggregate for the existing window.
-                    log.info(
-                            "the merged keyed window is the same as one of the existing windows, replace.");
-                }
                 SessionReducer sessionReducer = sessionReducerFactory.createSessionReducer();
                 ActorRef actorRef = getContext()
                         .actorOf(SessionReducerActor.props(
@@ -320,7 +316,6 @@ class SupervisorActor extends AbstractActor {
                                 sessionReducer,
                                 this.outputActor,
                                 true));
-                log.info("putting id: " + uniqueId);
                 this.actorsMap.put(uniqueId, actorRef);
                 break;
             }
@@ -362,16 +357,28 @@ class SupervisorActor extends AbstractActor {
 
     private void handleGetAccumulatorResponse(GetAccumulatorResponse getAccumulatorResponse) {
         String mergeTaskId = getAccumulatorResponse.getMergeTaskId();
-        if (!mergeTracker.containsKey(mergeTaskId)) {
+        log.info("kerantest-merge: mergeTaskId: " + mergeTaskId);
+        if (!this.mergeTracker.containsKey(mergeTaskId)) {
             throw new RuntimeException(
                     "received an accumulator but the corresponding merge task doesn't exist.");
         }
+        if (!this.actorsMap.containsKey(mergeTaskId)) {
+            log.info("kerantest-merge: not exist");
+            throw new RuntimeException(
+                    "received an accumulator but the corresponding parent merge session doesn't exist.");
+        }
         this.mergeTracker.put(mergeTaskId, this.mergeTracker.get(mergeTaskId) - 1);
-        // the supervisor gets the accumulator of the session and immediately releases the session.
-        // the session is released without being explicitly closed because it has been merged and tracked by the newly merged session.
-        // we release a session by simply removing it from the actor map so that the corresponding actor
-        // gets de-referred and handled by Java GC.
-        this.actorsMap.remove(UniqueIdGenerator.getUniqueIdentifier(getAccumulatorResponse.getFromKeyedWindow()));
+        String sessionIdToRelease = UniqueIdGenerator.getUniqueIdentifier(getAccumulatorResponse.getFromKeyedWindow());
+        if (!sessionIdToRelease.equals(mergeTaskId)) {
+            log.info(
+                    "kerantest: I received a GetAccuResponse, I am removing a session from my map. Id: "
+                            + sessionIdToRelease);
+            // release the session that returns us the accumulator, indicating it has finished its lifecycle.
+            // the session is released without being explicitly closed because it has been merged and tracked by the newly merged session.
+            // we release a session by simply removing it from the actor map so that the corresponding actor
+            // gets de-referred and handled by Java GC.
+            this.actorsMap.remove(sessionIdToRelease);
+        }
         this.actorsMap.get(mergeTaskId).tell(new MergeAccumulatorRequest(
                 this.mergeTracker.get(mergeTaskId) == 0,
                 getAccumulatorResponse.getAccumulator()), getSelf());
