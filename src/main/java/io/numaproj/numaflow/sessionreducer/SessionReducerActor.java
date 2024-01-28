@@ -160,20 +160,18 @@ class SessionReducerActor extends AbstractActor {
         Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
         responseBuilder.setKeyedWindow(this.keyedWindow);
         responseBuilder.setEOF(true);
-        return new ActorResponse(
-                responseBuilder.build(),
-                false,
-                null,
-                "");
+        return ActorResponse.builder()
+                .response(responseBuilder.build())
+                .build();
     }
 
     private ActorResponse buildMergeResponse(byte[] accumulator, String mergeTaskId) {
         Sessionreduce.SessionReduceResponse.Builder responseBuilder = Sessionreduce.SessionReduceResponse.newBuilder();
         responseBuilder.setKeyedWindow(this.keyedWindow);
-        return new ActorResponse(
-                responseBuilder.build(),
-                false,
-                accumulator,
-                mergeTaskId);
+        return ActorResponse.builder()
+                .response(responseBuilder.build())
+                .accumulator(accumulator)
+                .mergeTaskId(mergeTaskId)
+                .build();
     }
 }

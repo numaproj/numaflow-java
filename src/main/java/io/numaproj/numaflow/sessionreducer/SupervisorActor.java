@@ -104,12 +104,11 @@ class SupervisorActor extends AbstractActor {
                     throw new RuntimeException(
                             "open operation error: expected exactly one window");
                 }
-                ActorRequest createRequest = new ActorRequest(
-                        ActorRequestType.OPEN,
-                        windowOperation.getKeyedWindows(0),
-                        null,
-                        request.hasPayload() ? request.getPayload():null,
-                        "");
+                ActorRequest createRequest = ActorRequest.builder()
+                        .type(ActorRequestType.OPEN)
+                        .keyedWindow(windowOperation.getKeyedWindows(0))
+                        .payload(request.hasPayload() ? request.getPayload():null)
+                        .build();
                 this.invokeActor(createRequest);
                 break;
             }
@@ -119,12 +118,11 @@ class SupervisorActor extends AbstractActor {
                     throw new RuntimeException(
                             "append operation error: expected exactly one window");
                 }
-                ActorRequest appendRequest = new ActorRequest(
-                        ActorRequestType.APPEND,
-                        windowOperation.getKeyedWindows(0),
-                        null,
-                        request.hasPayload() ? request.getPayload():null,
-                        "");
+                ActorRequest appendRequest = ActorRequest.builder()
+                        .type(ActorRequestType.APPEND)
+                        .keyedWindow(windowOperation.getKeyedWindows(0))
+                        .payload(request.hasPayload() ? request.getPayload():null)
+                        .build();
                 this.invokeActor(appendRequest);
                 break;
             }
@@ -132,14 +130,10 @@ class SupervisorActor extends AbstractActor {
                 log.info("supervisor received a close request\n");
                 windowOperation.getKeyedWindowsList().forEach(
                         keyedWindow -> {
-                            ActorRequest closeRequest = new ActorRequest(
-                                    ActorRequestType.CLOSE,
-                                    keyedWindow,
-                                    null,
-                                    // since it's a close request, we don't expect a real payload
-                                    null,
-                                    ""
-                            );
+                            ActorRequest closeRequest = ActorRequest.builder()
+                                    .type(ActorRequestType.CLOSE)
+                                    .keyedWindow(keyedWindow)
+                                    .build();
                             this.invokeActor(closeRequest);
                         });
                 break;
@@ -165,25 +159,21 @@ class SupervisorActor extends AbstractActor {
 
                 // 1. ask the session reducer actor to update its keyed window.
                 // update the map to use the new id to point to the actor.
-                ActorRequest expandRequest = new ActorRequest(
-                        ActorRequestType.EXPAND,
-                        windowOperation.getKeyedWindows(0),
-                        windowOperation.getKeyedWindows(1),
-                        // do not send payload
-                        null,
-                        "");
+                ActorRequest expandRequest = ActorRequest.builder()
+                        .type(ActorRequestType.EXPAND)
+                        .keyedWindow(windowOperation.getKeyedWindows(0))
+                        .newKeyedWindow(windowOperation.getKeyedWindows(1))
+                        .build();
                 this.invokeActor(expandRequest);
                 this.actorsMap.put(newId, this.actorsMap.get(currentId));
                 this.actorsMap.remove(currentId);
 
                 // 2. send the payload to the updated actor.
-                ActorRequest appendRequest = new ActorRequest(
-                        ActorRequestType.APPEND,
-                        windowOperation.getKeyedWindows(1),
-                        null,
-                        request.hasPayload() ? request.getPayload():null,
-                        ""
-                );
+                ActorRequest appendRequest = ActorRequest.builder()
+                        .type(ActorRequestType.APPEND)
+                        .keyedWindow(windowOperation.getKeyedWindows(1))
+                        .payload(request.hasPayload() ? request.getPayload():null)
+                        .build();
                 this.invokeActor(appendRequest);
                 break;
             }
@@ -227,6 +217,12 @@ class SupervisorActor extends AbstractActor {
                 this.mergeTracker.put(mergeTaskId, windowOperation.getKeyedWindowsCount());
                 for (Sessionreduce.KeyedWindow window : windowOperation.getKeyedWindowsList()) {
                     // tell the session reducer actor - "hey, you are about to be merged."
+                    ActorRequest getAccumulatorRequest = ActorRequest.builder()
+                            .type(ActorRequestType.GET_ACCUMULATOR)
+                            .keyedWindow(window)
+                            .mergeTaskId(mergeTaskId)
+                            .build();
+                    /*
                     ActorRequest getAccumulatorRequest = new ActorRequest(
                             ActorRequestType.GET_ACCUMULATOR,
                             window,
@@ -234,6 +230,7 @@ class SupervisorActor extends AbstractActor {
                             null,
                             mergeTaskId
                     );
+                     */
                     this.invokeActor(getAccumulatorRequest);
                 }
                 // open a new session for the merged keyed window.
@@ -241,12 +238,10 @@ class SupervisorActor extends AbstractActor {
                 // in this case, since we already send out the GET_ACCUMULATOR request, it's ok to replace
                 // the existing window with the new one.
                 // the accumulator of the old window will get merged to the new window eventually.
-                ActorRequest mergeOpenRequest = new ActorRequest(
-                        ActorRequestType.MERGE_OPEN,
-                        mergedWindow,
-                        null,
-                        null,
-                        "");
+                ActorRequest mergeOpenRequest = ActorRequest.builder()
+                        .type(ActorRequestType.MERGE_OPEN)
+                        .keyedWindow(mergedWindow)
+                        .build();
                 this.invokeActor(mergeOpenRequest);
                 break;
             }
@@ -258,7 +253,7 @@ class SupervisorActor extends AbstractActor {
 
     private void invokeActor(ActorRequest actorRequest) {
         String uniqueId = UniqueIdGenerator.getUniqueIdentifier(actorRequest.getKeyedWindow());
-        switch (actorRequest.type) {
+        switch (actorRequest.getType()) {
             case OPEN: {
                 if (this.actorsMap.containsKey(uniqueId)) {
                     throw new RuntimeException(
@@ -292,7 +287,7 @@ class SupervisorActor extends AbstractActor {
                 break;
             }
             case CLOSE: {
-                // if I can find an active actor, I close it. otherwise, skip.
+                // if the session exists, send EOF to it.
                 if (this.actorsMap.containsKey(uniqueId)) {
                     this.actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
                 }
@@ -334,8 +329,10 @@ class SupervisorActor extends AbstractActor {
     }
 
     private void handleActorResponse(ActorResponse actorResponse) {
-        String responseWindowId = UniqueIdGenerator.getUniqueIdentifier(actorResponse.getResponse()
+        String responseWindowId = UniqueIdGenerator.getUniqueIdentifier(actorResponse
+                .getResponse()
                 .getKeyedWindow());
+
         if (actorResponse.isEOFResponse()) {
             // when the supervisor receives an EOF actor response,
             // it means the corresponding session reducer actor has finished its job.
