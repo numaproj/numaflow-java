@@ -1,8 +1,11 @@
 package io.numaproj.numaflow.sideinput;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
+import io.numaproj.numaflow.info.ServerInfoAccessor;
+import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
@@ -15,6 +18,7 @@ public class Server {
 
     private final GRPCConfig grpcConfig;
     private final Service service;
+    private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
 
     /**
@@ -43,6 +47,10 @@ public class Server {
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
+        GrpcServerUtils.writeServerInfo(
+                serverInfoAccessor,
+                grpcConfig.getSocketPath(),
+                grpcConfig.getInfoFilePath());
 
         if (this.server == null) {
             // create server builder
