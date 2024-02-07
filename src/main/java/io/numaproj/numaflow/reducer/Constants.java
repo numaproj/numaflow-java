@@ -5,6 +5,8 @@ class Constants {
 
     public static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/reduce.sock";
 
+    public static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/reducer-server-info";
+
     public static final String EOF = "EOF";
 
     public static final String SUCCESS = "SUCCESS";
