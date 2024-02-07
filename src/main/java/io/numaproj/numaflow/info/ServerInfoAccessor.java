@@ -1,8 +1,6 @@
 package io.numaproj.numaflow.info;
 
 public interface ServerInfoAccessor {
-    String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/server-info";
-
     String INFO_EOF = "U+005C__END__";
 
     /**
