@@ -11,7 +11,7 @@ public class GRPCConfigTest {
         GRPCConfig grpcConfig = GRPCConfig.defaultGrpcConfig();
         Assert.assertNotNull(grpcConfig);
         Assert.assertEquals(
-                ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH,
+                Constants.DEFAULT_SERVER_INFO_FILE_PATH,
                 grpcConfig.getInfoFilePath());
         Assert.assertEquals(
                 io.numaproj.numaflow.reducestreamer.Constants.DEFAULT_MESSAGE_SIZE,
