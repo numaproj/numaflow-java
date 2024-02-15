@@ -90,6 +90,10 @@ class SupervisorActor extends AbstractActor {
 
     private void handleEOF(String EOF) {
         this.isInputStreamClosed = true;
+        if (actorsMap.isEmpty()) {
+            this.outputActor.tell(EOF, getSelf());
+            return;
+        }
         for (Map.Entry<String, ActorRef> entry : actorsMap.entrySet()) {
             entry.getValue().tell(EOF, getSelf());
         }

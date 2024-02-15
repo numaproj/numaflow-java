@@ -78,7 +78,6 @@ class SessionReducerActor extends AbstractActor {
         // update the output stream to use the new keyed window
         OutputStreamObserverImpl newOutputStream = (OutputStreamObserverImpl) this.outputStream;
         newOutputStream.setKeyedWindow(newKeyedWindow);
-        this.outputStream = newOutputStream;
     }
 
     // when receiving a message, process it.

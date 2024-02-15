@@ -28,22 +28,27 @@ class OutputActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(ActorResponse.class, this::handleResponse)
+                .match(String.class, this::handleEOF)
                 .build();
     }
 
     private void handleResponse(ActorResponse actorResponse) {
-        log.info("sending to the output: " + actorResponse.getResponse().toString());
+        responseObserver.onNext(actorResponse.getResponse());
         if (actorResponse.isLast()) {
-            // send the very last response.
-            responseObserver.onNext(actorResponse.getResponse());
-            // close the output stream.
-            responseObserver.onCompleted();
-            // stop the AKKA system right after we close the output stream.
-            // note: could make more sense if the supervisor actor stops the system,
-            // but it requires an extra tell.
-            getContext().getSystem().stop(getSender());
-        } else {
-            responseObserver.onNext(actorResponse.getResponse());
+            this.closeSystem();
         }
+    }
+
+    private void handleEOF(String eof) {
+        this.closeSystem();
+    }
+
+    private void closeSystem() {
+        // close the output stream.
+        responseObserver.onCompleted();
+        // stop the AKKA system right after we close the output stream.
+        // note: could make more sense if the supervisor actor stops the system,
+        // but it requires an extra tell.
+        getContext().getSystem().stop(getSender());
     }
 }

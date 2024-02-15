@@ -414,7 +414,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_merge_close() {
+    public void open_merge_close() throws InterruptedException {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -643,7 +643,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_expand_append_merge_close() {
+    public void open_expand_append_merge_close() throws InterruptedException {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -925,6 +925,8 @@ public class ServerTest {
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
         }
+        // This sleep statement tests a case when there is no active windows and an EOF is received.
+        Thread.sleep(1000);
         inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
