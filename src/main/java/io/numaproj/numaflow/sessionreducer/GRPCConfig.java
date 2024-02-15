@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sessionreducer;
 
-import io.numaproj.numaflow.info.ServerInfoAccessor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,7 +18,7 @@ public class GRPCConfig {
      */
     static GRPCConfig defaultGrpcConfig() {
         return GRPCConfig.newBuilder()
-                .infoFilePath(ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH)
+                .infoFilePath(Constants.DEFAULT_SERVER_INFO_FILE_PATH)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
                 .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }

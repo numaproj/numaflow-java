@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sessionreducer;
 
-import io.numaproj.numaflow.info.ServerInfoAccessor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -11,7 +10,7 @@ public class GRPCConfigTest {
         GRPCConfig grpcConfig = GRPCConfig.defaultGrpcConfig();
         Assert.assertNotNull(grpcConfig);
         Assert.assertEquals(
-                ServerInfoAccessor.DEFAULT_SERVER_INFO_FILE_PATH,
+                Constants.DEFAULT_SERVER_INFO_FILE_PATH,
                 grpcConfig.getInfoFilePath());
         Assert.assertEquals(
                 Constants.DEFAULT_MESSAGE_SIZE,
