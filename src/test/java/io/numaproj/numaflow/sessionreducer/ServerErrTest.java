@@ -139,8 +139,6 @@ public class ServerErrTest {
                 .build();
         inputStreamObserver.onNext(openRequest);
 
-        inputStreamObserver.onCompleted();
-
         try {
             t.join();
         } catch (InterruptedException e) {

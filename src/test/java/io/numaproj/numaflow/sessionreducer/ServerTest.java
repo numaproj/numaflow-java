@@ -414,7 +414,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_merge_close() throws InterruptedException {
+    public void open_merge_close() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
