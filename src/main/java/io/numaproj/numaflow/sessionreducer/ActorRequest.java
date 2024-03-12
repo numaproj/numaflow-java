@@ -18,7 +18,7 @@ class ActorRequest {
     private final Sessionreduce.KeyedWindow newKeyedWindow;
     // the payload of the request
     private final Sessionreduce.SessionReduceRequest.Payload payload;
-    // the id of the merge task this request belongs to
+    // the id of the merge task this request belongs to, it's equal to the unique id of the merged window,
     // it is specified only when the actor request is a GET_ACCUMULATOR
     private final String mergeTaskId;
 

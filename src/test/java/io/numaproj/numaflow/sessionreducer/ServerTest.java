@@ -986,7 +986,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_merge_append_close() throws InterruptedException {
+    public void open_merge_append_close() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -1191,9 +1191,6 @@ public class ServerTest {
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
-            // FIXME - this assumes MERGE operation always finish within 1000 milliseconds
-            //  and within that 100 millisecond, there is no operations on the merged window.
-            Thread.sleep(100);
         }
         inputStreamObserver.onCompleted();
 
@@ -1254,7 +1251,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_merge_expand_close() throws InterruptedException {
+    public void open_merge_expand_close() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -1485,9 +1482,6 @@ public class ServerTest {
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
-            // FIXME - this assumes MERGE operation always finish within 1000 milliseconds
-            //  and within that 100 millisecond, there is no operations on the merged window.
-            Thread.sleep(100);
         }
         inputStreamObserver.onCompleted();
 
@@ -1548,7 +1542,7 @@ public class ServerTest {
     }
 
     @Test
-    public void open_merge_merge_close() throws InterruptedException {
+    public void open_merge_merge_close() {
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         StreamObserver<Sessionreduce.SessionReduceRequest> inputStreamObserver = SessionReduceGrpc
@@ -1809,9 +1803,6 @@ public class ServerTest {
         // send the test requests one by one to the input stream.
         for (Sessionreduce.SessionReduceRequest request : requests) {
             inputStreamObserver.onNext(request);
-            // FIXME - this assumes MERGE operation always finish within 1000 milliseconds
-            //  and within that 100 millisecond, there is no operations on the merged window.
-            Thread.sleep(100);
         }
         inputStreamObserver.onCompleted();
 

@@ -12,8 +12,6 @@ public enum ActorRequestType {
     CLOSE,
     // expand a session window
     EXPAND,
-    // open a brand-new session window which is created from a merge operation
-    MERGE_OPEN,
     // ask a to-be-merged session window for it's accumulator
     GET_ACCUMULATOR,
 }

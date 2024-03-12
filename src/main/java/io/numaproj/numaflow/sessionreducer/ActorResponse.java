@@ -19,7 +19,7 @@ class ActorResponse {
     boolean isLast;
     // The accumulator attribute holds the accumulator of the session.
     byte[] accumulator;
-    // The mergeTaskId attribute holds the merge task id that this session is to be merged into.
+    // The mergeTaskId attribute holds the id of the merged window that this session is to be merged into.
     String mergeTaskId;
 
     @Builder

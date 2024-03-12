@@ -3,6 +3,8 @@ package io.numaproj.numaflow.sessionreducer;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
+import akka.pattern.Patterns;
+import akka.util.Timeout;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -11,6 +13,9 @@ import io.numaproj.numaflow.sessionreduce.v1.Sessionreduce;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
 import io.numaproj.numaflow.sessionreducer.model.SessionReducerFactory;
 import lombok.extern.slf4j.Slf4j;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -79,7 +84,29 @@ class Service extends SessionReduceGrpc.SessionReduceImplBase {
             public void onNext(Sessionreduce.SessionReduceRequest sessionReduceRequest) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
-                    supervisorActor.tell(sessionReduceRequest, ActorRef.noSender());
+                    // if the operation is a MERGE, make it a blocking call.
+                    if (sessionReduceRequest.getOperation().getEvent()
+                            == Sessionreduce.SessionReduceRequest.WindowOperation.Event.MERGE) {
+                        // set time out to 1 second as we expect a MERGE operation to finish quickly.
+                        Timeout timeout = new Timeout(Duration.create(1, "seconds"));
+                        try {
+                            // ask the supervisor to process a merge request.
+                            Future<Object> future = Patterns.ask(
+                                    supervisorActor,
+                                    sessionReduceRequest,
+                                    timeout);
+                            // await for the merge done response.
+                            MergeDoneResponse response = (MergeDoneResponse) Await.result(
+                                    future,
+                                    timeout.duration());
+                        } catch (Exception e) {
+                            responseObserver.onError(new Throwable(
+                                    "Supervisor actor failed processing a MERGE request: "
+                                            + e.getMessage()));
+                        }
+                    } else {
+                        supervisorActor.tell(sessionReduceRequest, ActorRef.noSender());
+                    }
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));
                 }

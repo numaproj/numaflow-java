@@ -18,35 +18,28 @@ class SessionReducerActor extends AbstractActor {
     private Sessionreduce.KeyedWindow keyedWindow;
     private final SessionReducer sessionReducer;
     private OutputStreamObserver outputStream;
-    // when set to true, it means the corresponding session is in the process of merging with other windows.
-    private boolean isMerging;
-    // when set to true, it means this session is pending EOF, it already received a CLOSE/EOF request, but it hasn't finished its MERGE job yet.
-    private boolean eofPending = false;
     // when set to true, it means this session is already closed.
     private boolean isClosed = false;
 
     public SessionReducerActor(
             Sessionreduce.KeyedWindow keyedWindow,
             SessionReducer sessionReducer,
-            OutputStreamObserver outputStream,
-            boolean isMerging) {
+            OutputStreamObserver outputStream) {
         this.keyedWindow = keyedWindow;
         this.sessionReducer = sessionReducer;
         this.outputStream = outputStream;
-        this.isMerging = isMerging;
     }
 
     public static Props props(
             Sessionreduce.KeyedWindow keyedWindow,
             SessionReducer groupBy,
-            ActorRef outputActor,
-            boolean isMerging) {
+            ActorRef outputActor) {
         return Props.create(
                 SessionReducerActor.class,
                 keyedWindow,
                 groupBy,
-                new OutputStreamObserverImpl(outputActor, keyedWindow),
-                isMerging);
+                new OutputStreamObserverImpl(outputActor, keyedWindow)
+        );
     }
 
     @Override
@@ -64,15 +57,6 @@ class SessionReducerActor extends AbstractActor {
     // receiving a new keyed window, update the keyed window.
     // this is for EXPAND operation.
     private void updateKeyedWindow(Sessionreduce.KeyedWindow newKeyedWindow) {
-        if (this.isClosed) {
-            throw new RuntimeException(
-                    "received an expand request but the session is already closed.");
-        }
-        if (this.isMerging) {
-            throw new RuntimeException(
-                    "cannot expand a session window when it's in a merging process."
-                            + " window info: " + this.keyedWindow.toString());
-        }
         // update the keyed window
         this.keyedWindow = newKeyedWindow;
         // update the output stream to use the new keyed window
@@ -83,15 +67,6 @@ class SessionReducerActor extends AbstractActor {
     // when receiving a message, process it.
     // this is for OPEN/APPEND operation.
     private void invokeHandler(HandlerDatum handlerDatum) {
-        if (this.isClosed) {
-            throw new RuntimeException(
-                    "received a message but the session is already closed.");
-        }
-        if (this.isMerging) {
-            throw new RuntimeException(
-                    "cannot process messages when the session window is in a merging process."
-                            + " window info: " + this.keyedWindow.toString());
-        }
         this.sessionReducer.processMessage(
                 keyedWindow.getKeysList().toArray(new String[0]),
                 handlerDatum,
@@ -101,30 +76,22 @@ class SessionReducerActor extends AbstractActor {
     // receiving an EOF signal, close the window.
     // this is for CLOSE operation or for the close of gRPC input stream.
     private void handleEOF(String EOF) {
-        if (this.isMerging) {
-            // the session is in a merging process, wait until it finishes before processing EOF.
-            this.eofPending = true;
-            return;
-        } else if (this.isClosed) {
-            // we only process EOF once.
+        if (this.isClosed) {
             return;
         }
-        this.processEOF();
+        // invoke handleEndOfStream to materialize the messages received so far.
+        this.sessionReducer.handleEndOfStream(
+                keyedWindow.getKeysList().toArray(new String[0]),
+                outputStream);
+        // construct an actor response and send it back to the supervisor actor, indicating the actor
+        // has finished processing all the messages for the corresponding keyed window.
+        getSender().tell(buildEOFResponse(), getSelf());
+        this.isClosed = true;
     }
 
     // receiving a GetAccumulatorRequest, return the accumulator of the window.
     // this is for MERGE operation.
     private void handleGetAccumulatorRequest(GetAccumulatorRequest getAccumulatorRequest) {
-        if (this.isClosed) {
-            throw new RuntimeException(
-                    "received a get accumulator request but the session is already closed.");
-        }
-        if (this.isMerging) {
-            throw new RuntimeException(
-                    "cannot process a GetAccumulatorRequest when the session window is already in a merging process."
-                            + " window info: " + this.keyedWindow.toString());
-        }
-        this.isMerging = true;
         getSender().tell(buildMergeResponse(
                         this.sessionReducer.accumulator(),
                         getAccumulatorRequest.getMergeTaskId())
@@ -137,36 +104,7 @@ class SessionReducerActor extends AbstractActor {
     // receiving a MergeAccumulatorRequest, merge the accumulator.
     // this is for MERGE operation.
     private void handleMergeAccumulatorRequest(MergeAccumulatorRequest mergeAccumulatorRequest) {
-        if (this.isClosed) {
-            throw new RuntimeException(
-                    "received a merge accumulator request but the session is already closed.");
-        }
-        if (!this.isMerging) {
-            throw new RuntimeException(
-                    "received a merge accumulator request but the session is not in a merging process.");
-        }
         this.sessionReducer.mergeAccumulator(mergeAccumulatorRequest.getAccumulator());
-        if (mergeAccumulatorRequest.isLast()) {
-            // I have merged the last accumulator, I am no longer in a MERGE process.
-            this.isMerging = false;
-            if (this.eofPending) {
-                // I was asked to close, now that I finished the MERGE operation,
-                // I can close myself.
-                this.processEOF();
-            }
-        }
-    }
-
-    private void processEOF() {
-        // invoke handleEndOfStream to materialize the messages received so far.
-        this.sessionReducer.handleEndOfStream(
-                keyedWindow.getKeysList().toArray(new String[0]),
-                outputStream);
-        // construct an actor response and send it back to the supervisor actor, indicating the actor
-        // has finished processing all the messages for the corresponding keyed window.
-        getSender().tell(buildEOFResponse(), getSelf());
-        this.eofPending = false;
-        this.isClosed = true;
     }
 
     private ActorResponse buildEOFResponse() {
