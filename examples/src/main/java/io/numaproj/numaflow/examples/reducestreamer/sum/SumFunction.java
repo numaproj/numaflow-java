@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.examples.reducestreamer.sum;
 
+import io.numaproj.numaflow.reducestreamer.model.Datum;
 import io.numaproj.numaflow.reducestreamer.model.Message;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
 import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
@@ -19,9 +20,9 @@ public class SumFunction extends ReduceStreamer {
     @Override
     public void processMessage(
             String[] keys,
-            io.numaproj.numaflow.reducestreamer.model.Datum datum,
+            Datum datum,
             OutputStreamObserver outputStreamObserver,
-            io.numaproj.numaflow.reducestreamer.model.Metadata md) {
+            Metadata md) {
         try {
             sum += Integer.parseInt(new String(datum.getValue()));
         } catch (NumberFormatException e) {

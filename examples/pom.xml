@@ -151,6 +151,23 @@
                             </to>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>session-reduce-count</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.reducesession.counter.CountFactory
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/session-reduce-count</image>
+                            </to>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

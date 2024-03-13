@@ -27,13 +27,13 @@ class ReduceStreamerActor extends AbstractActor {
     private OutputStreamObserver outputStream;
 
     public static Props props(
-            String[] keys, Metadata md, ReduceStreamer groupBy, ActorRef responseStreamActor) {
+            String[] keys, Metadata md, ReduceStreamer groupBy, ActorRef outputActor) {
         return Props.create(
                 ReduceStreamerActor.class,
                 keys,
                 md,
                 groupBy,
-                new OutputStreamObserverImpl(md, responseStreamActor));
+                new OutputStreamObserverImpl(md, outputActor));
     }
 
     @Override
