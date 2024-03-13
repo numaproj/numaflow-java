@@ -87,8 +87,11 @@ class Service extends SessionReduceGrpc.SessionReduceImplBase {
                     // if the operation is a MERGE, make it a blocking call.
                     if (sessionReduceRequest.getOperation().getEvent()
                             == Sessionreduce.SessionReduceRequest.WindowOperation.Event.MERGE) {
-                        // set time out to 1 second as we expect a MERGE operation to finish quickly.
-                        Timeout timeout = new Timeout(Duration.create(1, "seconds"));
+                        // on GO SDK side, we wait forever until the MERGE operation is done.
+                        // on Java side, since the Await function requires a timeout, we are setting it to 1h
+                        // for now, which is long enough for us to determine the system is hanging.
+                        // If a MERGE took more than 1h, the system will panic.
+                        Timeout timeout = new Timeout(Duration.create(1, "hour"));
                         try {
                             // ask the supervisor to process a merge request.
                             Future<Object> future = Patterns.ask(
