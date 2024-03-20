@@ -34,7 +34,7 @@
                 <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>event-time-filter-function</id>
+                        <id>mapt-event-time-filter-function</id>
                         <phase>package</phase>
                         <goals>
                             <goal>dockerBuild</goal>
@@ -46,7 +46,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/event-time-filter</image>
+                                <image>numaflow-java-examples/mapt-event-time-filter-function</image>
                             </to>
                         </configuration>
                     </execution>
@@ -68,7 +68,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>flat-map</id>
+                        <id>map-flatmap</id>
                         <phase>package</phase>
                         <goals>
                             <goal>dockerBuild</goal>
@@ -148,6 +148,91 @@
                             </container>
                             <to>
                                 <image>numaflow-java-examples/reduce-stream-sum</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>map-forward-message</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.map.forward.ForwardFunction
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/map-forward-message</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>reduce-counter</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.reduce.count.CounterFactory
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/reduce-counter</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>sideinput-example</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.sideinput.simple.SimpleSideInput
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/sideinput-example</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>udf-sideinput-example</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.sideinput.udf.SimpleMapWithSideInput
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/udf-sideinput-example</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>source-simple-source</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.source.simple.SimpleSource
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/source-simple-source</image>
                             </to>
                         </configuration>
                     </execution>
