@@ -296,6 +296,7 @@
                         <exclude>io.numaproj.numaflow.mapstream.v1</exclude>
                         <exclude>io.numaproj.numaflow.map.v1</exclude>
                         <exclude>io.numaproj.numaflow.reduce.v1</exclude>
+                        <exclude>io.numaproj.numaflow.sessionreduce.v1</exclude>
                         <exclude>io.numaproj.numaflow.sourcetransformer.v1</exclude>
                         <exclude>io.numaproj.numaflow.sink.v1</exclude>
                         <exclude>io.numaproj.numaflow.sideinput.v1</exclude>
@@ -337,6 +338,7 @@
                                 <exclude>io/numaproj/numaflow/examples/*</exclude>
                                 <exclude>io/numaproj/numaflow/mapstream/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/reduce/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/sessionreduce/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/map/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/sourcetransformer/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/sink/v1/*</exclude>

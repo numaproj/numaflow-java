@@ -16,11 +16,11 @@ import java.util.List;
 @AllArgsConstructor
 class OutputStreamObserverImpl implements OutputStreamObserver {
     private final Metadata md;
-    private final ActorRef responseStreamActor;
+    private final ActorRef outputActor;
 
     @Override
     public void send(Message message) {
-        this.responseStreamActor.tell(buildResponse(message), ActorRef.noSender());
+        this.outputActor.tell(buildResponse(message), ActorRef.noSender());
     }
 
     private ActorResponse buildResponse(Message message) {
