@@ -7,6 +7,7 @@ import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -43,6 +44,7 @@ class OutputObserverImpl implements OutputObserver {
                                         .getOffset()
                                         .getValue()))
                                 .setPartitionId(message.getOffset().getPartitionId()))
+                        .putAllHeaders(message.getHeaders() != null ? message.getHeaders() : new HashMap<>())
                         .build());
 
         return builder.build();

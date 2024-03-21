@@ -44,7 +44,8 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
                         request.getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getSeconds(),
-                        request.getEventTime().getNanos())
+                        request.getEventTime().getNanos()),
+                request.getHeadersMap()
         );
 
         // process request
