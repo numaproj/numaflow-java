@@ -20,7 +20,7 @@ This can be achieved by running the following at the root directory:
     ```
     the -bpe flag builds and pushes the given example to the remote registry, <example-image> must be
     the id tag used within the execution element of the desired example. It is recommended to specify a tag,
-    like `test`, as the default is `stable` which is used by the Github Actions CI. For example in order to push
+    like `test`, as the default is `stable` which is used by the Github Actions CI. For example, in order to push
     the example for the reducer SDK, specifically the sum function, we would run:
     ```shell
     ./update_examples -bpe reduce-sum -t test
@@ -37,7 +37,7 @@ using the image, i.e. we can use Numaflow e2e test cases to verify the changes.
 
 ### Deploying
 
-After confiring that your changes pass local testing, you should roll back the version updates before 
+After confirming that your changes pass local testing, you should roll back the version updates before 
 publishing the PR. The real version updates can be raised in a separate PR, which is discussed 
 in the [After Release](#after-release) section. 
 
@@ -54,12 +54,12 @@ changes.
 ### After Release
 
 Once a new release has been made, and its corresponding version tag exists on the remote repo, we want to update the dependency
-management files to reflect this new version:
+management files to reflect this new version. Locally run:
 
 ```shell
 ./update_examples.sh -u <new-released-version>
   ```
 
 Similar to the deployment step, create a PR for the changes created (which should just be the version bump
-in the `pom.xml` files in root and example directories), and a Github Actions workflow will be triggered to
+in the `pom.xml` files in the root and example directories), and a Github Actions workflow will be triggered to
 build, tag, and push all example images.
