@@ -105,7 +105,7 @@ fi
 executionIDs=("mapt-event-time-filter-function" "flat-map-stream" "map-flatmap" \
               "even-odd" "simple-sink" "reduce-sum" "reduce-stream-sum" \
               "map-forward-message" "reduce-counter" "sideinput-example" \
-              "udf-sideinput-example" "source-simple-source"
+              "udf-sideinput-example" "source-simple-source" "session-reduce-count"
               )
 
 function dockerPublish () {
