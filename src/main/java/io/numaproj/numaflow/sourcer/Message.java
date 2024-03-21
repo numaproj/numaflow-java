@@ -42,6 +42,18 @@ public class Message {
     }
 
     /**
+     * used to create Message with value, offset, eventTime and headers.
+     *
+     * @param value message value
+     * @param offset message offset
+     * @param eventTime message eventTime
+     * @param headers message headers
+     */
+    public Message(byte[] value, Offset offset, Instant eventTime, Map<String, String> headers) {
+        this(value, offset, eventTime, null, headers);
+    }
+
+    /**
      * used to create Message with value, offset, eventTime, keys and headers.
      *
      * @param value message value
