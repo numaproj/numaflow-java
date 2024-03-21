@@ -135,7 +135,8 @@ class ReduceSupervisorActor extends AbstractActor {
                         payload.getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         payload.getEventTime().getSeconds(),
-                        payload.getEventTime().getNanos())
+                        payload.getEventTime().getNanos()),
+                payload.getHeadersMap()
         );
     }
 
