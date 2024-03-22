@@ -126,7 +126,7 @@ elif (( usingBuildPushExample )); then
     exit 1
   fi
   cd examples || exit
-  if ! mvn jib:dockerBuild@"$executionID" -Ddocker.tag="$tag"; then
+  if ! mvn clean install jib:dockerBuild@"$executionID" -Ddocker.tag="$tag"; then
     echo "Error: failed to build example image $executionID" >&2
     exit 1
   fi
