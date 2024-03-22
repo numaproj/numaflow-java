@@ -1,7 +1,7 @@
 name: Docker Publish
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
     tags:
       - '*'
