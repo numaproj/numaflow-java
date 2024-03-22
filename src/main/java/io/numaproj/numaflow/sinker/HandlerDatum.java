@@ -3,17 +3,19 @@ package io.numaproj.numaflow.sinker;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
+import java.util.Map;
 
 @AllArgsConstructor
 class HandlerDatum implements Datum {
 
     // EOF_DATUM is used to indicate the end of the stream.
-    static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null);
+    static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null, null);
     private String[] keys;
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
     private String id;
+    private Map<String, String> headers;
 
     @Override
     public String[] getKeys() {
@@ -38,5 +40,10 @@ class HandlerDatum implements Datum {
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public Map<String, String> getHeaders() {
+        return this.headers;
     }
 }
