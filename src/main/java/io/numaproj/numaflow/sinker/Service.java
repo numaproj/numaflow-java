@@ -112,7 +112,9 @@ class Service extends SinkGrpc.SinkImplBase {
                 Instant.ofEpochSecond(
                         d.getEventTime().getSeconds(),
                         d.getEventTime().getNanos()),
-                d.getId());
+                d.getId(),
+                d.getHeadersMap()
+        );
     }
 
     public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {

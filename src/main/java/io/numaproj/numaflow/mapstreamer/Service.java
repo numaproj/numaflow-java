@@ -40,7 +40,8 @@ class Service extends MapStreamGrpc.MapStreamImplBase {
                         request.getWatermark().getNanos()),
                 Instant.ofEpochSecond(
                         request.getEventTime().getSeconds(),
-                        request.getEventTime().getNanos())
+                        request.getEventTime().getNanos()),
+                request.getHeadersMap()
         );
 
         // process Datum

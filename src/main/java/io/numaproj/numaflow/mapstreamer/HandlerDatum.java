@@ -4,6 +4,7 @@ package io.numaproj.numaflow.mapstreamer;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
+import java.util.Map;
 
 @AllArgsConstructor
 class HandlerDatum implements Datum {
@@ -11,6 +12,7 @@ class HandlerDatum implements Datum {
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
+    private Map<String, String> headers;
 
 
     @Override
@@ -26,6 +28,11 @@ class HandlerDatum implements Datum {
     @Override
     public Instant getEventTime() {
         return this.eventTime;
+    }
+
+    @Override
+    public Map<String, String> getHeaders() {
+        return this.headers;
     }
 
 }

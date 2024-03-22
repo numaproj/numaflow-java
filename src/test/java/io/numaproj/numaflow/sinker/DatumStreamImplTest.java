@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -55,6 +56,11 @@ public class DatumStreamImplTest {
 
         @Override
         public String getId() {
+            return null;
+        }
+
+        @Override
+        public Map<String, String> getHeaders() {
             return null;
         }
     }

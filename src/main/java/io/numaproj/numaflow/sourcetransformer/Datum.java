@@ -2,6 +2,7 @@ package io.numaproj.numaflow.sourcetransformer;
 
 
 import java.time.Instant;
+import java.util.Map;
 
 /**
  * Datum contains methods to get the payload information.
@@ -28,4 +29,11 @@ public interface Datum {
      * @return returns the watermark
      */
     public Instant getWatermark();
+
+    /**
+     * method to get the headers information of the payload
+     *
+     * @return returns the headers in the form of key value pair
+     */
+    public Map<String, String> getHeaders();
 }
