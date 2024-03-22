@@ -9,8 +9,9 @@ brand new UDF image, and run it on a pipeline to verify the image continues work
 In order to do this you can follow these steps:
 
 1. Make the changes.
-2. Update your local repository using maven, to reflect your latest changes. After this, ensure that the `pom.xml` file
-in the examples directory is also using these changes.
+2. Update your local repository using maven, to reflect your latest changes. This can be done in the root
+directory by running: `mvn clean install` (make sure that the version in the `pom.xml in the root and examples
+directories match).
 3. Build your test images, and test them in a pipeline.
 
 There exists a script `update_examples.sh`, which you can also use while testing, for your convenience.
