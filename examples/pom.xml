@@ -10,6 +10,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <docker.tag>stable</docker.tag>
     </properties>
 
     <dependencies>
@@ -46,7 +47,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/mapt-event-time-filter-function</image>
+                                <image>numaflow-java-examples/mapt-event-time-filter-function:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -63,7 +64,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/flat-map-stream</image>
+                                <image>numaflow-java-examples/flat-map-stream:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -80,7 +81,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/map-flatmap</image>
+                                <image>numaflow-java-examples/map-flatmap:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -97,7 +98,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/even-odd</image>
+                                <image>numaflow-java-examples/even-odd:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -113,7 +114,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/simple-sink</image>
+                                <image>numaflow-java-examples/simple-sink:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -130,7 +131,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/reduce-sum</image>
+                                <image>numaflow-java-examples/reduce-sum:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -147,7 +148,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/reduce-stream-sum</image>
+                                <image>numaflow-java-examples/reduce-stream-sum:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -164,7 +165,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/map-forward-message</image>
+                                <image>numaflow-java-examples/map-forward-message:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -181,7 +182,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/reduce-counter</image>
+                                <image>numaflow-java-examples/reduce-counter:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -198,7 +199,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/sideinput-example</image>
+                                <image>numaflow-java-examples/sideinput-example:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -215,7 +216,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/udf-sideinput-example</image>
+                                <image>numaflow-java-examples/udf-sideinput-example:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -232,7 +233,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/source-simple-source</image>
+                                <image>numaflow-java-examples/source-simple-source:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
@@ -249,7 +250,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/session-reduce-count</image>
+                                <image>numaflow-java-examples/session-reduce-count:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
