@@ -76,10 +76,6 @@ if (( (usingTag + usingHelp > 1) || (usingTag && usingBuildPush + usingBuildPush
   exit 1
 fi
 
-if [ -n "$version" ]; then
- echo "Using version: $version"
-fi
-
 if [ -n "$executionID" ]; then
  echo "Updating example: $executionID"
 fi
@@ -106,7 +102,7 @@ function dockerPublish () {
   fi
 }
 
-if (( usingBuildPush )); then
+function build () {
   if ! mvn clean install; then
     echo "Error: failed to mvn clean install in root directory" >&2
     exit 1
@@ -116,20 +112,16 @@ if (( usingBuildPush )); then
     echo "Error: failed to build images in examples directory" >&2
     exit 1
   fi
+}
+
+if (( usingBuildPush )); then
+  build
   for id in "${executionIDs[@]}"
   do
     dockerPublish "$id"
   done
 elif (( usingBuildPushExample )); then
-  if ! mvn clean install; then
-    echo "Error: failed to mvn clean install in root directory" >&2
-    exit 1
-  fi
-  cd examples || exit
-  if ! mvn clean install jib:dockerBuild@"$executionID" -Ddocker.tag="$tag"; then
-    echo "Error: failed to build example image $executionID" >&2
-    exit 1
-  fi
+  build
   dockerPublish "$executionID"
 elif (( usingHelp )); then
   show_help
