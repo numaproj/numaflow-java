@@ -82,7 +82,7 @@ class SupervisorActor extends AbstractActor {
                 .create()
                 .match(ActorRequest.class, this::invokeActor)
                 .match(String.class, this::sendEOF)
-                .match(ActorResponse.class, this::handleActorResponse)
+                .match(ActorResponse.class, this::handleActorEOFResponse)
                 .build();
     }
 
@@ -114,7 +114,7 @@ class SupervisorActor extends AbstractActor {
         }
     }
 
-    private void handleActorResponse(ActorResponse actorResponse) {
+    private void handleActorEOFResponse(ActorResponse actorResponse) {
         // when the supervisor receives an actor response, it means the corresponding
         // reduce streamer actor has finished its job.
         // we remove the entry from the actors map.
