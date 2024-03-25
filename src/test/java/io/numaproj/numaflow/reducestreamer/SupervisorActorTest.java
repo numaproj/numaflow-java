@@ -87,6 +87,7 @@ public class SupervisorActorTest {
     public void given_inputRequestsHaveDifferentKeySets_when_supervisorActorBroadcasts_then_multipleReducerActorsHandleKeySetsSeparately() throws RuntimeException {
         final ActorSystem actorSystem = ActorSystem.create("test-system-2");
         CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+        int keyCount = 10;
 
         ActorRef shutdownActor = actorSystem
                 .actorOf(ShutdownActor
@@ -107,7 +108,7 @@ public class SupervisorActorTest {
                                 outputActor)
                 );
 
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= keyCount; i++) {
             io.numaproj.numaflow.reducestreamer.ActorRequest reduceRequest = new io.numaproj.numaflow.reducestreamer.ActorRequest(
                     ReduceOuterClass.ReduceRequest
                             .newBuilder()
@@ -126,15 +127,16 @@ public class SupervisorActorTest {
                 ActorRef.noSender());
         try {
             completableFuture.get();
-            // each reduce request generates two reduce responses, one containing the data and the other one indicating EOF.
-            assertEquals(20, reduceOutputStreamObserver.resultDatum.get().size());
-            for (int i = 0; i < 20; i++) {
+            // each reduce request generates keyCount number of responses with data, plus one final EOF response.
+            assertEquals(keyCount + 1, reduceOutputStreamObserver.resultDatum.get().size());
+            for (int i = 0; i < keyCount; i++) {
                 ReduceOuterClass.ReduceResponse response = reduceOutputStreamObserver.resultDatum
                         .get()
                         .get(i);
-                assertTrue(response.getResult().getValue().toStringUtf8().equals("1")
-                        || response.getEOF());
+                assertTrue(response.getResult().getValue().toStringUtf8().equals("1"));
             }
+            // verify the last one is the EOF.
+            assertTrue(reduceOutputStreamObserver.resultDatum.get().get(keyCount).getEOF());
         } catch (InterruptedException | ExecutionException e) {
             fail("Expected the future to complete without exception");
         }
