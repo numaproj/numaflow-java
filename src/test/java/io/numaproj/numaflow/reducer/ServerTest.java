@@ -21,7 +21,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
@@ -111,7 +110,7 @@ public class ServerTest {
                     .setPayload(ReduceOuterClass.ReduceRequest.Payload
                             .newBuilder()
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                            .addAllKeys(Arrays.asList(reduceKey))
+                            .addAllKeys(List.of(reduceKey))
                             .build())
                     .build();
             inputStreamObserver.onNext(request);
@@ -123,31 +122,28 @@ public class ServerTest {
         // sum of first 10 numbers 1 to 10 -> 55
         ByteString expectedValue = ByteString.copyFromUtf8(String.valueOf(55));
         while (!outputStreamObserver.completed.get()) ;
+        List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
 
         // Expect 2 responses, one containing the aggregated data and the other indicating EOF.
-        assertEquals(2, outputStreamObserver.resultDatum.get().size());
+        assertEquals(2, result.size());
         assertEquals(
-                expectedKeys,
-                outputStreamObserver.resultDatum
-                        .get()
+                expectedKeys, result
                         .get(0)
                         .getResult()
                         .getKeysList()
                         .toArray(new String[0]));
         assertEquals(
-                expectedValue,
-                outputStreamObserver.resultDatum
-                        .get()
+                expectedValue, result
                         .get(0)
                         .getResult()
                         .getValue());
-        assertTrue(outputStreamObserver.resultDatum.get().get(1).getEOF());
+        assertTrue(result.get(1).getEOF());
     }
 
     @Test
     public void given_inputReduceRequestsHaveDifferentKeySets_when_serverStarts_then_requestsGetAggregatedSeparately() {
         String reduceKey = "reduce-key";
-        int keyCount = 3;
+        int keyCount = 10;
 
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
@@ -167,7 +163,7 @@ public class ServerTest {
                 ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
                         .newBuilder()
                         .setPayload(ReduceOuterClass.ReduceRequest.Payload.newBuilder()
-                                .addAllKeys(Arrays.asList(reduceKey + j))
+                                .addAllKeys(List.of(reduceKey + j))
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                 .build())
                         .build();
@@ -182,10 +178,14 @@ public class ServerTest {
 
         while (!outputStreamObserver.completed.get()) ;
         List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
-        // the outputStreamObserver should have observed 2*keyCount responses, because for each key set, one response for the aggregated result, the other for EOF.
-        assertEquals(keyCount * 2, result.size());
-        result.forEach(response -> {
-            assertTrue(response.getResult().getValue().equals(expectedValue) || response.getEOF());
-        });
+
+        // the outputStreamObserver should have observed keyCount+ 1 responses, one with real output sum data per key, one as the final single EOF response.
+        assertEquals(keyCount + 1, result.size());
+        for (int i = 0; i < keyCount; i++) {
+            ReduceOuterClass.ReduceResponse response = result.get(i);
+            assertEquals(response.getResult().getValue(), expectedValue);
+        }
+        // verify the last one is the EOF.
+        assertTrue(result.get(keyCount).getEOF());
     }
 }
