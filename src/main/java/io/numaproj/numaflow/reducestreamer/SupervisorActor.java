@@ -82,7 +82,7 @@ class SupervisorActor extends AbstractActor {
                 .create()
                 .match(ActorRequest.class, this::invokeActor)
                 .match(String.class, this::sendEOF)
-                .match(ActorResponse.class, this::handleActorResponse)
+                .match(ActorResponse.class, this::handleActorEOFResponse)
                 .build();
     }
 
@@ -114,16 +114,15 @@ class SupervisorActor extends AbstractActor {
         }
     }
 
-    private void handleActorResponse(ActorResponse actorResponse) {
+    private void handleActorEOFResponse(ActorResponse actorResponse) {
         // when the supervisor receives an actor response, it means the corresponding
         // reduce streamer actor has finished its job.
         // we remove the entry from the actors map.
         actorsMap.remove(actorResponse.getActorUniqueIdentifier());
         if (actorsMap.isEmpty()) {
             // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
-            actorResponse.setLast(true);
-            this.outputActor.tell(actorResponse, getSelf());
-        } else {
+            // for reduce streamer, we only send to output stream one single EOF response, which is the last one.
+            // we don't care about per-key-set EOFs.
             this.outputActor.tell(actorResponse, getSelf());
         }
     }

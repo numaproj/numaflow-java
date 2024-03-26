@@ -73,6 +73,6 @@ class ReduceStreamerActor extends AbstractActor {
                 .newBuilder()
                 .addAllKeys(List.of(this.keys))
                 .build());
-        return new ActorResponse(responseBuilder.build(), false);
+        return new ActorResponse(responseBuilder.build());
     }
 }

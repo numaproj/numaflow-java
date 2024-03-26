@@ -18,15 +18,15 @@ you can take the desired image and test it in a pipeline
 
 If you want to build and push all the example images at once, you can run:
 ```shell
-./hack/update_examples -bp -t <tag>
+./hack/update_examples.sh -bp -t <tag>
 ```
 The default tag is `stable`, but it is recommended you specify your own for testing purposes, as the Github Actions CI uses the `stable` tag.
 This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be
-updated each time an SDK change is made.  
+updated each time an SDK change is made.
 
 You can alternatively build and push a specific example image by running the following:
 ```shell
-./hack/update_examples -bpe <example-execution-id> -t <tag>
+./hack/update_examples.sh -bpe <example-execution-id> -t <tag>
  ```
 Both `-bpe` and `-bp` first build a local image with the naming convention 
 `numaflow-java-examples/<example-execution-id>:<tag>`, which then gets pushed as 
