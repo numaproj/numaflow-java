@@ -116,7 +116,7 @@ public class ServerTest {
                     .setPayload(ReduceOuterClass.ReduceRequest.Payload
                             .newBuilder()
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                            .addAllKeys(Arrays.asList(reduceKey))
+                            .addAllKeys(List.of(reduceKey))
                             .build())
                     .build();
             inputStreamObserver.onNext(request);
@@ -169,7 +169,7 @@ public class ServerTest {
     @Test
     public void given_inputReduceRequestsHaveDifferentKeySets_when_serverStarts_then_requestsGetAggregatedSeparately() {
         String reduceKey = "reduce-key";
-        int keyCount = 3;
+        int keyCount = 10;
 
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
@@ -189,7 +189,7 @@ public class ServerTest {
                 ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
                         .newBuilder()
                         .setPayload(ReduceOuterClass.ReduceRequest.Payload.newBuilder()
-                                .addAllKeys(Arrays.asList(reduceKey + j))
+                                .addAllKeys(List.of(reduceKey + j))
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                 .build())
                         .build();
@@ -206,14 +206,15 @@ public class ServerTest {
 
         while (!outputStreamObserver.completed.get()) ;
         List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
-        // the outputStreamObserver should have observed 3*keyCount responses, 2 with real output sum data, one as EOF.
-        assertEquals(keyCount * 3, result.size());
-        result.forEach(response -> {
+        // the outputStreamObserver should have observed (keyCount * 2 + 1) responses, 2 with real output sum data per key, 1 as the final single EOF response.
+        assertEquals(keyCount * 2 + 1, result.size());
+        for (int i = 0; i < keyCount * 2; i++) {
+            ReduceOuterClass.ReduceResponse response = result.get(i);
             assertTrue(response.getResult().getValue().equals(expectedFirstResponse) ||
-                    response.getResult().getValue().equals(expectedSecondResponse)
-                    || response.getEOF());
-
-        });
+                    response.getResult().getValue().equals(expectedSecondResponse));
+        }
+        // verify the last one is the EOF.
+        assertTrue(result.get(keyCount * 2).getEOF());
     }
 
     public static class ReduceStreamerTestFactory extends ReduceStreamerFactory<ServerTest.ReduceStreamerTestFactory.TestReduceStreamHandler> {

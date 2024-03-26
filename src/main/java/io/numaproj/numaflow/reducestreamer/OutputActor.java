@@ -32,7 +32,7 @@ class OutputActor extends AbstractActor {
     }
 
     private void handleResponse(ActorResponse actorResponse) {
-        if (actorResponse.isLast()) {
+        if (actorResponse.getResponse().getEOF()) {
             // send the very last response.
             responseObserver.onNext(actorResponse.getResponse());
             // close the output stream.
