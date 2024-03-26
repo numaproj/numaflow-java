@@ -117,13 +117,17 @@ class ReduceSupervisorActor extends AbstractActor {
             if there are no entries in the map, that means processing is
             done we can close the stream.
          */
-        responseObserver.onNext(actorResponse.getResponse());
         if (actorResponse.getResponse().getEOF()) {
             actorsMap.remove(actorResponse.getUniqueIdentifier());
             if (actorsMap.isEmpty()) {
+                // only send the last EOF to the response gRPC output stream.
+                responseObserver.onNext(actorResponse.getResponse());
                 responseObserver.onCompleted();
                 getContext().getSystem().stop(getSelf());
             }
+        } else {
+            // send non-EOF responses to the output stream.
+            responseObserver.onNext(actorResponse.getResponse());
         }
     }
 

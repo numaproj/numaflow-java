@@ -116,7 +116,7 @@ public class ServerTest {
                     .setPayload(ReduceOuterClass.ReduceRequest.Payload
                             .newBuilder()
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
-                            .addAllKeys(Arrays.asList(reduceKey))
+                            .addAllKeys(List.of(reduceKey))
                             .build())
                     .build();
             inputStreamObserver.onNext(request);
@@ -189,7 +189,7 @@ public class ServerTest {
                 ReduceOuterClass.ReduceRequest request = ReduceOuterClass.ReduceRequest
                         .newBuilder()
                         .setPayload(ReduceOuterClass.ReduceRequest.Payload.newBuilder()
-                                .addAllKeys(Arrays.asList(reduceKey + j))
+                                .addAllKeys(List.of(reduceKey + j))
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                 .build())
                         .build();

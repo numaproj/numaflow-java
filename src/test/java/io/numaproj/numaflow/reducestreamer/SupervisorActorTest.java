@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -127,16 +128,15 @@ public class SupervisorActorTest {
                 ActorRef.noSender());
         try {
             completableFuture.get();
-            // each reduce request generates keyCount number of responses with data, plus one final EOF response.
-            assertEquals(keyCount + 1, reduceOutputStreamObserver.resultDatum.get().size());
+            List<ReduceOuterClass.ReduceResponse> result = reduceOutputStreamObserver.resultDatum.get();
+            // expect keyCount number of responses with data, plus one final EOF response.
+            assertEquals(keyCount + 1, result.size());
             for (int i = 0; i < keyCount; i++) {
-                ReduceOuterClass.ReduceResponse response = reduceOutputStreamObserver.resultDatum
-                        .get()
-                        .get(i);
-                assertTrue(response.getResult().getValue().toStringUtf8().equals("1"));
+                ReduceOuterClass.ReduceResponse response = result.get(i);
+                assertEquals("1", response.getResult().getValue().toStringUtf8());
             }
             // verify the last one is the EOF.
-            assertTrue(reduceOutputStreamObserver.resultDatum.get().get(keyCount).getEOF());
+            assertTrue(result.get(keyCount).getEOF());
         } catch (InterruptedException | ExecutionException e) {
             fail("Expected the future to complete without exception");
         }
