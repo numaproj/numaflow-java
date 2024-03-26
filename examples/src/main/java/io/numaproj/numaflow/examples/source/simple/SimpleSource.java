@@ -10,8 +10,10 @@ import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.Sourcer;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -41,12 +43,17 @@ public class SimpleSource extends Sourcer {
             if (System.currentTimeMillis() - startTime > request.getTimeout().toMillis()) {
                 return;
             }
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("x-txn-id", UUID.randomUUID().toString());
+
             // create a message with increasing offset
             Offset offset = new Offset(Longs.toByteArray(readIndex));
             Message message = new Message(
                     Long.toString(readIndex).getBytes(),
                     offset,
-                    Instant.now());
+                    Instant.now(),
+                    headers);
             // send the message to the observer
             observer.send(message);
             // keep track of the messages read and not acknowledged
