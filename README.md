@@ -1,6 +1,6 @@
 # Java SDK for Numaflow
 
-[![Build](https://github.com/numaproj/numaflow-java/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/numaproj/numaflow-java/actions/workflows/ci.yaml)
+[![Build](https://github.com/numaproj/numaflow-java/actions/workflows/run-tests.yaml/badge.svg?branch=main)](https://github.com/numaproj/numaflow-java/actions/workflows/run-tests.yaml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Release Version](https://img.shields.io/github/v/release/numaproj/numaflow-java?label=numaflow-java)](https://github.com/numaproj/numaflow-java/releases/latest)
 [![Maven Central](https://img.shields.io/maven-central/v/io.numaproj.numaflow/numaflow-java.svg?label=Maven%20Central)](https://central.sonatype.com/search?q=numaflow+java&smo=true)
