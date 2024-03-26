@@ -57,6 +57,8 @@ mvn clean install
     * [MapStream](examples/src/main/java/io/numaproj/numaflow/examples/mapstream/flatmapstream)
     * [Map](examples/src/main/java/io/numaproj/numaflow/examples/map)
     * [Reduce](examples/src/main/java/io/numaproj/numaflow/examples/reduce)
+    * [ReduceStream](examples/src/main/java/io/numaproj/numaflow/examples/reducestreamer)
+    * [SessionReduce](examples/src/main/java/io/numaproj/numaflow/examples/reducesession)
 
 * **User Defined Sink(UDSink)**
     * [Sink](examples/src/main/java/io/numaproj/numaflow/examples/sink/simple)
