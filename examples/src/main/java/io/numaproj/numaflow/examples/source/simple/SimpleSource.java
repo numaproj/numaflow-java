@@ -81,9 +81,4 @@ public class SimpleSource extends Sourcer {
     public List<Integer> getPartitions() {
         return Sourcer.defaultPartitions();
     }
-
-    @VisibleForTesting
-    public Map<Long, Boolean> getMessages()  {
-        return messages;
-    }
 }

@@ -1,12 +1,13 @@
 package io.numaproj.numaflow.examples.map.flatmap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.util.Iterator;
 
-import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.examples.utils.TestDatum;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import lombok.extern.slf4j.Slf4j;
@@ -17,48 +18,51 @@ public class FlatMapFunctionTest {
 
     @Test
     public void testCommaSeparatedString() {
-        Datum datum = mock(Datum.class);
-        when(datum.getValue()).thenReturn("apple,banana,carrot".getBytes());
+        TestDatum datum = TestDatum.builder().value("apple,banana,carrot".getBytes()).build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
 
         Iterator<Message> iterator = result.getMessages().iterator();
 
-        Message message = iterator.hasNext() ? iterator.next() : null;
+        Message message = iterator.next();
         assertEquals("apple", new String(message.getValue()));
 
-        message = iterator.hasNext() ? iterator.next() : null;
+        message = iterator.next();
         assertEquals("banana", new String(message.getValue()));
 
-        message = iterator.hasNext() ? iterator.next() : null;
+        message = iterator.next();
         assertEquals("carrot", new String(message.getValue()));
+
+        assertFalse(iterator.hasNext());
     }
 
     @Test
     public void testSingleString() {
-        Datum datum = mock(Datum.class);
-        when(datum.getValue()).thenReturn("apple".getBytes());
+        TestDatum datum = TestDatum.builder().value("apple".getBytes()).build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
 
         Iterator<Message> iterator = result.getMessages().iterator();
-        Message message = iterator.hasNext() ? iterator.next() : null;
+        assertTrue(iterator.hasNext());
+        Message message = iterator.next();
         assertEquals("apple", new String(message.getValue()));
+        assertFalse(iterator.hasNext());
     }
 
     @Test
     public void testEmptyString() {
-        Datum datum = mock(Datum.class);
-        when(datum.getValue()).thenReturn("".getBytes());
+        TestDatum datum = TestDatum.builder().value("".getBytes()).build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
 
         Iterator<Message> iterator = result.getMessages().iterator();
-        Message message = iterator.hasNext() ? iterator.next() : null;
+        assertTrue(iterator.hasNext());
+        Message message = iterator.next();
         assertEquals("", new String(message.getValue()));
+        assertFalse(iterator.hasNext());
     }
 }
 
