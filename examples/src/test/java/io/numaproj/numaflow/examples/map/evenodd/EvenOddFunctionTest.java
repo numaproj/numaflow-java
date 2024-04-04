@@ -50,7 +50,6 @@ public class EvenOddFunctionTest {
         assertNotNull(message);
 
         // The message should have the key "odd" and tag "odd-tag"
-        assert message != null;
         assertEquals("odd", message.getKeys()[0]);
         assertEquals("odd-tag", message.getTags()[0]);
 
@@ -71,7 +70,6 @@ public class EvenOddFunctionTest {
         assertNotNull(message);
 
         // The message should be dropped
-        assert message != null;
         assertEquals(Message.toDrop().getTags()[0], message.getTags()[0]);
 
         // No more messages
