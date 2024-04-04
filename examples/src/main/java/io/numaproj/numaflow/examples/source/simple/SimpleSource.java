@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.examples.source.simple;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
@@ -79,5 +80,10 @@ public class SimpleSource extends Sourcer {
     @Override
     public List<Integer> getPartitions() {
         return Sourcer.defaultPartitions();
+    }
+
+    @VisibleForTesting
+    public Map<Long, Boolean> getMessages()  {
+        return messages;
     }
 }
