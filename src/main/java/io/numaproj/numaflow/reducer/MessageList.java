@@ -5,18 +5,14 @@ import lombok.Getter;
 import lombok.Singular;
 
 import java.util.ArrayList;
-import java.util.Collection;
-
-/**
- * MessageList is used to return the list of Messages returned from Reducer functions.
- */
+import java.util.List;
 
 @Getter
 @Builder(builderMethodName = "newBuilder")
 public class MessageList {
 
     @Singular("addMessage")
-    private Iterable<Message> messages;
+    private List<Message> messages;
 
     /**
      * Builder to build MessageList
@@ -30,9 +26,11 @@ public class MessageList {
         public MessageListBuilder addMessages(Iterable<Message> messages) {
             if (this.messages == null) {
                 this.messages = new ArrayList<>();
-                return this;
             }
-            this.messages.addAll((Collection<? extends Message>) messages);
+
+            for (Message message: messages) {
+                this.messages.add(message);
+            }
             return this;
         }
     }
