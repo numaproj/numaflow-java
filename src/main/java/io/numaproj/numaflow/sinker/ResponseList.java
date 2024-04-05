@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Singular;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * ResponseList is used to return the list of responses from user defined sinker.
@@ -16,15 +16,25 @@ import java.util.Collection;
 public class ResponseList {
 
     @Singular("addResponse")
-    private Iterable<Response> responses;
+    private List<Response> responses;
 
+    /**
+     * Builder to build ResponseList
+     */
     public static class ResponseListBuilder {
+        /**
+         * @param responses to append all the responses to ResponseList
+         *
+         * @return returns the builder
+         */
         public ResponseListBuilder addResponses(Iterable<Response> responses) {
             if (this.responses == null) {
                 this.responses = new ArrayList<>();
-                return this;
             }
-            this.responses.addAll((Collection<? extends Response>) responses);
+
+            for (Response response: responses) {
+                this.responses.add(response);
+            }
             return this;
         }
     }

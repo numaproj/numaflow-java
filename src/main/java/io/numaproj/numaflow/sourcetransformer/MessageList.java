@@ -5,8 +5,7 @@ import lombok.Getter;
 import lombok.Singular;
 
 import java.util.ArrayList;
-import java.util.Collection;
-
+import java.util.List;
 
 /**
  * MessageList is used to return the list of Messages from SourceTransformer functions.
@@ -17,7 +16,7 @@ import java.util.Collection;
 public class MessageList {
 
     @Singular("addMessage")
-    private Iterable<Message> messages;
+    private List<Message> messages;
 
     /**
      * Builder to build MessageList
@@ -32,7 +31,10 @@ public class MessageList {
             if (this.messages == null) {
                 this.messages = new ArrayList<>();
             }
-            this.messages.addAll((Collection<? extends Message>) messages);
+
+            for (Message message : messages) {
+                this.messages.add(message);
+            }
             return this;
         }
     }
