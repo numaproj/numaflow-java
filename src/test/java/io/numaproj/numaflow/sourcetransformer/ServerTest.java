@@ -17,6 +17,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
+
 public class ServerTest {
     private final static String PROCESSED_KEY_SUFFIX = "-key-processed";
     private final static String PROCESSED_VALUE_SUFFIX = "-value-processed";
