@@ -13,10 +13,10 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+
 
 public class ServerTest {
     private final static String PROCESSED_KEY_SUFFIX = "-key-processed";

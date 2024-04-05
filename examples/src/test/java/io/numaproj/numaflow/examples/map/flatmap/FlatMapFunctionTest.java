@@ -1,18 +1,14 @@
 package io.numaproj.numaflow.examples.map.flatmap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-
-import java.util.Iterator;
-import java.util.List;
-
 import io.numaproj.numaflow.examples.utils.TestDatum;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
 public class FlatMapFunctionTest {

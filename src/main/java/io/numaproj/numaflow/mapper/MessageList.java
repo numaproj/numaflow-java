@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Singular;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -33,7 +32,7 @@ public class MessageList {
                 this.messages = new ArrayList<>();
             }
 
-            for (Message message: messages) {
+            for (Message message : messages) {
                 this.messages.add(message);
             }
             return this;
