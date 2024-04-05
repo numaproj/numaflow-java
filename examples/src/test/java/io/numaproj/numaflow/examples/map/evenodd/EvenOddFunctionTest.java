@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -24,17 +25,12 @@ public class EvenOddFunctionTest {
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertNotNull(message);
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
 
         // The message should have the key "even" and tag "even-tag"
-        assertEquals("even", message.getKeys()[0]);
-        assertEquals("even-tag", message.getTags()[0]);
-
-        // No more messages
-        assertFalse(iterator.hasNext());
+        assertEquals("even", messages.get(0).getKeys()[0]);
+        assertEquals("even-tag", messages.get(0).getTags()[0]);
     }
 
     @Test
@@ -44,17 +40,12 @@ public class EvenOddFunctionTest {
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertNotNull(message);
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
 
         // The message should have the key "odd" and tag "odd-tag"
-        assertEquals("odd", message.getKeys()[0]);
-        assertEquals("odd-tag", message.getTags()[0]);
-
-        // No more messages
-        assertFalse(iterator.hasNext());
+        assertEquals("odd", messages.get(0).getKeys()[0]);
+        assertEquals("odd-tag", messages.get(0).getTags()[0]);
     }
 
     @Test
@@ -64,15 +55,10 @@ public class EvenOddFunctionTest {
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertNotNull(message);
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
 
         // The message should be dropped
-        assertEquals(Message.toDrop().getTags()[0], message.getTags()[0]);
-
-        // No more messages
-        assertFalse(iterator.hasNext());
+        assertEquals(Message.toDrop().getTags()[0], messages.get(0).getTags()[0]);
     }
 }

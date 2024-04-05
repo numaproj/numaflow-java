@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.util.Iterator;
+import java.util.List;
 
 import io.numaproj.numaflow.examples.utils.TestDatum;
 import io.numaproj.numaflow.mapper.Message;
@@ -23,18 +24,12 @@ public class FlatMapFunctionTest {
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
+        List<Message> messages = result.getMessages();
+        assertEquals(3, messages.size());
 
-        Message message = iterator.next();
-        assertEquals("apple", new String(message.getValue()));
-
-        message = iterator.next();
-        assertEquals("banana", new String(message.getValue()));
-
-        message = iterator.next();
-        assertEquals("carrot", new String(message.getValue()));
-
-        assertFalse(iterator.hasNext());
+        assertEquals("apple", new String(messages.get(0).getValue()));
+        assertEquals("banana", new String(messages.get(1).getValue()));
+        assertEquals("carrot", new String(messages.get(2).getValue()));
     }
 
     @Test
@@ -44,11 +39,10 @@ public class FlatMapFunctionTest {
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertEquals("apple", new String(message.getValue()));
-        assertFalse(iterator.hasNext());
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
+
+        assertEquals("apple", new String(messages.get(0).getValue()));
     }
 
     @Test
@@ -58,11 +52,10 @@ public class FlatMapFunctionTest {
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertEquals("", new String(message.getValue()));
-        assertFalse(iterator.hasNext());
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
+
+        assertEquals("", new String(messages.get(0).getValue()));
     }
 }
 

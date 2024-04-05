@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.List;
 
 import io.numaproj.numaflow.examples.utils.TestDatum;
 import io.numaproj.numaflow.sourcetransformer.Message;
@@ -21,13 +22,12 @@ public class EventTimeFilterFunctionTest {
         EventTimeFilterFunction eventTimeFilterFunction = new EventTimeFilterFunction();
         MessageList result = eventTimeFilterFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertEquals(Message.toDrop(datum.getEventTime()).getEventTime(), message.getEventTime());
-        assertEquals(0, message.getValue().length);
-        assertEquals(Message.toDrop(datum.getEventTime()).getTags()[0], message.getTags()[0]);
-        assertFalse(iterator.hasNext());
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
+
+        assertEquals(Message.toDrop(datum.getEventTime()).getEventTime(), messages.get(0).getEventTime());
+        assertEquals(0, messages.get(0).getValue().length);
+        assertEquals(Message.toDrop(datum.getEventTime()).getTags()[0], messages.get(0).getTags()[0]);
     }
 
     @Test
@@ -40,12 +40,11 @@ public class EventTimeFilterFunctionTest {
         EventTimeFilterFunction eventTimeFilterFunction = new EventTimeFilterFunction();
         MessageList result = eventTimeFilterFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertEquals("test", new String(message.getValue()));
-        assertEquals("within_year_2022", message.getTags()[0]);
-        assertFalse(iterator.hasNext());
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
+
+        assertEquals("test", new String(messages.get(0).getValue()));
+        assertEquals("within_year_2022", messages.get(0).getTags()[0]);
     }
 
     @Test
@@ -58,12 +57,11 @@ public class EventTimeFilterFunctionTest {
         EventTimeFilterFunction eventTimeFilterFunction = new EventTimeFilterFunction();
         MessageList result = eventTimeFilterFunction.processMessage(new String[]{}, datum);
 
-        Iterator<Message> iterator = result.getMessages().iterator();
-        assertTrue(iterator.hasNext());
-        Message message = iterator.next();
-        assertEquals("test", new String(message.getValue()));
-        assertEquals("after_year_2022", message.getTags()[0]);
-        assertFalse(iterator.hasNext());
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
+
+        assertEquals("test", new String(messages.get(0).getValue()));
+        assertEquals("after_year_2022", messages.get(0).getTags()[0]);
     }
 }
 
