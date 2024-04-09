@@ -12,6 +12,7 @@ import java.util.Map;
  * Server Information to be used by client to determine:
  * - protocol: what is right protocol to use (UDS or TCP)
  * - language: what is language used by the server
+ * - minimum_numaflow_version: lower bound for the supported Numaflow version
  * - version: what is the numaflow sdk version used by the server
  * - metadata: other information
  */
@@ -20,13 +21,14 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ServerInfo {
-    public static final String MINIMUM_CLIENT_VERSION = ">= 1.2.0-0";
+    // Specify the minimum Numaflow version required by the latest SDK version
+    public static final String MINIMUM_NUMAFLOW_VERSION = ">= 1.2.0-0";
     @JsonProperty("protocol")
     private Protocol protocol;
     @JsonProperty("language")
     private Language language;
-    @JsonProperty("minimum_client_version")
-    private String minimum_client_version;
+    @JsonProperty("minimum_numaflow_version")
+    private String minimum_numaflow_version;
     @JsonProperty("version")
     private String version;
     @JsonProperty("metadata")

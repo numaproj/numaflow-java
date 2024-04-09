@@ -93,7 +93,7 @@ public class GrpcServerUtils {
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,
-                ServerInfo.MINIMUM_CLIENT_VERSION,
+                ServerInfo.MINIMUM_NUMAFLOW_VERSION,
                 serverInfoAccessor.getSDKVersion(),
                 new HashMap<>());
         log.info("Writing server info {} to {}", serverInfo, infoFilePath);
