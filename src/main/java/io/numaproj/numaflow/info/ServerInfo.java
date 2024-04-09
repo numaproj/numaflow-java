@@ -20,10 +20,13 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ServerInfo {
+    public static final String MINIMUM_CLIENT_VERSION = ">= 1.2.0-0";
     @JsonProperty("protocol")
     private Protocol protocol;
     @JsonProperty("language")
     private Language language;
+    @JsonProperty("minimum_client_version")
+    private String minimum_client_version;
     @JsonProperty("version")
     private String version;
     @JsonProperty("metadata")
