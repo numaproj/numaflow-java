@@ -21,7 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ServerInfo {
-    // Specify the minimum Numaflow version required by the latest SDK version
+    // Specify the minimum Numaflow version required by the current SDK version
     public static final String MINIMUM_NUMAFLOW_VERSION = "1.2.0-0";
     @JsonProperty("protocol")
     private Protocol protocol;
