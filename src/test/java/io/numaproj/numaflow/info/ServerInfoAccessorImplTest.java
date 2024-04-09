@@ -26,6 +26,7 @@ public class ServerInfoAccessorImplTest {
         ServerInfo testServerInfo = new ServerInfo(
                 Protocol.TCP_PROTOCOL,
                 Language.JAVA,
+                ServerInfo.MINIMUM_CLIENT_VERSION,
                 "0.4.3",
                 new HashMap<>() {{
                     put("key1", "value1");
@@ -38,6 +39,7 @@ public class ServerInfoAccessorImplTest {
             ServerInfo got = this.underTest.read(testFilePath);
             assertEquals(testServerInfo.getLanguage(), got.getLanguage());
             assertEquals(testServerInfo.getProtocol(), got.getProtocol());
+            assertEquals(testServerInfo.getMinimum_client_version(), got.getMinimum_client_version());
             assertEquals(testServerInfo.getVersion(), got.getVersion());
             assertEquals(testServerInfo.getMetadata(), got.getMetadata());
         } catch (Exception e) {
