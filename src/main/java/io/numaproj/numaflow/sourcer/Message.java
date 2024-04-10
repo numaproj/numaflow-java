@@ -62,7 +62,12 @@ public class Message {
      * @param keys message keys
      * @param headers message headers
      */
-    public Message(byte[] value, Offset offset, Instant eventTime, String[] keys, Map<String, String> headers) {
+    public Message(
+            byte[] value,
+            Offset offset,
+            Instant eventTime,
+            String[] keys,
+            Map<String, String> headers) {
         this.value = value;
         this.offset = offset;
         this.eventTime = eventTime;

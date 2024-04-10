@@ -47,5 +47,5 @@ public interface Datum {
      *
      * @return returns the headers in the form of key value pair
      */
-    public Map<String, String> getHeaders();
+    Map<String, String> getHeaders();
 }

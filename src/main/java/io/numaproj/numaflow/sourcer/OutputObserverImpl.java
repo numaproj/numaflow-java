@@ -44,7 +44,8 @@ class OutputObserverImpl implements OutputObserver {
                                         .getOffset()
                                         .getValue()))
                                 .setPartitionId(message.getOffset().getPartitionId()))
-                        .putAllHeaders(message.getHeaders() != null ? message.getHeaders() : new HashMap<>())
+                        .putAllHeaders(message.getHeaders()
+                                != null ? message.getHeaders() : new HashMap<>())
                         .build());
 
         return builder.build();

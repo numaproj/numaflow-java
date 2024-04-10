@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.reducer;
 
-import io.numaproj.numaflow.info.ServerInfoAccessor;
 import org.junit.Assert;
 import org.junit.Test;
 

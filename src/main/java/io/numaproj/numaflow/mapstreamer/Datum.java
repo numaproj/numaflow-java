@@ -13,26 +13,26 @@ public interface Datum {
      *
      * @return returns the payload value in byte array
      */
-    public byte[] getValue();
+    byte[] getValue();
 
     /**
      * method to get the event time of the payload
      *
      * @return returns the event time of the payload
      */
-    public Instant getEventTime();
+    Instant getEventTime();
 
     /**
      * method to get the watermark information
      *
      * @return returns the watermark
      */
-    public Instant getWatermark();
+    Instant getWatermark();
 
     /**
      * method to get the headers information of the payload
      *
      * @return returns the headers in the form of key value pair
      */
-    public Map<String, String> getHeaders();
+    Map<String, String> getHeaders();
 }

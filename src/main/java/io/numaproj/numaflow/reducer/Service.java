@@ -23,7 +23,7 @@ class Service extends ReduceGrpc.ReduceImplBase {
 
     public static final ActorSystem reduceActorSystem = ActorSystem.create("reduce");
 
-    private ReducerFactory<? extends Reducer> reducerFactory;
+    private final ReducerFactory<? extends Reducer> reducerFactory;
 
     public Service(ReducerFactory<? extends Reducer> reducerFactory) {
         this.reducerFactory = reducerFactory;

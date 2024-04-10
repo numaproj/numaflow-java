@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
 public class ServerInfoAccessorImplTest {
-    private ServerInfoAccessor underTest = new ServerInfoAccessorImpl(new ObjectMapper());
+    private final ServerInfoAccessor underTest = new ServerInfoAccessorImpl(new ObjectMapper());
 
     @Test
     public void given_localEnvironment_when_getNumaflowJavaSDKVersion_then_returnAValidVersion() {
