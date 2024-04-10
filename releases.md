@@ -20,3 +20,6 @@ on your situation. Finally, click `Publish release`, and your version tag will b
 ### After Release
 
 After your release a Github Actions workflow, `Publish to Maven Central and Github Packages`, will be triggered. Monitor the workflow run and ensure that it succeeds.
+
+If the released version has backwards incompatible changes, i.e. it does not support older versions of the Numaflow platform,
+you must update the `MINIMUM_NUMAFLOW_VERSION` constant in the `src/main/java/io/numaproj/numaflow/info/ServerInfo.java` file to the minimum Numaflow version that is supported by your new SDK version. 
