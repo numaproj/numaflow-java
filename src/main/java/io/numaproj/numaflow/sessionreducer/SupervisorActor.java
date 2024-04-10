@@ -120,7 +120,7 @@ class SupervisorActor extends AbstractActor {
                 ActorRequest createRequest = ActorRequest.builder()
                         .type(ActorRequestType.OPEN)
                         .keyedWindow(windowOperation.getKeyedWindows(0))
-                        .payload(request.hasPayload() ? request.getPayload():null)
+                        .payload(request.hasPayload() ? request.getPayload() : null)
                         .build();
                 this.invokeActor(createRequest);
                 break;
@@ -133,7 +133,7 @@ class SupervisorActor extends AbstractActor {
                 ActorRequest appendRequest = ActorRequest.builder()
                         .type(ActorRequestType.APPEND)
                         .keyedWindow(windowOperation.getKeyedWindows(0))
-                        .payload(request.hasPayload() ? request.getPayload():null)
+                        .payload(request.hasPayload() ? request.getPayload() : null)
                         .build();
                 this.invokeActor(appendRequest);
                 break;
@@ -182,7 +182,7 @@ class SupervisorActor extends AbstractActor {
                 ActorRequest appendRequest = ActorRequest.builder()
                         .type(ActorRequestType.APPEND)
                         .keyedWindow(windowOperation.getKeyedWindows(1))
-                        .payload(request.hasPayload() ? request.getPayload():null)
+                        .payload(request.hasPayload() ? request.getPayload() : null)
                         .build();
                 this.invokeActor(appendRequest);
                 break;

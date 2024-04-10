@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.mapper;
 
-import io.numaproj.numaflow.info.ServerInfoAccessor;
 import lombok.Builder;
 import lombok.Getter;
 

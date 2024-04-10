@@ -1,6 +1,6 @@
 package io.numaproj.numaflow.examples.map.flatmap;
 
-import io.numaproj.numaflow.examples.utils.TestDatum;
+import io.numaproj.numaflow.mapper.MapperTestKit;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +15,16 @@ public class FlatMapFunctionTest {
 
     @Test
     public void testCommaSeparatedString() {
-        TestDatum datum = TestDatum.builder().value("apple,banana,carrot".getBytes()).build();
+        MapperTestKit mapperTestKit = new MapperTestKit(new FlatMapFunction());
+        try {
+            mapperTestKit.startServer();
+        } catch (Exception e) {
+            log.error("Failed to start server", e);
+        }
 
-        FlatMapFunction flatMapFunction = new FlatMapFunction();
-        MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("apple,banana,carrot".getBytes()).build();
+
+        MessageList result = mapperTestKit.sendRequest(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
         assertEquals(3, messages.size());
@@ -26,11 +32,17 @@ public class FlatMapFunctionTest {
         assertEquals("apple", new String(messages.get(0).getValue()));
         assertEquals("banana", new String(messages.get(1).getValue()));
         assertEquals("carrot", new String(messages.get(2).getValue()));
+
+        try {
+            mapperTestKit.stopServer();
+        } catch (Exception e) {
+            log.error("Failed to stop server", e);
+        }
     }
 
     @Test
     public void testSingleString() {
-        TestDatum datum = TestDatum.builder().value("apple".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("apple".getBytes()).build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
@@ -43,7 +55,7 @@ public class FlatMapFunctionTest {
 
     @Test
     public void testEmptyString() {
-        TestDatum datum = TestDatum.builder().value("".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("".getBytes()).build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);

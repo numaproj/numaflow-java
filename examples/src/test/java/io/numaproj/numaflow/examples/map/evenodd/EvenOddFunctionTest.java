@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.examples.map.evenodd;
 
 
-import io.numaproj.numaflow.examples.utils.TestDatum;
+import io.numaproj.numaflow.mapper.MapperTestKit;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +15,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class EvenOddFunctionTest {
 
     @Test
+    public void testServerInvocation() {
+        MapperTestKit mapperTestKit = new MapperTestKit(new EvenOddFunction());
+        try {
+            mapperTestKit.startServer();
+        } catch (Exception e) {
+            log.error("Failed to start server", e);
+        }
+
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("2".getBytes()).build();
+        MessageList result = mapperTestKit.sendRequest(new String[]{}, datum);
+
+        List<Message> messages = result.getMessages();
+        assertEquals(1, messages.size());
+        assertEquals("even", messages.get(0).getKeys()[0]);
+
+        try {
+            mapperTestKit.stopServer();
+        } catch (Exception e) {
+            log.error("Failed to stop server", e);
+        }
+    }
+
+    @Test
     public void testEvenNumber() {
-        TestDatum datum = TestDatum.builder().value("2".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("2".getBytes()).build();
 
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
@@ -31,7 +54,7 @@ public class EvenOddFunctionTest {
 
     @Test
     public void testOddNumber() {
-        TestDatum datum = TestDatum.builder().value("3".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("3".getBytes()).build();
 
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
@@ -46,7 +69,7 @@ public class EvenOddFunctionTest {
 
     @Test
     public void testNonNumeric() {
-        TestDatum datum = TestDatum.builder().value("abc".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("abc".getBytes()).build();
 
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);

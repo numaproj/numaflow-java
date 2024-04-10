@@ -89,7 +89,11 @@ public class GrpcServerUtils {
             }
         }
 
-        // write server info to file
+        // write server info to file if file path is not null
+        if (infoFilePath == null) {
+            return;
+        }
+
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,

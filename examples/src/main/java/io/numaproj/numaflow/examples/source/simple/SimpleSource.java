@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.examples.source.simple;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Longs;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;

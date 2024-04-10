@@ -12,6 +12,19 @@ import java.util.List;
  */
 public abstract class Sourcer {
     /**
+     * method returns default partitions for the source.
+     * It can be used in the getPartitions() function of the Sourcer interface only
+     * if the source doesn't have partitions. DefaultPartition will be the pod replica
+     * index of the source.
+     *
+     * @return list of partitions
+     */
+    public static List<Integer> defaultPartitions() {
+        String partition = System.getenv().getOrDefault("NUMAFLOW_REPLICA", "0");
+        return Collections.singletonList(Integer.parseInt(partition));
+    }
+
+    /**
      * method will be used for reading messages from source.
      *
      * @param request the request
@@ -44,17 +57,4 @@ public abstract class Sourcer {
      * @return list of partitions
      */
     public abstract List<Integer> getPartitions();
-
-    /**
-     * method returns default partitions for the source.
-     * It can be used in the getPartitions() function of the Sourcer interface only
-     * if the source doesn't have partitions. DefaultPartition will be the pod replica
-     * index of the source.
-     *
-     * @return list of partitions
-     */
-    public static List<Integer> defaultPartitions() {
-        String partition = System.getenv().getOrDefault("NUMAFLOW_REPLICA", "0");
-        return Collections.singletonList(Integer.parseInt(partition));
-    }
 }

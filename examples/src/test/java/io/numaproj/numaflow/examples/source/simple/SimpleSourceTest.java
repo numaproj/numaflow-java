@@ -17,16 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleSourceTest {
 
-    @Data
-    static class TestObserver implements OutputObserver {
-        List<Message> messages = new ArrayList<>();
-
-        @Override
-        public void send(Message message) {
-            messages.add(message);
-        }
-    }
-
     @Test
     public void test_ReadAndAck() {
         SimpleSource simpleSource = new SimpleSource();
@@ -73,6 +63,16 @@ public class SimpleSourceTest {
         SimpleSource simpleSource = new SimpleSource();
         // simple source getPending always returns 0.
         assertEquals(0, simpleSource.getPending());
+    }
+
+    @Data
+    static class TestObserver implements OutputObserver {
+        List<Message> messages = new ArrayList<>();
+
+        @Override
+        public void send(Message message) {
+            messages.add(message);
+        }
     }
 }
 
