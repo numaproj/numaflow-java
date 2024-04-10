@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.examples.sink.simple;
 
+import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.SinkerTestKit;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +37,12 @@ public class SimpleSinkTest {
         try {
             ResponseList responseList = sinkerTestKit.sendRequests(testDatumIterator);
             assertEquals(datumCount, responseList.getResponses().size());
+            for (Response response: responseList.getResponses()) {
+                assertEquals(true, response.getSuccess());
+            }
         } catch (Exception e) {
             fail("Failed to send requests");
         }
-
 
         // Stop the server
         try {
@@ -47,5 +50,8 @@ public class SimpleSinkTest {
         } catch (InterruptedException e) {
             fail("Failed to stop server");
         }
+
+        // we can add the logic to verify if the messages were
+        // successfully written to the sink(could be a file, database, etc.)
     }
 }
