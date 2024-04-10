@@ -44,14 +44,6 @@ After confirming that your changes pass local testing:
 all example images. This ensures that all example images are using the most up-to-date version of the SDK, i.e. the one including your 
 changes
 
-### Before Release
-
-Before releasing a new SDK version, make sure to update all references from the old version to the new one.
-For example, the version in the `pom.xml` in the root and example directories should be updated (for [reference
-](https://github.com/numaproj/numaflow-java/pull/89/files#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8)). After making these changes, create a PR. Once merged, it will trigger the Docker Publish workflow, and should be included in the release.
-As a result, the correct SDK version will always be printed in the server information logs, and the example images will 
-always be using the latest changes (due to pointing to the local maven repository that is built).
-
 ### Adding a New Example
 
 If you add a new example, there are a few steps to follow in order for it to be used by the update script and the Docker
@@ -59,5 +51,5 @@ Publish workflow:
 
 1. Add the example to the `pom.xml` file in the examples directory, within an execution element. Note that the
 `id` tag you specify must be exactly the same as the quay.io repository name for the example
-2. Add the `id` tag you specified in step 1 to the `executionIDs` array in `update_examples.sh`
-3. Add the `id` tag you specified in step 1 to the `execution_ids` matrix in `build-push.yaml`
+2. Add the `id` tag you specified in step 1 to the `executionIDs` array in `hack/update_examples.sh`
+3. Add the `id` tag you specified in step 1 to the `execution_ids` matrix in `.github/workflows/build-push.yaml`
