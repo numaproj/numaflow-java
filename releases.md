@@ -6,7 +6,7 @@ This document explains the release process for the Java SDK. You can find the mo
 
 Before releasing a new SDK version, make sure to update all references from the old version to the new one.
 For example, the version in the `README.md`, as well as the `pom.xml` in the root and example directories should be updated (for [reference
-](https://github.com/numaproj/numaflow-java/pull/89/files#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8)). The specified version should follow the [semantic versioning](https://semver.org/) specification. After making these changes, create a PR. Once merged, it will trigger the Docker Publish workflow, and should be included in the release.
+](https://github.com/numaproj/numaflow-java/pull/89/files#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8)). The specified version should follow the [semantic versioning](https://semver.org/) specification. After making these changes, create a PR. Once merged, it will trigger the `Docker Publish` workflow, and should be included in the release.
 As a result, the correct SDK version will always be printed in the server information logs, and the example images will
 always be using the latest changes (due to pointing to the local maven repository that is built).
 
