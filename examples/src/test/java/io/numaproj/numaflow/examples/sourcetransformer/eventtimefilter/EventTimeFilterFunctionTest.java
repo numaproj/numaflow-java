@@ -16,14 +16,14 @@ public class EventTimeFilterFunctionTest {
     @Test
     public void testServerInvocation() {
         SourceTransformerTestKit sourceTransformerTestKit = new SourceTransformerTestKit(new EventTimeFilterFunction());
-try {
+        try {
             sourceTransformerTestKit.startServer();
         } catch (Exception e) {
             fail("Failed to start server");
         }
 
         // Create a client which can send requests to the server
-        SourceTransformerTestKit.Client  client = new SourceTransformerTestKit.Client();
+        SourceTransformerTestKit.Client client = new SourceTransformerTestKit.Client();
 
         SourceTransformerTestKit.TestDatum datum = SourceTransformerTestKit.TestDatum.builder()
                 .eventTime(Instant.ofEpochMilli(1640995200000L))

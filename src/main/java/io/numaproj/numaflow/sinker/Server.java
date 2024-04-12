@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.sinker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
@@ -72,7 +71,8 @@ public class Server {
         server.start();
 
         log.info(
-                "Server started, listening on socket path: " + grpcConfig.getSocketPath());
+                "Server started, listening on {}",
+                grpcConfig.isLocal() ? grpcConfig.getPort() : grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

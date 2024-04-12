@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
@@ -44,7 +43,7 @@ public class Server {
     /**
      * Starts the gRPC server and begins listening for requests. If the server is configured to be non-local,
      * it writes server information to a specified path. A shutdown hook is registered to ensure the server
-     *  is properly shut down when the JVM is shutting down.
+     * is properly shut down when the JVM is shutting down.
      *
      * @throws Exception if the server fails to start
      */
@@ -77,7 +76,7 @@ public class Server {
 
         log.info(
                 "Server started, listening on {}",
-                grpcConfig.isLocal() ? grpcConfig.getSocketPath() : grpcConfig.getPort());
+                grpcConfig.isLocal() ? grpcConfig.getPort() : grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

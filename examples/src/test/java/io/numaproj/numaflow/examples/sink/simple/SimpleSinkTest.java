@@ -25,9 +25,9 @@ public class SimpleSinkTest {
         }
 
         // Create a test datum iterator with 10 messages
-        SinkerTestKit.TestDatumIterator testDatumIterator = new SinkerTestKit.TestDatumIterator();
+        SinkerTestKit.TestListIterator testListIterator = new SinkerTestKit.TestListIterator();
         for (int i = 0; i < datumCount; i++) {
-            testDatumIterator.addDatum(SinkerTestKit.TestDatum
+            testListIterator.addDatum(SinkerTestKit.TestDatum
                     .builder()
                     .id("id-" + i)
                     .value(("value-" + i).getBytes())
@@ -36,7 +36,7 @@ public class SimpleSinkTest {
 
         SinkerTestKit.SinkerClient sinkerClient = new SinkerTestKit.SinkerClient();
         try {
-            ResponseList responseList = sinkerClient.sendRequest(testDatumIterator);
+            ResponseList responseList = sinkerClient.sendRequest(testListIterator);
             assertEquals(datumCount, responseList.getResponses().size());
             for (Response response : responseList.getResponses()) {
                 assertEquals(true, response.getSuccess());
