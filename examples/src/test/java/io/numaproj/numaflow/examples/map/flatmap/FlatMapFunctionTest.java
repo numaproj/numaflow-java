@@ -22,9 +22,13 @@ public class FlatMapFunctionTest {
             log.error("Failed to start server", e);
         }
 
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("apple,banana,carrot".getBytes()).build();
+        MapperTestKit.MapperClient client = new MapperTestKit.MapperClient();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("apple,banana,carrot".getBytes())
+                .build();
 
-        MessageList result = mapperTestKit.sendRequest(new String[]{}, datum);
+        MessageList result = client.sendRequest(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
         assertEquals(3, messages.size());
@@ -42,7 +46,10 @@ public class FlatMapFunctionTest {
 
     @Test
     public void testSingleString() {
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("apple".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("apple".getBytes())
+                .build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);
@@ -55,7 +62,10 @@ public class FlatMapFunctionTest {
 
     @Test
     public void testEmptyString() {
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("".getBytes())
+                .build();
 
         FlatMapFunction flatMapFunction = new FlatMapFunction();
         MessageList result = flatMapFunction.processMessage(new String[]{}, datum);

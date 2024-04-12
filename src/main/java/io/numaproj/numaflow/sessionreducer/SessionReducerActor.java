@@ -14,9 +14,9 @@ import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
  * a session reducer actor only works on its assigned single session window.
  */
 class SessionReducerActor extends AbstractActor {
+    private final SessionReducer sessionReducer;
     // the session window the actor is working on
     private Sessionreduce.KeyedWindow keyedWindow;
-    private final SessionReducer sessionReducer;
     private OutputStreamObserver outputStream;
     // when set to true, it means this session is already closed.
     private boolean isClosed = false;

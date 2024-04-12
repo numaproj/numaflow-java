@@ -16,7 +16,11 @@ import io.numaproj.numaflow.mapper.Server;
 public class FlatMapFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
-        new Server(new FlatMapFunction()).start();
+        Server server = new Server(new FlatMapFunction());
+        server.start();
+
+        // Wait for the server to shutdown
+        server.awaitTermination();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {

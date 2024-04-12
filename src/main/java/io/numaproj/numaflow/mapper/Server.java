@@ -42,20 +42,29 @@ public class Server {
     }
 
     /**
-     * Start serving requests.
+     * Starts the gRPC server and begins listening for requests. If the server is configured to be non-local,
+     * it writes server information to a specified path. A shutdown hook is registered to ensure the server
+     *  is properly shut down when the JVM is shutting down.
      *
-     * @throws Exception if server fails to start
+     * @throws Exception if the server fails to start
      */
     public void start() throws Exception {
-        GrpcServerUtils.writeServerInfo(
-                serverInfoAccessor,
-                grpcConfig.getSocketPath(),
-                grpcConfig.getInfoFilePath());
+
+        if (!grpcConfig.isLocal()) {
+            GrpcServerUtils.writeServerInfo(
+                    serverInfoAccessor,
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getInfoFilePath());
+        }
 
         if (this.server == null) {
-            // create server builder
-            ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
-                    grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
+            ServerBuilder<?> serverBuilder = null;
+            // create server builder for domain socket server
+            serverBuilder = GrpcServerUtils.createServerBuilder(
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getMaxMessageSize(),
+                    grpcConfig.isLocal(),
+                    grpcConfig.getPort());
 
             // build server
             this.server = serverBuilder
@@ -67,7 +76,8 @@ public class Server {
         server.start();
 
         log.info(
-                "Server started, listening on socket path: " + grpcConfig.getSocketPath());
+                "Server started, listening on {}",
+                grpcConfig.isLocal() ? grpcConfig.getSocketPath() : grpcConfig.getPort());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -83,6 +93,17 @@ public class Server {
     }
 
     /**
+     * Blocks until the server has terminated. If the server is already terminated, this method
+     * will return immediately. If the server is not yet terminated, this method will block the
+     * calling thread until the server has terminated.
+     *
+     * @throws InterruptedException if the current thread is interrupted while waiting
+     */
+    public void awaitTermination() throws InterruptedException {
+        server.awaitTermination();
+    }
+
+    /**
      * Stop serving requests and shutdown resources. Await termination on the main thread since the
      * grpc library uses daemon threads.
      *
@@ -95,11 +116,11 @@ public class Server {
     }
 
     /**
-     * Set server builder for testing.
+     * Sets the server builder. This method can be used for testing purposes to provide a different
+     * grpc server builder.
      *
-     * @param serverBuilder in process server builder can be used for testing
+     * @param serverBuilder the server builder to be used
      */
-    @VisibleForTesting
     public void setServerBuilder(ServerBuilder<?> serverBuilder) {
         this.server = serverBuilder
                 .addService(this.service)

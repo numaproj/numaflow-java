@@ -139,7 +139,7 @@ class Service extends SinkGrpc.SinkImplBase {
                 log.error("Sink executor was abruptly shut down. " + droppedTasks.size()
                         + " tasks will not be executed.");
             } else {
-                log.error("Sink executor was terminated.");
+                log.info("Sink executor was terminated.");
             }
         } catch (InterruptedException e) {
             Thread.interrupted();

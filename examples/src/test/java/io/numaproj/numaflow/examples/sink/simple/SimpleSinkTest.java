@@ -34,10 +34,11 @@ public class SimpleSinkTest {
                     .build());
         }
 
+        SinkerTestKit.SinkerClient sinkerClient = new SinkerTestKit.SinkerClient();
         try {
-            ResponseList responseList = sinkerTestKit.sendRequests(testDatumIterator);
+            ResponseList responseList = sinkerClient.sendRequest(testDatumIterator);
             assertEquals(datumCount, responseList.getResponses().size());
-            for (Response response: responseList.getResponses()) {
+            for (Response response : responseList.getResponses()) {
                 assertEquals(true, response.getSuccess());
             }
         } catch (Exception e) {

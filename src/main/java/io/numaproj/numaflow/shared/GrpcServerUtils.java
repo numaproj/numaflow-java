@@ -104,7 +104,11 @@ public class GrpcServerUtils {
         serverInfoAccessor.write(serverInfo, infoFilePath);
     }
 
-    public static ServerBuilder<?> createServerBuilder(String socketPath, int maxMessageSize) {
+    public static ServerBuilder<?> createServerBuilder(
+            String socketPath,
+            int maxMessageSize,
+            boolean isLocal,
+            int port) {
         ServerInterceptor interceptor = new ServerInterceptor() {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
@@ -148,6 +152,13 @@ public class GrpcServerUtils {
                 };
             }
         };
+
+        if (isLocal) {
+            return ServerBuilder.forPort(port)
+                    .maxInboundMessageSize(maxMessageSize)
+                    .intercept(interceptor);
+        }
+
         return NettyServerBuilder
                 .forAddress(new DomainSocketAddress(socketPath))
                 .channelType(GrpcServerUtils.getChannelTypeClass())
