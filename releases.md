@@ -28,4 +28,4 @@ changes that you would like to highlight as part of the release, add those to th
 
 ### After Release
 
-After your release a Github Actions workflow, `Publish to Maven Central and Github Packages`, will be triggered. Monitor the workflow run and ensure that it succeeds.
+After your release, a Github Actions workflow, `Publish to Maven Central and Github Packages`, will be triggered. Monitor the workflow run and ensure that it succeeds.
