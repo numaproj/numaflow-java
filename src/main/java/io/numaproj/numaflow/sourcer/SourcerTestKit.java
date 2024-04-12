@@ -28,34 +28,69 @@ public class SourcerTestKit {
     private final GRPCConfig grpcConfig;
     private Server server;
 
+    /**
+     * Create a new SourcerTestKit with the given Sourcer.
+     *
+     * @param sourcer the sourcer to test
+     */
     public SourcerTestKit(Sourcer sourcer) {
         this(sourcer, GRPCConfig.newBuilder().isLocal(true).build());
     }
 
+    /**
+     * Create a new SourcerTestKit with the given Sourcer and GRPCConfig.
+     *
+     * @param sourcer the sourcer to test
+     * @param grpcConfig the grpc configuration to use
+     */
     public SourcerTestKit(Sourcer sourcer, GRPCConfig grpcConfig) {
         this.sourcer = sourcer;
         this.grpcConfig = grpcConfig;
     }
 
+    /**
+     * startServer starts the server.
+     *
+     * @throws Exception if server fails to start
+     */
     public void startServer() throws Exception {
         server = new Server(sourcer, grpcConfig);
         server.start();
     }
 
+    /**
+     * stopServer stops the server.
+     *
+     * @throws InterruptedException if server fails to stop
+     */
     public void stopServer() throws InterruptedException {
         if (server != null) {
             server.stop();
         }
     }
 
+    /**
+     * SourcerClient is a client to send requests to the server.
+     * It provides methods to send read, ack and pending requests to the server.
+     */
     public static class SourcerClient {
         private final ManagedChannel channel;
         private final SourceGrpc.SourceStub sourceStub;
 
+        /**
+         * Create a new SourcerClient with the default host and port.
+         * The default host is localhost and the default port is 50051.
+         */
         public SourcerClient() {
             this("localhost", 50051);
         }
 
+        /**
+         * Create a new SourcerClient with the given host and port.
+         *
+         * @param host the host
+         * @param port the port
+         */
         public SourcerClient(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port)
                     .usePlaintext()
@@ -63,6 +98,11 @@ public class SourcerTestKit {
             this.sourceStub = SourceGrpc.newStub(channel);
         }
 
+        /**
+         * close closes the client.
+         *
+         * @throws InterruptedException if the client fails to close
+         */
         public void close() throws InterruptedException {
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
         }
@@ -72,6 +112,7 @@ public class SourcerTestKit {
          *
          * @param request the read request
          * @param observer the output observer to receive the messages
+         *
          * @throws Exception if the request fails
          */
         public void sendReadRequest(ReadRequest request, OutputObserver observer) throws Exception {

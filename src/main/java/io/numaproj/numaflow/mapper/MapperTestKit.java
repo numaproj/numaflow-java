@@ -171,7 +171,12 @@ public class MapperTestKit {
             }
         }
 
-        public void shutdown() throws InterruptedException {
+        /**
+         * Close the client.
+         *
+         * @throws InterruptedException if the client fails to close
+         */
+        public void close() throws InterruptedException {
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
         }
     }

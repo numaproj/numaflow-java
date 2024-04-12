@@ -3,13 +3,11 @@ package io.numaproj.numaflow.examples.sourcetransformer.eventtimefilter;
 import io.numaproj.numaflow.sourcetransformer.Message;
 import io.numaproj.numaflow.sourcetransformer.MessageList;
 import io.numaproj.numaflow.sourcetransformer.SourceTransformerTestKit;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public class EventTimeFilterFunctionTest {
 
@@ -19,7 +17,7 @@ public class EventTimeFilterFunctionTest {
         try {
             sourceTransformerTestKit.startServer();
         } catch (Exception e) {
-            fail("Failed to start server");
+            Assertions.fail("Failed to start server");
         }
 
         // Create a client which can send requests to the server
@@ -32,15 +30,16 @@ public class EventTimeFilterFunctionTest {
         MessageList result = client.sendRequest(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
-        assertEquals(1, messages.size());
+        Assertions.assertEquals(1, messages.size());
 
-        assertEquals("test", new String(messages.get(0).getValue()));
-        assertEquals("within_year_2022", messages.get(0).getTags()[0]);
+        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
+        Assertions.assertEquals("within_year_2022", messages.get(0).getTags()[0]);
 
         try {
+            client.close();
             sourceTransformerTestKit.stopServer();
         } catch (Exception e) {
-            fail("Failed to stop server");
+            Assertions.fail("Failed to stop server");
         }
     }
 
@@ -55,13 +54,13 @@ public class EventTimeFilterFunctionTest {
         MessageList result = eventTimeFilterFunction.processMessage(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
-        assertEquals(1, messages.size());
+        Assertions.assertEquals(1, messages.size());
 
-        assertEquals(
+        Assertions.assertEquals(
                 Message.toDrop(datum.getEventTime()).getEventTime(),
                 messages.get(0).getEventTime());
-        assertEquals(0, messages.get(0).getValue().length);
-        assertEquals(
+        Assertions.assertEquals(0, messages.get(0).getValue().length);
+        Assertions.assertEquals(
                 Message.toDrop(datum.getEventTime()).getTags()[0],
                 messages.get(0).getTags()[0]);
     }
@@ -77,10 +76,10 @@ public class EventTimeFilterFunctionTest {
         MessageList result = eventTimeFilterFunction.processMessage(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
-        assertEquals(1, messages.size());
+        Assertions.assertEquals(1, messages.size());
 
-        assertEquals("test", new String(messages.get(0).getValue()));
-        assertEquals("within_year_2022", messages.get(0).getTags()[0]);
+        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
+        Assertions.assertEquals("within_year_2022", messages.get(0).getTags()[0]);
     }
 
     @Test
@@ -94,10 +93,10 @@ public class EventTimeFilterFunctionTest {
         MessageList result = eventTimeFilterFunction.processMessage(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
-        assertEquals(1, messages.size());
+        Assertions.assertEquals(1, messages.size());
 
-        assertEquals("test", new String(messages.get(0).getValue()));
-        assertEquals("after_year_2022", messages.get(0).getTags()[0]);
+        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
+        Assertions.assertEquals("after_year_2022", messages.get(0).getTags()[0]);
     }
 }
 

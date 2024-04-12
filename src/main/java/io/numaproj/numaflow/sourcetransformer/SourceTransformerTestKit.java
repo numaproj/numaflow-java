@@ -101,6 +101,13 @@ public class SourceTransformerTestKit {
             this.sourceTransformStub = SourceTransformGrpc.newStub(channel);
         }
 
+        /**
+         * Send a gRPC request to the server.
+         *
+         * @param request the request to send
+         *
+         * @return a CompletableFuture that will be completed when the response is received
+         */
         private CompletableFuture<Sourcetransformer.SourceTransformResponse> sendGrpcRequest(
                 Sourcetransformer.SourceTransformRequest request) {
             CompletableFuture<Sourcetransformer.SourceTransformResponse> future = new CompletableFuture<>();
@@ -178,7 +185,12 @@ public class SourceTransformerTestKit {
             }
         }
 
-        public void shutdown() throws InterruptedException {
+        /**
+         * Close the client.
+         *
+         * @throws InterruptedException if the client fails to close
+         */
+        public void close() throws InterruptedException {
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
         }
     }
