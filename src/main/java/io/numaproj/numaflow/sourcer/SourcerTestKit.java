@@ -72,6 +72,7 @@ public class SourcerTestKit {
          *
          * @param request the read request
          * @param observer the output observer to receive the messages
+         * @throws Exception if the request fails
          */
         public void sendReadRequest(ReadRequest request, OutputObserver observer) throws Exception {
             SourceOuterClass.ReadRequest grpcRequest = SourceOuterClass.ReadRequest.newBuilder()
@@ -117,7 +118,7 @@ public class SourcerTestKit {
          *
          * @param request the ack request
          *
-         * @throws Exception
+         * @throws Exception if the request fails
          */
         public void sendAckRequest(AckRequest request) throws Exception {
             CompletableFuture<SourceOuterClass.AckResponse> future = new CompletableFuture<>();
@@ -160,7 +161,7 @@ public class SourcerTestKit {
          *
          * @return the number of pending messages
          *
-         * @throws Exception
+         * @throws Exception if the request fails
          */
         public long sendPendingRequest() throws Exception {
             CompletableFuture<SourceOuterClass.PendingResponse> future = new CompletableFuture<>();
