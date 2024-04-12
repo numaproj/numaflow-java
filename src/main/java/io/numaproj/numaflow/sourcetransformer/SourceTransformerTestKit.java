@@ -1,12 +1,12 @@
-package io.numaproj.numaflow.mapper;
+package io.numaproj.numaflow.sourcetransformer;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.map.v1.MapGrpc;
-import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
+import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -20,23 +20,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * MapperTestKit is a test kit for testing Mapper implementations.
+ * SourceTransformerTestKit is a test kit for testing SourceTransformer implementations.
  * It provides methods to start and stop the server and send requests to the server.
  */
 @Slf4j
-public class MapperTestKit {
-    private final Mapper mapper;
+public class SourceTransformerTestKit {
+    private final SourceTransformer sourceTransformer;
     private final GRPCConfig grpcConfig;
     private Server server;
 
     /**
-     * Create a new MapperTestKit with the given Mapper.
+     * Create a new SourceTransformerTestKit with the given SourceTransformer.
      *
-     * @param mapper the mapper to test
+     * @param sourceTransformer the source transformer to test
      */
-    public MapperTestKit(Mapper mapper) {
+    public SourceTransformerTestKit(SourceTransformer sourceTransformer) {
         this(
-                mapper,
+                sourceTransformer,
                 GRPCConfig
                         .newBuilder()
                         .isLocal(true)
@@ -44,13 +44,13 @@ public class MapperTestKit {
     }
 
     /**
-     * Create a new MapperTestKit with the given Mapper and GRPCConfig.
+     * Create a new SourceTransformerTestKit with the given SourceTransformer and GRPCConfig.
      *
-     * @param mapper the mapper to test
+     * @param sourceTransformer the sourceTransformer to test
      * @param grpcConfig the grpc configuration to use.
      */
-    public MapperTestKit(Mapper mapper, GRPCConfig grpcConfig) {
-        this.mapper = mapper;
+    public SourceTransformerTestKit(SourceTransformer sourceTransformer, GRPCConfig grpcConfig) {
+        this.sourceTransformer = sourceTransformer;
         this.grpcConfig = grpcConfig;
     }
 
@@ -60,7 +60,7 @@ public class MapperTestKit {
      * @throws Exception if server fails to start
      */
     public void startServer() throws Exception {
-        server = new Server(this.mapper, this.grpcConfig);
+        server = new Server(this.sourceTransformer, this.grpcConfig);
         server.start();
     }
 
@@ -76,18 +76,18 @@ public class MapperTestKit {
     }
 
     /**
-     * Client is a client for sending requests to the map server.
+     * SourceTransformerClient is a client for sending requests to the source transformer server.
      */
     public static class Client {
         private final ManagedChannel channel;
-        private final MapGrpc.MapStub mapStub;
+        private final SourceTransformGrpc.SourceTransformStub sourceTransformStub;
 
         /**
          * empty constructor for Client.
          * default host is localhost and port is 50051.
          */
         public Client() {
-            this(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT);
+            this("localhost", Constants.DEFAULT_PORT);
         }
 
         /**
@@ -98,14 +98,15 @@ public class MapperTestKit {
          */
         public Client(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-            this.mapStub = MapGrpc.newStub(channel);
+            this.sourceTransformStub = SourceTransformGrpc.newStub(channel);
         }
 
-        private CompletableFuture<MapOuterClass.MapResponse> sendGrpcRequest(MapOuterClass.MapRequest request) {
-            CompletableFuture<MapOuterClass.MapResponse> future = new CompletableFuture<>();
-            StreamObserver<MapOuterClass.MapResponse> responseObserver = new StreamObserver<>() {
+        private CompletableFuture<Sourcetransformer.SourceTransformResponse> sendGrpcRequest(
+                Sourcetransformer.SourceTransformRequest request) {
+            CompletableFuture<Sourcetransformer.SourceTransformResponse> future = new CompletableFuture<>();
+            StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver = new StreamObserver<>() {
                 @Override
-                public void onNext(MapOuterClass.MapResponse response) {
+                public void onNext(Sourcetransformer.SourceTransformResponse response) {
                     future.complete(response);
                 }
 
@@ -123,7 +124,7 @@ public class MapperTestKit {
                 }
             };
 
-            mapStub.mapFn(
+            sourceTransformStub.sourceTransformFn(
                     request, responseObserver);
 
             return future;
@@ -138,7 +139,7 @@ public class MapperTestKit {
          * @return response from the server as a MessageList
          */
         public MessageList sendRequest(String[] keys, Datum data) {
-            MapOuterClass.MapRequest request = MapOuterClass.MapRequest.newBuilder()
+            Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest.newBuilder()
                     .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
                     .setValue(data.getValue()
                             == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
@@ -157,10 +158,13 @@ public class MapperTestKit {
                     .build();
 
             try {
-                MapOuterClass.MapResponse response = this.sendGrpcRequest(request).get();
+                Sourcetransformer.SourceTransformResponse response = this.sendGrpcRequest(request).get();
                 List<Message> messages = response.getResultsList().stream()
                         .map(result -> new Message(
                                 result.getValue().toByteArray(),
+                                Instant.ofEpochSecond(
+                                        result.getEventTime().getSeconds(),
+                                        result.getEventTime().getNanos()),
                                 result.getKeysList().toArray(new String[0]),
                                 result.getTagsList().toArray(new String[0])))
                         .collect(Collectors.toList());

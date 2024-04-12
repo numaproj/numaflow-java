@@ -47,10 +47,12 @@ public class Server {
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
-        GrpcServerUtils.writeServerInfo(
-                serverInfoAccessor,
-                grpcConfig.getSocketPath(),
-                grpcConfig.getInfoFilePath());
+        if (!grpcConfig.isLocal()) {
+            GrpcServerUtils.writeServerInfo(
+                    serverInfoAccessor,
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getInfoFilePath());
+        }
 
         if (this.server == null) {
             // create server builder

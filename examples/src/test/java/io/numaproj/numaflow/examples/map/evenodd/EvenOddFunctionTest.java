@@ -24,7 +24,7 @@ public class EvenOddFunctionTest {
         }
 
         // Create a client which can send requests to the server
-        MapperTestKit.MapperClient client = new MapperTestKit.MapperClient();
+        MapperTestKit.Client client = new MapperTestKit.Client();
         MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
                 .builder()
                 .value("2".getBytes())
