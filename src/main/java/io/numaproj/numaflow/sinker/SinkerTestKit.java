@@ -42,7 +42,7 @@ public class SinkerTestKit {
      * @param sinker the sinker to test
      */
     public SinkerTestKit(Sinker sinker) {
-        this(sinker, GRPCConfig.newBuilder().isLocal(true).build());
+        this(sinker, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

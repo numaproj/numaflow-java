@@ -35,12 +35,7 @@ public class SourceTransformerTestKit {
      * @param sourceTransformer the source transformer to test
      */
     public SourceTransformerTestKit(SourceTransformer sourceTransformer) {
-        this(
-                sourceTransformer,
-                GRPCConfig
-                        .newBuilder()
-                        .isLocal(true)
-                        .build());
+        this(sourceTransformer, GRPCConfig.defaultGrpcConfig());
     }
 
     /**
