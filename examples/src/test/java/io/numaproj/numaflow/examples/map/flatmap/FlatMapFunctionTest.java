@@ -22,7 +22,7 @@ public class FlatMapFunctionTest {
             log.error("Failed to start server", e);
         }
 
-        MapperTestKit.MapperClient client = new MapperTestKit.MapperClient();
+        MapperTestKit.Client client = new MapperTestKit.Client();
         MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
                 .builder()
                 .value("apple,banana,carrot".getBytes())
