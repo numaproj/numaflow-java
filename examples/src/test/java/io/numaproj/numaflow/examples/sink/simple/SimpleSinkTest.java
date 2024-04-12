@@ -4,25 +4,17 @@ import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.SinkerTestKit;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @Slf4j
 public class SimpleSinkTest {
 
     @Test
-    public void testServerInvocation() {
+    public void testSimpleSink() {
         int datumCount = 10;
-        SinkerTestKit sinkerTestKit = new SinkerTestKit(new SimpleSink());
-
-        // Start the server
-        try {
-            sinkerTestKit.startServer();
-        } catch (Exception e) {
-            fail("Failed to start server");
-        }
+        SimpleSink simpleSink = new SimpleSink();
 
         // Create a test datum iterator with 10 messages
         SinkerTestKit.TestListIterator testListIterator = new SinkerTestKit.TestListIterator();
@@ -34,24 +26,11 @@ public class SimpleSinkTest {
                     .build());
         }
 
-        SinkerTestKit.SinkerClient sinkerClient = new SinkerTestKit.SinkerClient();
-        try {
-            ResponseList responseList = sinkerClient.sendRequest(testListIterator);
-            assertEquals(datumCount, responseList.getResponses().size());
-            for (Response response : responseList.getResponses()) {
-                assertEquals(true, response.getSuccess());
-            }
-        } catch (Exception e) {
-            fail("Failed to send requests");
+        ResponseList responseList = simpleSink.processMessages(testListIterator);
+        Assertions.assertEquals(datumCount, responseList.getResponses().size());
+        for (Response response : responseList.getResponses()) {
+            Assertions.assertEquals(true, response.getSuccess());
         }
-
-        // Stop the server
-        try {
-            sinkerTestKit.stopServer();
-        } catch (InterruptedException e) {
-            fail("Failed to stop server");
-        }
-
         // we can add the logic to verify if the messages were
         // successfully written to the sink(could be a file, database, etc.)
     }

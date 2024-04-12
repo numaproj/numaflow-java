@@ -10,6 +10,7 @@ import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import jdk.jfr.Experimental;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -24,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * SinkerTestKit is a test kit for testing Sinker implementations.
  * It provides methods to start and stop the server and send requests to the server.
+ * It also provides a simple implementation of Datum for testing.
+ * It also provides a simple client to send requests to the server.
  */
 @Experimental
 @Slf4j
@@ -75,21 +78,27 @@ public class SinkerTestKit {
     }
 
     /**
-     * SinkClient is a client for sending requests to the server.
+     * Client is a client for sending requests to the server.
      */
-    public static class SinkerClient {
+    public static class Client {
         private final ManagedChannel channel;
         private final SinkGrpc.SinkStub sinkStub;
 
         /**
-         * Create a new SinkClient with default host and port.
+         * Create a new Client with default host and port.
          * Default host is localhost and default port is 50051.
          */
-        public SinkerClient() {
+        public Client() {
             this("localhost", Constants.DEFAULT_PORT);
         }
 
-        public SinkerClient(String host, int port) {
+        /**
+         * Create a new Client with the given host and port.
+         *
+         * @param host the host to connect to
+         * @param port the port to connect to
+         */
+        public Client(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
             this.sinkStub = SinkGrpc.newStub(channel);
         }
@@ -195,6 +204,8 @@ public class SinkerTestKit {
     /**
      * TestListIterator is a list based DatumIterator for testing.
      */
+    @Getter
+    @Setter
     public static class TestListIterator implements DatumIterator {
         private final List<Datum> data;
         private int index;

@@ -17,7 +17,7 @@ class SessionReducerActor extends AbstractActor {
     private final SessionReducer sessionReducer;
     // the session window the actor is working on
     private Sessionreduce.KeyedWindow keyedWindow;
-    private OutputStreamObserver outputStream;
+    private final OutputStreamObserver outputStream;
     // when set to true, it means this session is already closed.
     private boolean isClosed = false;
 

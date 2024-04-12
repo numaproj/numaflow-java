@@ -44,32 +44,65 @@ public class ReducerTestKit {
         this.grpcConfig = grpcConfig;
     }
 
+    /**
+     * startServer starts the server.
+     *
+     * @throws Exception if server fails to start
+     */
     public void startServer() throws Exception {
         server = new Server(reducer, grpcConfig);
         server.start();
     }
 
+    /**
+     * stopServer stops the server.
+     *
+     * @throws InterruptedException if server fails to stop
+     */
     public void stopServer() throws InterruptedException {
         if (server != null) {
             server.stop();
         }
     }
 
-    public static class ReducerClient {
+    /**
+     * Client is a client to send requests to the server.
+     * It provides a method to send a reduce request to the server.
+     */
+    public static class Client {
         private final ManagedChannel channel;
         private final ReduceGrpc.ReduceStub reduceStub;
 
-        public ReducerClient() {
+        /**
+         * Create a new Client with the default host and port.
+         * The default host is localhost and the default port is 50051.
+         */
+        public Client() {
             this("localhost", 50051);
         }
 
-        public ReducerClient(String host, int port) {
+        /**
+         * Create a new Client with the given host and port.
+         *
+         * @param host the host
+         * @param port the port
+         */
+        public Client(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port)
                     .usePlaintext()
                     .build();
             this.reduceStub = ReduceGrpc.newStub(channel);
         }
 
+        /**
+         * sendReduceRequest sends a reduce request to the server.
+         *
+         * @param testReduceRequest the request to send
+         *
+         * @return the response from the server
+         *
+         * @throws Exception if the request fails
+         */
         public MessageList sendReduceRequest(TestReduceRequest testReduceRequest) throws Exception {
             List<ReduceOuterClass.ReduceRequest.Payload> payloadList = new ArrayList<>();
             Metadata metadata = new io.grpc.Metadata();
@@ -171,6 +204,9 @@ public class ReducerTestKit {
             return messageListBuilder.build();
         }
 
+        /**
+         * close the client.
+         */
         public void close() {
             channel.shutdown();
         }

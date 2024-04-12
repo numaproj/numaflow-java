@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.examples.map.evenodd;
 
 import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.mapper.GRPCConfig;
 import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
@@ -18,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 public class EvenOddFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
+        /*
+        * If we want to run the server locally, we can use the GRPCConfig.newBuilder().isLocal(true).build()
+        * It will start the server locally and we can send requests to the server using the MapperTestKit.Client
+         */
         Server server = new Server(new EvenOddFunction());
 
         // Start the server
