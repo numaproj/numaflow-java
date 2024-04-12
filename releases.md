@@ -19,7 +19,7 @@ always be using the latest changes (due to pointing to the local maven repositor
 This can be done via the Github UI. 
 1. In the `Releases` section of the Java SDK repo, click `Draft a new release`
 2. Create a tag that has the same name as the version that you specified in the root
-`pom.xml` prefixed with a `'v'`, and select it
+`pom.xml`, prefix it with a `'v'`, and select it
 3. Make the title the same as the tag
 4. Click `Generate release notes` so that all the changes made since the last release are documented. If there are any major features or breaking
 changes that you would like to highlight as part of the release, add those to the description as well
