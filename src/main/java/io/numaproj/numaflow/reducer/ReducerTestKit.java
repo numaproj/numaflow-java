@@ -36,7 +36,7 @@ public class ReducerTestKit {
     private Server server;
 
     public ReducerTestKit(ReducerFactory<? extends Reducer> reducer) {
-        this(reducer, GRPCConfig.newBuilder().isLocal(true).build());
+        this(reducer, GRPCConfig.defaultGrpcConfig());
     }
 
     public ReducerTestKit(ReducerFactory<? extends Reducer> reducer, GRPCConfig grpcConfig) {

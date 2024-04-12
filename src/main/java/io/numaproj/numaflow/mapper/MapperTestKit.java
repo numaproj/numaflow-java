@@ -35,12 +35,7 @@ public class MapperTestKit {
      * @param mapper the mapper to test
      */
     public MapperTestKit(Mapper mapper) {
-        this(
-                mapper,
-                GRPCConfig
-                        .newBuilder()
-                        .isLocal(true)
-                        .build());
+        this(mapper, GRPCConfig.defaultGrpcConfig());
     }
 
     /**

@@ -34,7 +34,7 @@ public class SourcerTestKit {
      * @param sourcer the sourcer to test
      */
     public SourcerTestKit(Sourcer sourcer) {
-        this(sourcer, GRPCConfig.newBuilder().isLocal(true).build());
+        this(sourcer, GRPCConfig.defaultGrpcConfig());
     }
 
     /**
