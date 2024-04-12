@@ -139,7 +139,8 @@ public class SourceTransformerTestKit {
          * @return response from the server as a MessageList
          */
         public MessageList sendRequest(String[] keys, Datum data) {
-            Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest.newBuilder()
+            Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
+                    .newBuilder()
                     .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
                     .setValue(data.getValue()
                             == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
@@ -158,7 +159,9 @@ public class SourceTransformerTestKit {
                     .build();
 
             try {
-                Sourcetransformer.SourceTransformResponse response = this.sendGrpcRequest(request).get();
+                Sourcetransformer.SourceTransformResponse response = this
+                        .sendGrpcRequest(request)
+                        .get();
                 List<Message> messages = response.getResultsList().stream()
                         .map(result -> new Message(
                                 result.getValue().toByteArray(),

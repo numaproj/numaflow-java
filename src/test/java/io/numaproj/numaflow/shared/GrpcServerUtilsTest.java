@@ -37,7 +37,11 @@ public class GrpcServerUtilsTest {
 
     @Test
     public void testCreateServerBuilder() {
-        ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder("socketPath", 1000, false, 50051);
+        ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
+                "socketPath",
+                1000,
+                false,
+                50051);
         Assert.assertNotNull(serverBuilder);
     }
 

@@ -5,6 +5,7 @@ import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
 import io.numaproj.numaflow.sourcer.OutputObserver;
 import io.numaproj.numaflow.sourcer.ReadRequest;
+import io.numaproj.numaflow.sourcer.SourcerTestKit;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,8 +15,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SimpleSourceTest {
+
+    @Test
+    public void testServerInvocation() {
+        SimpleSource simpleSource = new SimpleSource();
+
+        SourcerTestKit sourcerTestKit = new SourcerTestKit(simpleSource);
+        try {
+            sourcerTestKit.startServer();
+        } catch (Exception e) {
+            fail("Failed to start server");
+        }
+
+        // create a client to send requests to the server
+        SourcerTestKit.SourcerClient sourcerClient = new SourcerTestKit.SourcerClient();
+        // create a test observer to receive messages from the server
+        SourcerTestKit.TestListBasedObserver testObserver = new SourcerTestKit.TestListBasedObserver();
+        // create a read request with count 10 and timeout 1 second
+        SourcerTestKit.TestReadRequest testReadRequest = SourcerTestKit.TestReadRequest.builder()
+                .count(10).timeout(Duration.ofSeconds(1)).build();
+
+        try {
+            sourcerClient.sendReadRequest(testReadRequest, testObserver);
+            assertEquals(10, testObserver.getMessages().size());
+        } catch (Exception e) {
+            fail();
+        }
+
+        try {
+            sourcerClient.close();
+            sourcerTestKit.stopServer();
+        } catch (InterruptedException e) {
+            fail("Failed to stop server");
+        }
+    }
 
     @Test
     public void test_ReadAndAck() {

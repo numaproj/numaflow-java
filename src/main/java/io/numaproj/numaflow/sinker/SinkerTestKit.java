@@ -15,10 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -94,71 +94,15 @@ public class SinkerTestKit {
             this.sinkStub = SinkGrpc.newStub(channel);
         }
 
+
         /**
          * Send request to the server.
          *
          * @param datumIterator iterator of Datum objects to send to the server
          *
          * @return response from the server as a ResponseList
-         *
          */
         public ResponseList sendRequest(DatumIterator datumIterator) {
-            ArrayList<SinkOuterClass.SinkRequest> requests = new ArrayList<>();
-            while (true) {
-                Datum datum = null;
-                try {
-                    datum = datumIterator.next();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    continue;
-                }
-                if (datum == null) {
-                    break;
-                }
-                SinkOuterClass.SinkRequest request = SinkOuterClass.SinkRequest.newBuilder()
-                        .addAllKeys(
-                                datum.getKeys() == null ? new ArrayList<>() : List.of(datum.getKeys()))
-                        .setValue(datum.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                                datum.getValue()))
-                        .setId(datum.getId())
-                        .setEventTime(datum.getEventTime() == null ? Timestamp
-                                .newBuilder()
-                                .build() : Timestamp.newBuilder()
-                                .setSeconds(datum.getEventTime().getEpochSecond())
-                                .setNanos(datum.getEventTime().getNano()).build())
-                        .setWatermark(datum.getWatermark() == null ? Timestamp
-                                .newBuilder()
-                                .build() : Timestamp.newBuilder()
-                                .setSeconds(datum.getWatermark().getEpochSecond())
-                                .setNanos(datum.getWatermark().getNano()).build())
-                        .build();
-                requests.add(request);
-            }
-
-            SinkOuterClass.SinkResponse response;
-            try {
-                response = this.sendGrpcRequest(requests.iterator()).get();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-
-            ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
-            for (SinkOuterClass.SinkResponse.Result result : response.getResultsList()) {
-                if (result.getSuccess()) {
-                    responseListBuilder.addResponse(Response.responseOK(result.getId()));
-                } else {
-                    responseListBuilder.addResponse(Response.responseFailure(
-                            result.getId(),
-                            result.getErrMsg()));
-                }
-            }
-
-            return responseListBuilder.build();
-        }
-
-        private CompletableFuture<SinkOuterClass.SinkResponse> sendGrpcRequest(Iterator<SinkOuterClass.SinkRequest> requests) throws Exception {
-
             CompletableFuture<SinkOuterClass.SinkResponse> future = new CompletableFuture<>();
             StreamObserver<SinkOuterClass.SinkResponse> responseObserver = new StreamObserver<>() {
                 @Override
@@ -183,34 +127,79 @@ public class SinkerTestKit {
             StreamObserver<SinkOuterClass.SinkRequest> requestObserver = sinkStub.sinkFn(
                     responseObserver);
 
-            try {
-                while (requests.hasNext()) {
-                    SinkOuterClass.SinkRequest request = requests.next();
-                    requestObserver.onNext(request);
+            while (true) {
+                Datum datum = null;
+                try {
+                    datum = datumIterator.next();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    continue;
                 }
-            } catch (RuntimeException e) {
-                // Cancel rpc.
-                requestObserver.onError(e);
-                throw e;
+                if (datum == null) {
+                    break;
+                }
+                SinkOuterClass.SinkRequest request = SinkOuterClass.SinkRequest.newBuilder()
+                        .addAllKeys(
+                                datum.getKeys()
+                                        == null ? new ArrayList<>() : List.of(datum.getKeys()))
+                        .setValue(datum.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
+                                datum.getValue()))
+                        .setId(datum.getId())
+                        .setEventTime(datum.getEventTime() == null ? Timestamp
+                                .newBuilder()
+                                .build() : Timestamp.newBuilder()
+                                .setSeconds(datum.getEventTime().getEpochSecond())
+                                .setNanos(datum.getEventTime().getNano()).build())
+                        .setWatermark(datum.getWatermark() == null ? Timestamp
+                                .newBuilder()
+                                .build() : Timestamp.newBuilder()
+                                .setSeconds(datum.getWatermark().getEpochSecond())
+                                .setNanos(datum.getWatermark().getNano()).build())
+                        .build();
+                requestObserver.onNext(request);
             }
 
             requestObserver.onCompleted();
-            return future;
+
+            SinkOuterClass.SinkResponse response;
+            try {
+                response = future.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
+            for (SinkOuterClass.SinkResponse.Result result : response.getResultsList()) {
+                if (result.getSuccess()) {
+                    responseListBuilder.addResponse(Response.responseOK(result.getId()));
+                } else {
+                    responseListBuilder.addResponse(Response.responseFailure(
+                            result.getId(),
+                            result.getErrMsg()));
+                }
+            }
+
+            return responseListBuilder.build();
         }
 
-        public void shutdown() throws InterruptedException {
+        /**
+         * close the client.
+         *
+         * @throws InterruptedException if client fails to close
+         */
+        public void close() throws InterruptedException {
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
         }
     }
 
     /**
-     * TestDatumIterator is a DatumIterator for testing.
+     * TestListIterator is a list based DatumIterator for testing.
      */
-    public static class TestDatumIterator implements DatumIterator {
+    public static class TestListIterator implements DatumIterator {
         private final List<Datum> data;
         private int index;
 
-        public TestDatumIterator() {
+        public TestListIterator() {
             this.data = new ArrayList<>();
             this.index = 0;
         }
@@ -225,6 +214,39 @@ public class SinkerTestKit {
 
         public void addDatum(Datum datum) {
             data.add(datum);
+        }
+    }
+
+    /**
+     * TestBlockingIterator is a blocking queue based DatumIterator for testing.
+     * It has a queue size of 1. Users can use this to stream data to the server.
+     * If the queue is full, the iterator will block until the queue has space.
+     * users should invoke close() to indicate the end of the stream to the server.
+     */
+    public static class TestBlockingIterator implements DatumIterator {
+        private final LinkedBlockingQueue<Datum> queue;
+        private volatile boolean closed = false;
+
+        public TestBlockingIterator() {
+            this.queue = new LinkedBlockingQueue<>(1); // set the queue size to 10
+        }
+
+        @Override
+        public Datum next() throws InterruptedException {
+            if (!closed) {
+                return queue.take();
+            }
+            return null;
+        }
+
+        public void addDatum(Datum datum) throws InterruptedException {
+            if (!closed) {
+                queue.put(datum);
+            }
+        }
+
+        public void close() {
+            closed = true;
         }
     }
 

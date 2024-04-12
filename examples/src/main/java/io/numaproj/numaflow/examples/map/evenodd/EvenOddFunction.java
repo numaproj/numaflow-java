@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.examples.map.evenodd;
 
 import io.numaproj.numaflow.mapper.Datum;
-import io.numaproj.numaflow.mapper.GRPCConfig;
 import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
