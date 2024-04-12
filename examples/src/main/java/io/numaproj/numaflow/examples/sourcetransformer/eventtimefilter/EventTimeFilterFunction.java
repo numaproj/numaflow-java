@@ -23,8 +23,13 @@ public class EventTimeFilterFunction extends SourceTransformer {
     private static final Instant januaryFirst2023 = Instant.ofEpochMilli(1672531200000L);
 
     public static void main(String[] args) throws Exception {
-        new Server(new EventTimeFilterFunction())
-                .start();
+        Server server = new Server(new EventTimeFilterFunction());
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {

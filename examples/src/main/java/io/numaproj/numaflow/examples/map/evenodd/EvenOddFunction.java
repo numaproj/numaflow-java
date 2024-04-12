@@ -19,6 +19,8 @@ public class EvenOddFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
         Server server = new Server(new EvenOddFunction());
+
+        // Start the server
         server.start();
 
         // Wait for the server to shutdown

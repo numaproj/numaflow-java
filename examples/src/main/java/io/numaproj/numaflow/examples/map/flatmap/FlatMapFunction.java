@@ -17,9 +17,11 @@ public class FlatMapFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
         Server server = new Server(new FlatMapFunction());
+
+        // Start the server
         server.start();
 
-        // Wait for the server to shutdown
+        // Wait for the server to shut down
         server.awaitTermination();
     }
 

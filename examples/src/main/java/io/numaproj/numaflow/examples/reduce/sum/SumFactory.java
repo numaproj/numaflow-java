@@ -9,7 +9,13 @@ public class SumFactory extends ReducerFactory<SumFunction> {
 
     public static void main(String[] args) throws Exception {
         log.info("sum udf was invoked");
-        new Server(new SumFactory()).start();
+        Server server = new Server(new SumFactory());
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
     }
 
     @Override

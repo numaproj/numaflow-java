@@ -13,9 +13,11 @@ import io.numaproj.numaflow.mapper.Server;
 public class ForwardFunction extends Mapper {
     public static void main(String[] args) throws Exception {
         Server server = new Server(new ForwardFunction());
+
+        // Start the server
         server.start();
 
-        // Wait for the server to shutdown
+        // Wait for the server to shut down
         server.awaitTermination();
     }
 
