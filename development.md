@@ -40,16 +40,16 @@ Note: before running the script, ensure that through the CLI, you are logged int
 After confirming that your changes pass local testing:
 
 1. Clean up testing artifacts
-2. Create a PR. Once your PR has been merged, a Github Actions workflow (Docker Publish) will be triggered, to build, tag (with `stable`), and push
+2. Create a PR. Once your PR has been merged, a Github Actions workflow (`Docker Publish`) will be triggered, to build, tag (with `stable`), and push
 all example images. This ensures that all example images are using the most up-to-date version of the SDK, i.e. the one including your 
 changes
 
 ### Adding a New Example
 
-If you add a new example, there are a few steps to follow in order for it to be used by the update script and the Docker
-Publish workflow:
+If you add a new example, there are a few steps to follow in order for it to be used by the update script and the 
+`Docker Publish` workflow:
 
-1. Add the example to the `pom.xml` file in the examples directory, within an execution element. Note that the
+1. Add the example to the `examples/pom.xml`git, within an execution element. Note that the
 `id` tag you specify must be exactly the same as the quay.io repository name for the example
 2. Add the `id` tag you specified in step 1 to the `executionIDs` array in `hack/update_examples.sh`
 3. Add the `id` tag you specified in step 1 to the `execution_ids` matrix in `.github/workflows/build-push.yaml`
