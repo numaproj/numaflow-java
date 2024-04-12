@@ -17,7 +17,13 @@ import io.numaproj.numaflow.mapstreamer.Server;
 public class FlatMapStreamFunction extends MapStreamer {
 
     public static void main(String[] args) throws Exception {
-        new Server(new FlatMapStreamFunction()).start();
+        Server server = new Server(new FlatMapStreamFunction());
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shutdown
+        server.awaitTermination();
     }
 
     public void processMessage(String[] keys, Datum data, OutputObserver outputObserver) {

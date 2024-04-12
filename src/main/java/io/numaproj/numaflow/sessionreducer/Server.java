@@ -50,10 +50,12 @@ public class Server {
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
-        GrpcServerUtils.writeServerInfo(
-                serverInfoAccessor,
-                grpcConfig.getSocketPath(),
-                grpcConfig.getInfoFilePath());
+        if (!grpcConfig.isLocal()) {
+            GrpcServerUtils.writeServerInfo(
+                    serverInfoAccessor,
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getInfoFilePath());
+        }
 
         if (this.server == null) {
             // create server builder
@@ -73,8 +75,8 @@ public class Server {
         server.start();
 
         log.info(
-                "Server started, listening on socket path: "
-                        + grpcConfig.getSocketPath());
+                "Server started, listening on {}",
+                grpcConfig.isLocal() ? grpcConfig.getPort() : grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

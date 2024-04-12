@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -117,6 +116,7 @@ public class SourcerTestKit {
          * sendAckRequest sends an ack request to the server.
          *
          * @param request the ack request
+         *
          * @throws Exception
          */
         public void sendAckRequest(AckRequest request) throws Exception {
@@ -157,7 +157,9 @@ public class SourcerTestKit {
 
         /**
          * sendPendingRequest sends a pending request to the server.
+         *
          * @return the number of pending messages
+         *
          * @throws Exception
          */
         public long sendPendingRequest() throws Exception {

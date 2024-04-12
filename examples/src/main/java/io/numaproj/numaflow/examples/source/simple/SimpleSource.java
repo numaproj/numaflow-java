@@ -28,7 +28,13 @@ public class SimpleSource extends Sourcer {
     private long readIndex = 0;
 
     public static void main(String[] args) throws Exception {
-        new Server(new SimpleSource()).start();
+        Server server = new Server(new SimpleSource());
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
     }
 
     @Override

@@ -23,7 +23,13 @@ public class CounterFactory extends ReducerFactory<CounterFactory.Counter> {
     public static void main(String[] args) throws Exception {
         log.info("counter udf was invoked");
         Config config = new Config(1);
-        new Server(new CounterFactory(config)).start();
+        Server server = new Server(new CounterFactory(config));
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
     }
 
     @Override
