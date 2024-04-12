@@ -4,8 +4,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
@@ -31,10 +29,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class SinkerTestKit {
 
-    private static final int PORT = 50051;
-    private final Service service;
+    private final Sinker sinker;
+    private final GRPCConfig grpcConfig;
     private Server server;
-    private SinkClient client;
 
     /**
      * Create a new SinkerTestKit.
@@ -42,7 +39,18 @@ public class SinkerTestKit {
      * @param sinker the sinker to test
      */
     public SinkerTestKit(Sinker sinker) {
-        this.service = new Service(sinker);
+        this(sinker, GRPCConfig.newBuilder().isLocal(true).build());
+    }
+
+    /**
+     * Create a new SinkerTestKit with the given Sinker and GRPCConfig.
+     *
+     * @param sinker the sinker to test
+     * @param grpcConfig the grpc configuration to use
+     */
+    public SinkerTestKit(Sinker sinker, GRPCConfig grpcConfig) {
+        this.sinker = sinker;
+        this.grpcConfig = grpcConfig;
     }
 
     /**
@@ -50,16 +58,9 @@ public class SinkerTestKit {
      *
      * @throws IOException if server fails to start
      */
-    public void startServer() throws IOException {
-        server = ServerBuilder.forPort(PORT)
-                .addService(this.service)
-                .build()
-                .start();
-
-        log.info("Server started, listening on {}", PORT);
-
-        // Create a client for sending requests to the server
-        client = new SinkClient("localhost", PORT);
+    public void startServer() throws Exception {
+        server = new Server(sinker, grpcConfig);
+        server.start();
     }
 
     /**
@@ -68,92 +69,95 @@ public class SinkerTestKit {
      * @throws InterruptedException if server fails to stop
      */
     public void stopServer() throws InterruptedException {
-        // Shutdown the client and server
-        if (client != null) {
-            client.shutdown();
-        }
         if (server != null) {
-            server.shutdown();
+            server.stop();
         }
-    }
-
-    /**
-     * Send requests to the server.
-     *
-     * @param datumIterator iterator of Datum objects to send to the server
-     *
-     * @return response from the server as a ResponseList
-     *
-     * @throws InterruptedException if the thread is interrupted
-     */
-    public ResponseList sendRequests(DatumIterator datumIterator) throws Exception {
-        ArrayList<SinkOuterClass.SinkRequest> requests = new ArrayList<>();
-        while (true) {
-            Datum datum = null;
-            try {
-                datum = datumIterator.next();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                continue;
-            }
-            if (datum == null) {
-                break;
-            }
-            SinkOuterClass.SinkRequest request = SinkOuterClass.SinkRequest.newBuilder()
-                    .addAllKeys(
-                            datum.getKeys() == null ? new ArrayList<>() : List.of(datum.getKeys()))
-                    .setValue(datum.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                            datum.getValue()))
-                    .setId(datum.getId())
-                    .setEventTime(datum.getEventTime() == null ? Timestamp
-                            .newBuilder()
-                            .build() : Timestamp.newBuilder()
-                            .setSeconds(datum.getEventTime().getEpochSecond())
-                            .setNanos(datum.getEventTime().getNano()).build())
-                    .setWatermark(datum.getWatermark() == null ? Timestamp
-                            .newBuilder()
-                            .build() : Timestamp.newBuilder()
-                            .setSeconds(datum.getWatermark().getEpochSecond())
-                            .setNanos(datum.getWatermark().getNano()).build())
-                    .build();
-            requests.add(request);
-        }
-
-        SinkOuterClass.SinkResponse response;
-        try {
-            response = client.sendRequests(requests.iterator()).get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-
-        ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
-        for (SinkOuterClass.SinkResponse.Result result : response.getResultsList()) {
-            if (result.getSuccess()) {
-                responseListBuilder.addResponse(Response.responseOK(result.getId()));
-            } else {
-                responseListBuilder.addResponse(Response.responseFailure(
-                        result.getId(),
-                        result.getErrMsg()));
-            }
-        }
-
-        return responseListBuilder.build();
     }
 
     /**
      * SinkClient is a client for sending requests to the server.
      */
-    private static class SinkClient {
+    public static class SinkerClient {
         private final ManagedChannel channel;
         private final SinkGrpc.SinkStub sinkStub;
 
-        public SinkClient(String host, int port) {
+        /**
+         * Create a new SinkClient with default host and port.
+         * Default host is localhost and default port is 50051.
+         */
+        public SinkerClient() {
+            this("localhost", Constants.DEFAULT_PORT);
+        }
+
+        public SinkerClient(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
             this.sinkStub = SinkGrpc.newStub(channel);
         }
 
-        public CompletableFuture<SinkOuterClass.SinkResponse> sendRequests(Iterator<SinkOuterClass.SinkRequest> requests) throws Exception {
+        /**
+         * Send request to the server.
+         *
+         * @param datumIterator iterator of Datum objects to send to the server
+         *
+         * @return response from the server as a ResponseList
+         *
+         */
+        public ResponseList sendRequest(DatumIterator datumIterator) {
+            ArrayList<SinkOuterClass.SinkRequest> requests = new ArrayList<>();
+            while (true) {
+                Datum datum = null;
+                try {
+                    datum = datumIterator.next();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    continue;
+                }
+                if (datum == null) {
+                    break;
+                }
+                SinkOuterClass.SinkRequest request = SinkOuterClass.SinkRequest.newBuilder()
+                        .addAllKeys(
+                                datum.getKeys() == null ? new ArrayList<>() : List.of(datum.getKeys()))
+                        .setValue(datum.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
+                                datum.getValue()))
+                        .setId(datum.getId())
+                        .setEventTime(datum.getEventTime() == null ? Timestamp
+                                .newBuilder()
+                                .build() : Timestamp.newBuilder()
+                                .setSeconds(datum.getEventTime().getEpochSecond())
+                                .setNanos(datum.getEventTime().getNano()).build())
+                        .setWatermark(datum.getWatermark() == null ? Timestamp
+                                .newBuilder()
+                                .build() : Timestamp.newBuilder()
+                                .setSeconds(datum.getWatermark().getEpochSecond())
+                                .setNanos(datum.getWatermark().getNano()).build())
+                        .build();
+                requests.add(request);
+            }
+
+            SinkOuterClass.SinkResponse response;
+            try {
+                response = this.sendGrpcRequest(requests.iterator()).get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+
+            ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
+            for (SinkOuterClass.SinkResponse.Result result : response.getResultsList()) {
+                if (result.getSuccess()) {
+                    responseListBuilder.addResponse(Response.responseOK(result.getId()));
+                } else {
+                    responseListBuilder.addResponse(Response.responseFailure(
+                            result.getId(),
+                            result.getErrMsg()));
+                }
+            }
+
+            return responseListBuilder.build();
+        }
+
+        private CompletableFuture<SinkOuterClass.SinkResponse> sendGrpcRequest(Iterator<SinkOuterClass.SinkRequest> requests) throws Exception {
 
             CompletableFuture<SinkOuterClass.SinkResponse> future = new CompletableFuture<>();
             StreamObserver<SinkOuterClass.SinkResponse> responseObserver = new StreamObserver<>() {

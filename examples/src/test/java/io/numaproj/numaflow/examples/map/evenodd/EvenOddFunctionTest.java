@@ -23,8 +23,13 @@ public class EvenOddFunctionTest {
             log.error("Failed to start server", e);
         }
 
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("2".getBytes()).build();
-        MessageList result = mapperTestKit.sendRequest(new String[]{}, datum);
+        // Create a client which can send requests to the server
+        MapperTestKit.MapperClient client = new MapperTestKit.MapperClient();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("2".getBytes())
+                .build();
+        MessageList result = client.sendRequest(new String[]{}, datum);
 
         List<Message> messages = result.getMessages();
         assertEquals(1, messages.size());
@@ -39,7 +44,10 @@ public class EvenOddFunctionTest {
 
     @Test
     public void testEvenNumber() {
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("2".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("2".getBytes())
+                .build();
 
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
@@ -54,7 +62,10 @@ public class EvenOddFunctionTest {
 
     @Test
     public void testOddNumber() {
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("3".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("3".getBytes())
+                .build();
 
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);
@@ -69,7 +80,10 @@ public class EvenOddFunctionTest {
 
     @Test
     public void testNonNumeric() {
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum.builder().value("abc".getBytes()).build();
+        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
+                .builder()
+                .value("abc".getBytes())
+                .build();
 
         EvenOddFunction evenOddFunction = new EvenOddFunction();
         MessageList result = evenOddFunction.processMessage(new String[]{}, datum);

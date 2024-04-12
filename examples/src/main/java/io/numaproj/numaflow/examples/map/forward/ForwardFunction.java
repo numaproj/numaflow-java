@@ -12,7 +12,11 @@ import io.numaproj.numaflow.mapper.Server;
 
 public class ForwardFunction extends Mapper {
     public static void main(String[] args) throws Exception {
-        new Server(new ForwardFunction()).start();
+        Server server = new Server(new ForwardFunction());
+        server.start();
+
+        // Wait for the server to shutdown
+        server.awaitTermination();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {

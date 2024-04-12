@@ -9,9 +9,19 @@ import lombok.Getter;
 @Getter
 @Builder(builderMethodName = "newBuilder")
 public class GRPCConfig {
-    private String socketPath;
-    private int maxMessageSize;
-    private String infoFilePath;
+    @Builder.Default
+    private String socketPath = Constants.DEFAULT_SOCKET_PATH;
+
+    @Builder.Default
+    private int maxMessageSize = Constants.DEFAULT_MESSAGE_SIZE;
+
+    @Builder.Default
+    private String infoFilePath = Constants.DEFAULT_SERVER_INFO_FILE_PATH;
+
+    @Builder.Default
+    private int port = Constants.DEFAULT_PORT;
+
+    private boolean isLocal;
 
     /**
      * Static method to create default GRPCConfig.

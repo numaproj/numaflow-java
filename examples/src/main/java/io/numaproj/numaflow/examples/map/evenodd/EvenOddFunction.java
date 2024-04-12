@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.examples.map.evenodd;
 
 import io.numaproj.numaflow.mapper.Datum;
+import io.numaproj.numaflow.mapper.GRPCConfig;
 import io.numaproj.numaflow.mapper.Mapper;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
@@ -18,7 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 public class EvenOddFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
-        new Server(new EvenOddFunction()).start();
+        Server server = new Server(new EvenOddFunction());
+        server.start();
+
+        // Wait for the server to shutdown
+        server.awaitTermination();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {
