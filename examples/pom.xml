@@ -123,7 +123,7 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>quay.io/yhl25/numaflow-java/even-odd:v0.0.1</image>
+                                <image>numaflow-java-examples/even-odd:${docker.tag}</image>
                             </to>
                         </configuration>
                     </execution>
