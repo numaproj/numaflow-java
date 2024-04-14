@@ -25,14 +25,19 @@ public class GRPCConfigTest {
         String socketPath = "test-socket-path";
         int maxMessageSize = 2000;
         String infoFilePath = "test-info-file-path";
+        int port = 8001;
         GRPCConfig grpcConfig = GRPCConfig.newBuilder()
                 .socketPath(socketPath)
                 .maxMessageSize(maxMessageSize)
                 .infoFilePath(infoFilePath)
+                .port(port)
+                .isLocal(false)
                 .build();
         Assert.assertNotNull(grpcConfig);
         Assert.assertEquals(socketPath, grpcConfig.getSocketPath());
         Assert.assertEquals(maxMessageSize, grpcConfig.getMaxMessageSize());
         Assert.assertEquals(infoFilePath, grpcConfig.getInfoFilePath());
+        Assert.assertEquals(port, grpcConfig.getPort());
+        Assert.assertFalse(grpcConfig.isLocal());
     }
 }
