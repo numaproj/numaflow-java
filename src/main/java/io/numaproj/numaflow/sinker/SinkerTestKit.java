@@ -89,7 +89,7 @@ public class SinkerTestKit {
          * Default host is localhost and default port is 50051.
          */
         public Client() {
-            this("localhost", Constants.DEFAULT_PORT);
+            this(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT);
         }
 
         /**

@@ -8,4 +8,6 @@ class Constants {
     public static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/mapstreamer-server-info";
 
     public static final int DEFAULT_PORT = 50051;
+
+    public static final String DEFAULT_HOST = "localhost";
 }

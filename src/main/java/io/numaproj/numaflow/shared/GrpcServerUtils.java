@@ -89,6 +89,7 @@ public class GrpcServerUtils {
             }
         }
 
+        // server info file can be null if the Grpc server is used for local component testing
         // write server info to file if file path is not null
         if (infoFilePath == null) {
             return;

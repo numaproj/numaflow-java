@@ -78,7 +78,7 @@ public class ReducerTestKit {
          * The default host is localhost and the default port is 50051.
          */
         public Client() {
-            this("localhost", 50051);
+            this(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT);
         }
 
         /**
