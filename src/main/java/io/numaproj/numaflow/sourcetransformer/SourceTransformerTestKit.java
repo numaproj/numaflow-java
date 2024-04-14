@@ -82,7 +82,7 @@ public class SourceTransformerTestKit {
          * default host is localhost and port is 50051.
          */
         public Client() {
-            this("localhost", Constants.DEFAULT_PORT);
+            this(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT);
         }
 
         /**

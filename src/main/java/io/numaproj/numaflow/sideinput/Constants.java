@@ -8,4 +8,6 @@ public class Constants {
     static int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
 
     static int DEFAULT_PORT = 50051;
+
+    static final String DEFAULT_HOST = "localhost";
 }

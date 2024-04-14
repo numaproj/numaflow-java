@@ -13,5 +13,7 @@ class Constants {
 
     public static final String SUCCESS = "SUCCESS";
 
+    public static final String DEFAULT_HOST = "localhost";
+
     public static final String DELIMITER = ":";
 }

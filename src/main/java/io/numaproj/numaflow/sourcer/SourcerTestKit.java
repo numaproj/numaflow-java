@@ -73,16 +73,16 @@ public class SourcerTestKit {
      * SourcerClient is a client to send requests to the server.
      * It provides methods to send read, ack and pending requests to the server.
      */
-    public static class SourcerClient {
+    public static class Client {
         private final ManagedChannel channel;
         private final SourceGrpc.SourceStub sourceStub;
 
         /**
-         * Create a new SourcerClient with the default host and port.
-         * The default host is localhost and the default port is 50051.
+         * empty constructor for Client.
+         * default host is localhost and port is 50051.
          */
-        public SourcerClient() {
-            this("localhost", 50051);
+        public Client() {
+            this(Constants.DEFAULT_HOST, Constants.DEFAULT_PORT);
         }
 
         /**
@@ -91,7 +91,7 @@ public class SourcerTestKit {
          * @param host the host
          * @param port the port
          */
-        public SourcerClient(String host, int port) {
+        public Client(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port)
                     .usePlaintext()
                     .build();
@@ -228,6 +228,39 @@ public class SourcerTestKit {
             };
             sourceStub.pendingFn(Empty.newBuilder().build(), observer);
             return future.get().getResult().getCount();
+        }
+
+        /**
+         * sendGetPartitionsRequest sends a getPartitions request to the server.
+         *
+         * @return the list of source partitions
+         *
+         * @throws Exception if the request fails
+         */
+        public List<Integer> sendGetPartitionsRequest() throws Exception {
+            CompletableFuture<SourceOuterClass.PartitionsResponse> future = new CompletableFuture<>();
+            StreamObserver<SourceOuterClass.PartitionsResponse> observer = new StreamObserver<>() {
+
+                @Override
+                public void onNext(SourceOuterClass.PartitionsResponse value) {
+                    future.complete(value);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    future.completeExceptionally(t);
+                }
+
+                @Override
+                public void onCompleted() {
+                    if (!future.isDone()) {
+                        future.completeExceptionally(new RuntimeException(
+                                "Server completed without a response"));
+                    }
+                }
+            };
+            sourceStub.partitionsFn(Empty.newBuilder().build(), observer);
+            return future.get().getResult().getPartitionsList();
         }
     }
 

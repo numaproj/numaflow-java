@@ -205,7 +205,7 @@ public class ServerTest {
         }
 
         // create a client to send requests to the server
-        SourcerTestKit.SourcerClient sourcerClient = new SourcerTestKit.SourcerClient();
+        SourcerTestKit.Client sourcerClient = new SourcerTestKit.Client();
         // create a test observer to receive messages from the server
         SourcerTestKit.TestListBasedObserver testObserver = new SourcerTestKit.TestListBasedObserver();
         // create a read request with count 10 and timeout 1 second
