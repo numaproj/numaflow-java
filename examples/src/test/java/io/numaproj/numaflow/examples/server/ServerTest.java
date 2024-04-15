@@ -5,6 +5,7 @@ import io.numaproj.numaflow.examples.map.flatmap.FlatMapFunction;
 import io.numaproj.numaflow.examples.reduce.sum.SumFactory;
 import io.numaproj.numaflow.examples.sink.simple.SimpleSink;
 import io.numaproj.numaflow.examples.source.simple.SimpleSource;
+import io.numaproj.numaflow.examples.sourcetransformer.eventtimefilter.EventTimeFilterFunction;
 import io.numaproj.numaflow.mapper.MapperTestKit;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
@@ -14,6 +15,7 @@ import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.SinkerTestKit;
 import io.numaproj.numaflow.sourcer.SourcerTestKit;
+import io.numaproj.numaflow.sourcetransformer.SourceTransformerTestKit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.Assertions;
@@ -44,9 +46,9 @@ public class ServerTest {
                 .builder()
                 .value("2".getBytes())
                 .build();
-        MessageList result = client.sendRequest(new String[]{}, datum);
+        io.numaproj.numaflow.mapper.MessageList result = client.sendRequest(new String[]{}, datum);
 
-        List<Message> messages = result.getMessages();
+        List<io.numaproj.numaflow.mapper.Message> messages = result.getMessages();
         Assertions.assertEquals(1, messages.size());
         Assertions.assertEquals("even", messages.get(0).getKeys()[0]);
 
@@ -58,6 +60,40 @@ public class ServerTest {
             Assertions.fail("Failed to stop server");
         }
     }
+
+    @Test
+    public void testSourceTransformerServerInvocation() {
+        SourceTransformerTestKit sourceTransformerTestKit = new SourceTransformerTestKit(new EventTimeFilterFunction());
+        try {
+            sourceTransformerTestKit.startServer();
+        } catch (Exception e) {
+            Assertions.fail("Failed to start server");
+        }
+
+        // Create a client which can send requests to the server
+        SourceTransformerTestKit.Client client = new SourceTransformerTestKit.Client();
+
+        SourceTransformerTestKit.TestDatum datum = SourceTransformerTestKit.TestDatum.builder()
+                .eventTime(Instant.ofEpochMilli(1640995200000L))
+                .value("test".getBytes())
+                .build();
+        io.numaproj.numaflow.sourcetransformer.MessageList result = client.sendRequest(new String[]{}, datum);
+
+        List<io.numaproj.numaflow.sourcetransformer.Message> messages = result.getMessages();
+        Assertions.assertEquals(1, messages.size());
+
+        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
+        Assertions.assertEquals("within_year_2022", messages.get(0).getTags()[0]);
+
+        try {
+            client.close();
+            sourceTransformerTestKit.stopServer();
+        } catch (Exception e) {
+            Assertions.fail("Failed to stop server");
+        }
+    }
+
+
 
     @Test
     public void testFlatMapServerInvocation() {
