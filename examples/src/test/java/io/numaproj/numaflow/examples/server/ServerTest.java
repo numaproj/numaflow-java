@@ -15,13 +15,13 @@ import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.SinkerTestKit;
 import io.numaproj.numaflow.sourcer.SourcerTestKit;
+import io.numaproj.numaflow.sourcetransformer.SourceTransformerTestKit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import io.numaproj.numaflow.sourcetransformer.SourceTransformerTestKit;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -253,7 +253,9 @@ public class ServerTest {
                 .eventTime(Instant.ofEpochMilli(1640995200000L))
                 .value("test".getBytes())
                 .build();
-        io.numaproj.numaflow.sourcetransformer.MessageList result = client.sendRequest(new String[]{}, datum);
+        io.numaproj.numaflow.sourcetransformer.MessageList result = client.sendRequest(
+                new String[]{},
+                datum);
 
         List<io.numaproj.numaflow.sourcetransformer.Message> messages = result.getMessages();
         Assertions.assertEquals(1, messages.size());
