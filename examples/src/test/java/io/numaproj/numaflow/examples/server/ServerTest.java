@@ -5,6 +5,7 @@ import io.numaproj.numaflow.examples.map.flatmap.FlatMapFunction;
 import io.numaproj.numaflow.examples.reduce.sum.SumFactory;
 import io.numaproj.numaflow.examples.sink.simple.SimpleSink;
 import io.numaproj.numaflow.examples.source.simple.SimpleSource;
+import io.numaproj.numaflow.examples.sourcetransformer.eventtimefilter.EventTimeFilterFunction;
 import io.numaproj.numaflow.mapper.MapperTestKit;
 import io.numaproj.numaflow.mapper.Message;
 import io.numaproj.numaflow.mapper.MessageList;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import io.numaproj.numaflow.sourcetransformer.SourceTransformerTestKit;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -230,6 +232,39 @@ public class ServerTest {
             sourcerClient.close();
             sourcerTestKit.stopServer();
         } catch (InterruptedException e) {
+            Assertions.fail("Failed to stop server");
+        }
+    }
+
+    @Test
+    @Order(6)
+    public void testSourceTransformerServerInvocation() {
+        SourceTransformerTestKit sourceTransformerTestKit = new SourceTransformerTestKit(new EventTimeFilterFunction());
+        try {
+            sourceTransformerTestKit.startServer();
+        } catch (Exception e) {
+            Assertions.fail("Failed to start server");
+        }
+
+        // Create a client which can send requests to the server
+        SourceTransformerTestKit.Client client = new SourceTransformerTestKit.Client();
+
+        SourceTransformerTestKit.TestDatum datum = SourceTransformerTestKit.TestDatum.builder()
+                .eventTime(Instant.ofEpochMilli(1640995200000L))
+                .value("test".getBytes())
+                .build();
+        io.numaproj.numaflow.sourcetransformer.MessageList result = client.sendRequest(new String[]{}, datum);
+
+        List<io.numaproj.numaflow.sourcetransformer.Message> messages = result.getMessages();
+        Assertions.assertEquals(1, messages.size());
+
+        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
+        Assertions.assertEquals("within_year_2022", messages.get(0).getTags()[0]);
+
+        try {
+            client.close();
+            sourceTransformerTestKit.stopServer();
+        } catch (Exception e) {
             Assertions.fail("Failed to stop server");
         }
     }
