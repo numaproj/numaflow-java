@@ -15,20 +15,23 @@ import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.SinkerTestKit;
 import io.numaproj.numaflow.sourcer.SourcerTestKit;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.FixMethodOrder;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-@FixMethodOrder
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Slf4j
 public class ServerTest {
 
     @Test
+    @Order(1)
     public void testMapServerInvocation() {
         MapperTestKit mapperTestKit = new MapperTestKit(new EvenOddFunction());
         try {
@@ -60,6 +63,7 @@ public class ServerTest {
     }
 
     @Test
+    @Order(2)
     public void testFlatMapServerInvocation() {
         MapperTestKit mapperTestKit = new MapperTestKit(new FlatMapFunction());
         try {
@@ -92,6 +96,7 @@ public class ServerTest {
     }
 
     @Test
+    @Order(3)
     public void testReduceServerInvocation() {
         SumFactory sumFactory = new SumFactory();
 
@@ -149,6 +154,7 @@ public class ServerTest {
     }
 
     @Test
+    @Order(4)
     public void testSinkServerInvocation() {
         int datumCount = 10;
         SinkerTestKit sinkerTestKit = new SinkerTestKit(new SimpleSink());
@@ -194,6 +200,7 @@ public class ServerTest {
     }
 
     @Test
+    @Order(5)
     public void testSourceServerInvocation() {
         SimpleSource simpleSource = new SimpleSource();
 
