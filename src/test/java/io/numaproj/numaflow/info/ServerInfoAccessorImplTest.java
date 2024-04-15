@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
 public class ServerInfoAccessorImplTest {
-    private ServerInfoAccessor underTest = new ServerInfoAccessorImpl(new ObjectMapper());
+    private final ServerInfoAccessor underTest = new ServerInfoAccessorImpl(new ObjectMapper());
 
     @Test
     public void given_localEnvironment_when_getNumaflowJavaSDKVersion_then_returnAValidVersion() {
@@ -39,7 +39,9 @@ public class ServerInfoAccessorImplTest {
             ServerInfo got = this.underTest.read(testFilePath);
             assertEquals(testServerInfo.getLanguage(), got.getLanguage());
             assertEquals(testServerInfo.getProtocol(), got.getProtocol());
-            assertEquals(testServerInfo.getMinimum_numaflow_version(), got.getMinimum_numaflow_version());
+            assertEquals(
+                    testServerInfo.getMinimum_numaflow_version(),
+                    got.getMinimum_numaflow_version());
             assertEquals(testServerInfo.getVersion(), got.getVersion());
             assertEquals(testServerInfo.getMetadata(), got.getMetadata());
         } catch (Exception e) {

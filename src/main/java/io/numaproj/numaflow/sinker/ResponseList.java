@@ -32,7 +32,7 @@ public class ResponseList {
                 this.responses = new ArrayList<>();
             }
 
-            for (Response response: responses) {
+            for (Response response : responses) {
                 this.responses.add(response);
             }
             return this;

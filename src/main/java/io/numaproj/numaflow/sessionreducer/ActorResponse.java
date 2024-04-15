@@ -35,6 +35,10 @@ class ActorResponse {
         this.mergeTaskId = mergeTaskId;
     }
 
+    boolean isEOFResponse() {
+        return this.accumulator == null && this.mergeTaskId == null;
+    }
+
     static class ActorResponseBuilder {
         ActorResponse build() {
             if ((accumulator != null && mergeTaskId == null) || (accumulator == null
@@ -44,9 +48,5 @@ class ActorResponse {
             }
             return new ActorResponse(response, isLast, accumulator, mergeTaskId);
         }
-    }
-
-    boolean isEOFResponse() {
-        return this.accumulator == null && this.mergeTaskId == null;
     }
 }

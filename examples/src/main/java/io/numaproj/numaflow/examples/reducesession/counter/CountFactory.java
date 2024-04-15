@@ -13,7 +13,13 @@ public class CountFactory extends SessionReducerFactory<CountFunction> {
 
     public static void main(String[] args) throws Exception {
         log.info("count udf was invoked");
-        new Server(new CountFactory()).start();
+        Server server = new Server(new CountFactory());
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
     }
 
     @Override

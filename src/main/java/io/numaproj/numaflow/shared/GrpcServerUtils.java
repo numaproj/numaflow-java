@@ -89,7 +89,12 @@ public class GrpcServerUtils {
             }
         }
 
-        // write server info to file
+        // server info file can be null if the Grpc server is used for local component testing
+        // write server info to file if file path is not null
+        if (infoFilePath == null) {
+            return;
+        }
+
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,
@@ -100,7 +105,11 @@ public class GrpcServerUtils {
         serverInfoAccessor.write(serverInfo, infoFilePath);
     }
 
-    public static ServerBuilder<?> createServerBuilder(String socketPath, int maxMessageSize) {
+    public static ServerBuilder<?> createServerBuilder(
+            String socketPath,
+            int maxMessageSize,
+            boolean isLocal,
+            int port) {
         ServerInterceptor interceptor = new ServerInterceptor() {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
@@ -144,6 +153,13 @@ public class GrpcServerUtils {
                 };
             }
         };
+
+        if (isLocal) {
+            return ServerBuilder.forPort(port)
+                    .maxInboundMessageSize(maxMessageSize)
+                    .intercept(interceptor);
+        }
+
         return NettyServerBuilder
                 .forAddress(new DomainSocketAddress(socketPath))
                 .channelType(GrpcServerUtils.getChannelTypeClass())

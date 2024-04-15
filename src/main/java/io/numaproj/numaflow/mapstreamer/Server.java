@@ -55,7 +55,10 @@ public class Server {
         if (this.server == null) {
             // create server builder
             ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
-                    grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getMaxMessageSize(),
+                    grpcConfig.isLocal(),
+                    grpcConfig.getPort());
             // build server
             this.server = serverBuilder
                     .addService(this.service)
@@ -79,6 +82,17 @@ public class Server {
                 e.printStackTrace(System.err);
             }
         }));
+    }
+
+    /**
+     * Blocks until the server has terminated. If the server is already terminated, this method
+     * will return immediately. If the server is not yet terminated, this method will block the
+     * calling thread until the server has terminated.
+     *
+     * @throws InterruptedException if the current thread is interrupted while waiting
+     */
+    public void awaitTermination() throws InterruptedException {
+        server.awaitTermination();
     }
 
     /**

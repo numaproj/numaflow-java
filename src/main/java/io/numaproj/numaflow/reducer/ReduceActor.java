@@ -68,9 +68,9 @@ class ReduceActor extends AbstractActor {
                 .newBuilder()
                 .setValue(ByteString.copyFrom(message.getValue()))
                 .addAllKeys(message.getKeys()
-                        == null ? new ArrayList<>():Arrays.asList(message.getKeys()))
+                        == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                 .addAllTags(
-                        message.getTags() == null ? new ArrayList<>():List.of(message.getTags()))
+                        message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
                 .build());
         return new ActorResponse(responseBuilder.build());
     }

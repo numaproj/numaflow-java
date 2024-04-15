@@ -38,7 +38,13 @@ public class SimpleMapWithSideInput extends Mapper {
         sideInputWatcher.startWatching();
 
         // start the server
-        new Server(new SimpleMapWithSideInput(sideInputWatcher)).start();
+        Server server = new Server(new SimpleMapWithSideInput(sideInputWatcher));
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
 
         // Stop watching for side input
         sideInputWatcher.stopWatching();

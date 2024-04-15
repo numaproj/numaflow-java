@@ -1,10 +1,6 @@
 package io.numaproj.numaflow.examples.mapstream.flatmapstream;
 
-import io.numaproj.numaflow.mapstreamer.Datum;
-import io.numaproj.numaflow.mapstreamer.MapStreamer;
-import io.numaproj.numaflow.mapstreamer.Message;
-import io.numaproj.numaflow.mapstreamer.OutputObserver;
-import io.numaproj.numaflow.mapstreamer.Server;
+import io.numaproj.numaflow.mapstreamer.*;
 
 
 /**
@@ -17,7 +13,13 @@ import io.numaproj.numaflow.mapstreamer.Server;
 public class FlatMapStreamFunction extends MapStreamer {
 
     public static void main(String[] args) throws Exception {
-        new Server(new FlatMapStreamFunction()).start();
+        Server server = new Server(new FlatMapStreamFunction());
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shutdown
+        server.awaitTermination();
     }
 
     public void processMessage(String[] keys, Datum data, OutputObserver outputObserver) {

@@ -50,15 +50,20 @@ public class Server {
      * @throws Exception if server fails to start
      */
     public void start() throws Exception {
-        GrpcServerUtils.writeServerInfo(
-                serverInfoAccessor,
-                grpcConfig.getSocketPath(),
-                grpcConfig.getInfoFilePath());
+        if (!grpcConfig.isLocal()) {
+            GrpcServerUtils.writeServerInfo(
+                    serverInfoAccessor,
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getInfoFilePath());
+        }
 
         if (this.server == null) {
             // create server builder
             ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
-                    grpcConfig.getSocketPath(), grpcConfig.getMaxMessageSize());
+                    grpcConfig.getSocketPath(),
+                    grpcConfig.getMaxMessageSize(),
+                    grpcConfig.isLocal(),
+                    grpcConfig.getPort());
 
             // build server
             this.server = serverBuilder
@@ -70,8 +75,8 @@ public class Server {
         server.start();
 
         log.info(
-                "Server started, listening on socket path: "
-                        + grpcConfig.getSocketPath());
+                "Server started, listening on {}",
+                grpcConfig.isLocal() ? "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -84,6 +89,17 @@ public class Server {
                 e.printStackTrace(System.err);
             }
         }));
+    }
+
+    /**
+     * Blocks until the server has terminated. If the server is already terminated, this method
+     * will return immediately. If the server is not yet terminated, this method will block the
+     * calling thread until the server has terminated.
+     *
+     * @throws InterruptedException if the current thread is interrupted while waiting
+     */
+    public void awaitTermination() throws InterruptedException {
+        server.awaitTermination();
     }
 
     /**
