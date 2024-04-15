@@ -38,8 +38,6 @@ Add this dependency to your project's build file:
 compile "io.numaproj.numaflow:numaflow-java:0.7.0"
 ```
 
-```
-
 ### Build
 
 ```bash
