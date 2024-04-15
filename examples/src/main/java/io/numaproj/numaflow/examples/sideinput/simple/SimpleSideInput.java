@@ -28,7 +28,13 @@ public class SimpleSideInput extends SideInputRetriever {
     }
 
     public static void main(String[] args) throws Exception {
-        new Server(new SimpleSideInput(new Config("sampling", 0.5F))).start();
+        Server server = new Server(new SimpleSideInput(new Config("sampling", 0.5F)));
+
+        // Start the server
+        server.start();
+
+        // wait for the server to shut down
+        server.awaitTermination();
     }
 
     @Override

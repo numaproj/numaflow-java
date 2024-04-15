@@ -1,78 +1,62 @@
 package io.numaproj.numaflow.examples.source.simple;
 
-import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
-import io.numaproj.numaflow.sourcer.OutputObserver;
-import io.numaproj.numaflow.sourcer.ReadRequest;
-import lombok.Data;
+import io.numaproj.numaflow.sourcer.SourcerTestKit;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SimpleSourceTest {
-
-    @Data
-    static class TestObserver implements OutputObserver {
-        List<Message> messages = new ArrayList<>();
-
-        @Override
-        public void send(Message message) {
-            messages.add(message);
-        }
-    }
 
     @Test
     public void test_ReadAndAck() {
         SimpleSource simpleSource = new SimpleSource();
-        TestObserver testObserver = new TestObserver();
+        SourcerTestKit.TestListBasedObserver testObserver = new SourcerTestKit.TestListBasedObserver();
 
         // Read 2 messages
-        ReadRequest readRequest = Mockito.mock(ReadRequest.class);
-        Mockito.when(readRequest.getCount()).thenReturn(2L);
-        Mockito.when(readRequest.getTimeout()).thenReturn(Duration.ofMillis(1000));
+        SourcerTestKit.TestReadRequest readRequest = SourcerTestKit.TestReadRequest.builder()
+                .count(2).timeout(Duration.ofMillis(1000)).build();
         simpleSource.read(readRequest, testObserver);
-        assertEquals(2, testObserver.messages.size());
+        Assertions.assertEquals(2, testObserver.getMessages().size());
 
         // Try reading 4 more messages
         // Since the previous batch didn't get acked, the data source shouldn't allow us to read more messages
         // We should get 0 messages, meaning the observer only holds the previous 2 messages
-        ReadRequest readRequest2 = Mockito.mock(ReadRequest.class);
-        Mockito.when(readRequest2.getCount()).thenReturn(2L);
-        Mockito.when(readRequest2.getTimeout()).thenReturn(Duration.ofMillis(1000));
+        SourcerTestKit.TestReadRequest readRequest2 = SourcerTestKit.TestReadRequest.builder()
+                .count(2).timeout(Duration.ofMillis(1000)).build();
         simpleSource.read(readRequest2, testObserver);
-        assertEquals(2, testObserver.messages.size());
+        Assertions.assertEquals(2, testObserver.getMessages().size());
 
         // Ack the first batch
-        AckRequest ackRequest = Mockito.mock(AckRequest.class);
+
         ArrayList<Offset> offsets = new ArrayList<>();
         // iterate over the testObserver messages and get the offset
-        for (Message message : testObserver.messages) {
+        for (Message message : testObserver.getMessages()) {
             offsets.add(message.getOffset());
         }
-        Mockito.when(ackRequest.getOffsets()).thenReturn(offsets);
+        SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
+                .offsets(offsets).build();
         simpleSource.ack(ackRequest);
 
         // Try reading 6 more messages
         // Since the previous batch got acked, the data source should allow us to read more messages
         // We should get 6 more messages - total of 2+6=8
-        ReadRequest readRequest3 = Mockito.mock(ReadRequest.class);
-        Mockito.when(readRequest3.getCount()).thenReturn(6L);
-        Mockito.when(readRequest3.getTimeout()).thenReturn(Duration.ofMillis(1000));
+        SourcerTestKit.TestReadRequest readRequest3 = SourcerTestKit.TestReadRequest.builder()
+                .count(6).timeout(Duration.ofMillis(1000)).build();
         simpleSource.read(readRequest3, testObserver);
-        assertEquals(8, testObserver.messages.size());
+        Assertions.assertEquals(8, testObserver.getMessages().size());
     }
 
     @Test
     public void testPending() {
         SimpleSource simpleSource = new SimpleSource();
         // simple source getPending always returns 0.
-        assertEquals(0, simpleSource.getPending());
+        Assertions.assertEquals(0, simpleSource.getPending());
     }
+
 }
 

@@ -24,7 +24,7 @@ import static io.numaproj.numaflow.reduce.v1.ReduceGrpc.getReduceFnMethod;
 class Service extends ReduceGrpc.ReduceImplBase {
     public static final ActorSystem reduceActorSystem = ActorSystem.create("reducestream");
 
-    private ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
+    private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
 
     public Service(ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory) {
         this.reduceStreamerFactory = reduceStreamerFactory;

@@ -28,7 +28,7 @@ public class MessageList {
                 this.messages = new ArrayList<>();
             }
 
-            for (Message message: messages) {
+            for (Message message : messages) {
                 this.messages.add(message);
             }
             return this;

@@ -18,7 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 public class EvenOddFunction extends Mapper {
 
     public static void main(String[] args) throws Exception {
-        new Server(new EvenOddFunction()).start();
+        Server server = new Server(new EvenOddFunction());
+
+        // Start the server
+        server.start();
+
+        // Wait for the server to shutdown
+        server.awaitTermination();
     }
 
     public MessageList processMessage(String[] keys, Datum data) {

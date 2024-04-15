@@ -25,16 +25,18 @@
             <artifactId>slf4j-simple</artifactId>
             <version>2.0.7</version>
         </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
+            <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -59,7 +61,9 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/mapt-event-time-filter-function:${docker.tag}</image>
+                                <image>
+                                    numaflow-java-examples/mapt-event-time-filter-function:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -160,7 +164,8 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/reduce-stream-sum:${docker.tag}</image>
+                                <image>numaflow-java-examples/reduce-stream-sum:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -177,7 +182,8 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/map-forward-message:${docker.tag}</image>
+                                <image>numaflow-java-examples/map-forward-message:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -211,7 +217,8 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/sideinput-example:${docker.tag}</image>
+                                <image>numaflow-java-examples/sideinput-example:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -228,7 +235,8 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/udf-sideinput-example:${docker.tag}</image>
+                                <image>numaflow-java-examples/udf-sideinput-example:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -245,7 +253,8 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/source-simple-source:${docker.tag}</image>
+                                <image>numaflow-java-examples/source-simple-source:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -262,7 +271,8 @@
                                 </mainClass>
                             </container>
                             <to>
-                                <image>numaflow-java-examples/session-reduce-count:${docker.tag}</image>
+                                <image>numaflow-java-examples/session-reduce-count:${docker.tag}
+                                </image>
                             </to>
                         </configuration>
                     </execution>
@@ -271,6 +281,10 @@
         </plugins>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.22.2</version>
+                </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.10.1</version>

@@ -14,6 +14,7 @@ public abstract class Sinker {
      * response list should be returned.
      *
      * @param datumStream stream of messages to be processed
+     *
      * @return response list
      */
     public abstract ResponseList processMessages(DatumIterator datumStream);

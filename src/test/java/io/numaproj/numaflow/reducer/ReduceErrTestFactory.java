@@ -10,7 +10,7 @@ public class ReduceErrTestFactory extends ReducerFactory<ReduceErrTestFactory.Re
     }
 
     public static class ReduceTestFn extends Reducer {
-        private int sum = 0;
+        private final int sum = 0;
 
         @Override
         public void addMessage(String[] keys, Datum datum, Metadata md) {

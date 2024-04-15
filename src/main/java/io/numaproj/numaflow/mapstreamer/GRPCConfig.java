@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.mapstreamer;
 
-import io.numaproj.numaflow.info.ServerInfoAccessor;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,9 +9,19 @@ import lombok.Getter;
 @Getter
 @Builder(builderMethodName = "newBuilder")
 public class GRPCConfig {
-    private String socketPath;
-    private int maxMessageSize;
-    private String infoFilePath;
+    @Builder.Default
+    private String socketPath = Constants.DEFAULT_SOCKET_PATH;
+
+    @Builder.Default
+    private int maxMessageSize = Constants.DEFAULT_MESSAGE_SIZE;
+
+    @Builder.Default
+    private String infoFilePath = Constants.DEFAULT_SERVER_INFO_FILE_PATH;
+
+    @Builder.Default
+    private int port = Constants.DEFAULT_PORT;
+
+    private boolean isLocal;
 
     /**
      * Static method to create default GRPCConfig.
@@ -21,6 +30,7 @@ public class GRPCConfig {
         return GRPCConfig.newBuilder()
                 .infoFilePath(Constants.DEFAULT_SERVER_INFO_FILE_PATH)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
+                .isLocal(System.getenv("NUMAFLOW_POD") == null) // if NUMAFLOW_POD is not set, then we are not running using numaflow
                 .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }
 }

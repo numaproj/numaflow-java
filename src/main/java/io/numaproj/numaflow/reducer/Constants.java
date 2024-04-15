@@ -7,6 +7,10 @@ class Constants {
 
     public static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/reducer-server-info";
 
+    public static final int DEFAULT_PORT = 50051;
+
+    public static final String DEFAULT_HOST = "localhost";
+
     public static final String EOF = "EOF";
 
     public static final String SUCCESS = "SUCCESS";
