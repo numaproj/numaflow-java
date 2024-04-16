@@ -120,10 +120,12 @@ class Service extends SinkGrpc.SinkImplBase {
     public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {
         var responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
         responses.getResponses().forEach(response -> {
+            SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK :
+                    response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
             responseBuilder.addResults(SinkOuterClass.SinkResponse.Result.newBuilder()
                     .setId(response.getId() == null ? "" : response.getId())
                     .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                    .setSuccess(response.getSuccess())
+                    .setStatus(status)
                     .build());
         });
         return responseBuilder.build();

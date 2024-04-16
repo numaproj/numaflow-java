@@ -27,10 +27,20 @@ public class GRPCConfig {
      * Static method to create default GRPCConfig.
      */
     static GRPCConfig defaultGrpcConfig() {
+        String containerType = System.getenv(Constants.ENV_UD_CONTAINER_TYPE);
+        String socketPath = Constants.DEFAULT_SOCKET_PATH;
+        String infoFilePath = Constants.DEFAULT_SERVER_INFO_FILE_PATH;
+
+        // if containerType is fb-udsink then we need to use fb sink socket path and info file path
+        if (Constants.UD_CONTAINER_FALLBACK_SINK.equals(containerType)) {
+            socketPath = Constants.DEFAULT_FB_SINK_SOCKET_PATH;
+            infoFilePath = Constants.DEFAULT_FB_SERVER_INFO_FILE_PATH;
+        }
         return GRPCConfig.newBuilder()
-                .infoFilePath(Constants.DEFAULT_SERVER_INFO_FILE_PATH)
+                .infoFilePath(infoFilePath)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
-                .isLocal(System.getenv("NUMAFLOW_POD") == null) // if NUMAFLOW_POD is not set, then we are not running using numaflow
-                .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
+                .isLocal(containerType == null) // if ENV_UD_CONTAINER_TYPE is not set, then we are not running using numaflow
+                .socketPath(socketPath)
+                .build();
     }
 }
