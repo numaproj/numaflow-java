@@ -179,12 +179,14 @@ public class SinkerTestKit {
 
             ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
             for (SinkOuterClass.SinkResponse.Result result : response.getResultsList()) {
-                if (result.getSuccess()) {
+                if (result.getStatus() == SinkOuterClass.Status.SUCCESS) {
                     responseListBuilder.addResponse(Response.responseOK(result.getId()));
+                } else if (result.getStatus() == SinkOuterClass.Status.FALLBACK) {
+                    responseListBuilder.addResponse(Response.responseFallback(
+                            result.getId()));
                 } else {
                     responseListBuilder.addResponse(Response.responseFailure(
-                            result.getId(),
-                            result.getErrMsg()));
+                            result.getId(), result.getErrMsg()));
                 }
             }
 
