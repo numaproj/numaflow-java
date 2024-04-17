@@ -43,7 +43,7 @@ public class SimpleSink extends Sinker {
             }
             try {
                 String msg = new String(datum.getValue());
-                log.info("Received message: {}", msg);
+                log.info("Received message: {}, headers - {}", msg, datum.getHeaders());
                 responseListBuilder.addResponse(Response.responseOK(datum.getId()));
             } catch (Exception e) {
                 responseListBuilder.addResponse(Response.responseFailure(
