@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -158,6 +159,7 @@ public class SourceTransformerTestKit {
                                     .setSeconds(data.getWatermark().getEpochSecond())
                                     .setNanos(data.getWatermark().getNano())
                                     .build())
+                    .putAllHeaders(data.getHeaders() == null ? new HashMap<>() : data.getHeaders())
                     .build();
 
             try {

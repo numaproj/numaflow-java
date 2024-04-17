@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -164,6 +165,7 @@ public class SinkerTestKit {
                                 .build() : Timestamp.newBuilder()
                                 .setSeconds(datum.getWatermark().getEpochSecond())
                                 .setNanos(datum.getWatermark().getNano()).build())
+                        .putAllHeaders(datum.getHeaders() == null ? new HashMap<>() : datum.getHeaders())
                         .build();
                 requestObserver.onNext(request);
             }
