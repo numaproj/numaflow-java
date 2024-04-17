@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Slf4j
@@ -175,6 +176,7 @@ public class ServerTest {
                     .builder()
                     .id("id-" + i)
                     .value(("value-" + i).getBytes())
+                    .headers(Map.of("test-key", "test-value"))
                     .build());
         }
 
