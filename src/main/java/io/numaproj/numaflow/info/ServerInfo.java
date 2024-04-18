@@ -22,7 +22,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class ServerInfo {
     // Specify the minimum Numaflow version required by the current SDK version
-    public static final String MINIMUM_NUMAFLOW_VERSION = "1.2.0-0";
+    public static final String MINIMUM_NUMAFLOW_VERSION = "1.2.0-rc4";
     @JsonProperty("protocol")
     private Protocol protocol;
     @JsonProperty("language")
