@@ -20,7 +20,7 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
         String version = "";
         try (InputStream in = getClass()
                 .getClassLoader()
-                .getResourceAsStream("version.properties")) {
+                .getResourceAsStream("numaflow-java-sdk-version.properties")) {
             if (in != null) {
                 Properties properties = new Properties();
                 properties.load(in);
