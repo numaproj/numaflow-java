@@ -388,8 +388,11 @@
         </pluginManagement>
         <resources>
             <resource>
-                <directory>src/main/java/io/numaproj/numaflow/info</directory>
+                <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <includes>
+                  <include>numaflow-java-sdk-version.properties</include>
+                </includes>                
             </resource>
         </resources>
     </build>
