@@ -149,6 +149,8 @@ public class GrpcServerUtils {
                         var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
                         var newStatus = Status.fromThrowable(status.asException());
                         serverCall.close(newStatus, headers);
+                        e.printStackTrace();
+                        System.exit(1);
                     }
                 };
             }
