@@ -1,9 +1,8 @@
 #!/bin/bash
 
 function show_help () {
-    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bp|--build-push | -bpe|--build-push-example <execution-id>)"
+    echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bpe|--build-push-example <execution-id>)"
     echo "  -h, --help                   Display help message and exit"
-    echo "  -bp, --build-push            Build all the examples and push them to the quay.io registry"
     echo "  -bpe, --build-push-example   Build the given example id (found in examples/pom.xml), and push it to the quay.io registry"
     echo "  -t, --tag                    To be optionally used with -bpe or -bp. Specify the tag to build with. Default tag: stable"
 }
@@ -15,7 +14,6 @@ if [ $# -eq 0 ]; then
 fi
 
 usingHelp=0
-usingBuildPush=0
 usingBuildPushExample=0
 usingTag=0
 executionID=""
@@ -26,9 +24,6 @@ function handle_options () {
     case "$1" in
       -h | --help)
         usingHelp=1
-        ;;
-      -bp | --build-push)
-        usingBuildPush=1
         ;;
       -bpe | --build-push-example)
         if [ -z "$2" ]; then
@@ -64,14 +59,14 @@ function handle_options () {
 
 handle_options "$@"
 
-if (( usingBuildPush + usingBuildPushExample + usingHelp > 1 )); then
-  echo "Only one of '-h', '-bp', or '-bpe' is allowed at a time" >&2
+if (( usingBuildPushExample + usingHelp > 1 )); then
+  echo "Only one of '-h' or '-bpe' is allowed at a time" >&2
   show_help
   exit 1
 fi
 
-if (( (usingTag + usingHelp > 1) || (usingTag && usingBuildPush + usingBuildPushExample == 0) )); then
-  echo "Can only use -t with -bp or -bpe" >&2
+if (( (usingTag + usingHelp > 1) || (usingTag && usingBuildPushExample == 0) )); then
+  echo "Can only use -t with -bpe" >&2
   show_help
   exit 1
 fi
@@ -114,13 +109,7 @@ function build () {
   fi
 }
 
-if (( usingBuildPush )); then
-  build
-  for id in "${executionIDs[@]}"
-  do
-    dockerPublish "$id"
-  done
-elif (( usingBuildPushExample )); then
+if (( usingBuildPushExample )); then
   build
   dockerPublish "$executionID"
 elif (( usingHelp )); then
