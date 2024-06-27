@@ -24,7 +24,7 @@ The default tag is `stable`, but it is recommended you specify your own for test
 This consistent tag name is used so that the tags in the [E2E test pipelines](https://github.com/numaproj/numaflow/tree/main/test) do not need to be
 updated each time an SDK change is made.
 
-`-bpe`first builds a local image with the naming convention 
+`-bpe` first builds a local image with the naming convention 
 `numaflow-java-examples/<example-execution-id>:<tag>`, which then gets pushed as 
 `quay.io/numaio/numaflow-java/<example-execution-id>:<tag>`. If you want to build and tag all images locally, 
 without pushing to quay.io, as mentioned in step 3, run: `mvn clean install -Ddocker.tag=<tag>`.
