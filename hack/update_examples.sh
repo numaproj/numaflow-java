@@ -4,7 +4,7 @@ function show_help () {
     echo "Usage: $0 [-h|--help | -t|--tag <tag>] (-bpe|--build-push-example <execution-id>)"
     echo "  -h, --help                   Display help message and exit"
     echo "  -bpe, --build-push-example   Build the given example id (found in examples/pom.xml), and push it to the quay.io registry"
-    echo "  -t, --tag                    To be optionally used with -bpe or -bp. Specify the tag to build with. Default tag: stable"
+    echo "  -t, --tag                    To be optionally used with -bpe. Specify the tag to build with. Default tag: stable"
 }
 
 if [ $# -eq 0 ]; then
@@ -78,12 +78,6 @@ fi
 if [ -n "$tag" ] && (( ! usingHelp )); then
  echo "Using tag: $tag"
 fi
-
-executionIDs=("mapt-event-time-filter-function" "flat-map-stream" "map-flatmap" \
-              "even-odd" "simple-sink" "reduce-sum" "reduce-stream-sum" \
-              "map-forward-message" "reduce-counter" "sideinput-example" \
-              "udf-sideinput-example" "source-simple-source" "session-reduce-count"
-              )
 
 function dockerPublish () {
   echo "Docker publish for example: $1"
