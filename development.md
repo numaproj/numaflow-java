@@ -47,5 +47,4 @@ If you add a new example, there are a few steps to follow in order for it to be 
 
 1. Add the example to the `examples/pom.xml`, within an execution element. Note that the
 `id` tag you specify must be exactly the same as the quay.io repository name for the example
-2. Add the `id` tag you specified in step 1 to the `executionIDs` array in `hack/update_examples.sh`
-3. Add the `id` tag you specified in step 1 to the `execution_ids` matrix in `.github/workflows/build-push.yaml`
+2. Add the `id` tag you specified in step 1 to the `execution_ids` matrix in `.github/workflows/build-push.yaml`
