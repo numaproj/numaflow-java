@@ -152,7 +152,7 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-transport-native-kqueue</artifactId>
             <version>${netty.version}</version>
-            <classifier>osx-aarch_64</classifier>
+            <classifier>osx-x86_64</classifier>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -191,6 +191,14 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_3</artifactId>
             <version>${akka.version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.typesafe.akka/akka-testkit -->
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-testkit_3</artifactId>
+            <version>2.8.5</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
@@ -303,6 +311,7 @@
                             </rules>
                             <excludes>
                                 <exclude>io/numaproj/numaflow/examples/*</exclude>
+                                <exclude>io/numaproj/numaflow/batchmap/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/mapstream/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/reduce/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/sessionreduce/v1/*</exclude>
@@ -340,6 +349,7 @@
                     <excludePackageNames>
                         io.numaproj.numaflow.info,
                         io.numaproj.numaflow.map.v1,
+                        io.numaproj.numaflow.batchmap.v1,
                         io.numaproj.numaflow.reduce.v1,
                         io.numaproj.numaflow.mapstream.v1,
                         io.numaproj.numaflow.sourcetransformer.v1,
