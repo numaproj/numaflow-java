@@ -6,8 +6,7 @@ import io.numaproj.numaflow.batchmapper.BatchResponses;
 import io.numaproj.numaflow.batchmapper.Datum;
 import io.numaproj.numaflow.batchmapper.DatumIterator;
 import io.numaproj.numaflow.batchmapper.Message;
-import io.numaproj.numaflow.examples.mapstream.flatmapstream.FlatMapStreamFunction;
-import io.numaproj.numaflow.mapstreamer.Server;
+import io.numaproj.numaflow.batchmapper.Server;
 
 public class BatchFlatMap extends BatchMapper {
     @Override
@@ -41,7 +40,7 @@ public class BatchFlatMap extends BatchMapper {
     }
 
     public static void main(String[] args) throws Exception {
-        Server server = new Server(new FlatMapStreamFunction());
+        Server server = new Server(new BatchFlatMap());
 
         // Start the server
         server.start();
