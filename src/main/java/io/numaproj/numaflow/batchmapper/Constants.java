@@ -5,7 +5,7 @@ class Constants {
 
     public static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/batchmap.sock";
 
-    public static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/mapper-server-info";
+    public static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/batchmapper-server-info";
 
     public static final int DEFAULT_PORT = 50051;
 
