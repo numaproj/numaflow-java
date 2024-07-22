@@ -8,6 +8,8 @@ import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,7 +52,8 @@ public class Server {
         GrpcServerUtils.writeServerInfo(
                 serverInfoAccessor,
                 grpcConfig.getSocketPath(),
-                grpcConfig.getInfoFilePath());
+                grpcConfig.getInfoFilePath(),
+                Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
 
         if (this.server == null) {
             // create server builder
