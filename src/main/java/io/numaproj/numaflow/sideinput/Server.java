@@ -108,6 +108,9 @@ public class Server {
     public void stop() throws InterruptedException {
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            if (!server.isTerminated()) {
+                server.shutdownNow();
+            }
         }
     }
 
