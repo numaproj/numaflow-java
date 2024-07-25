@@ -7,7 +7,9 @@ import io.numaproj.numaflow.batchmapper.Datum;
 import io.numaproj.numaflow.batchmapper.DatumIterator;
 import io.numaproj.numaflow.batchmapper.Message;
 import io.numaproj.numaflow.batchmapper.Server;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class BatchFlatMap extends BatchMapper {
     @Override
     public BatchResponses processMessage(DatumIterator datumStream) {

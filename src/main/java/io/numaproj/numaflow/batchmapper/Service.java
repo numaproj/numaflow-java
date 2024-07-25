@@ -91,8 +91,8 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
                     // We Fire off the call to the client from here and stream the response back
                     datumStream.writeMessage(HandlerDatum.EOF_DATUM);
                     batchMapActor.tell(datumStream, ActorRef.noSender());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (Exception e) {
+                    log.error("Error Encountered in batchMap Stream onCompleted", e);
                     onError(e);
                 }
             }

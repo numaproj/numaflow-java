@@ -63,10 +63,9 @@ public class BatchMapActor extends AbstractActor {
     }
 
     private void invokeHandler(DatumIteratorImpl iterator) {
-        log.info("Started the call already");
         BatchResponses resultMessages = this.batchMapper.processMessage(iterator);
 
-        log.info(
+        log.debug(
                 "Finished the call Result size is :{} and iterator count is :{}",
                 resultMessages.getItems().size(),
                 iterator.getCount());
@@ -96,10 +95,6 @@ public class BatchMapActor extends AbstractActor {
                     .setId(message.getId())
                     .addAllResults(batchMapResponseResult)
                     .build();
-            log.info(
-                    "IN SDK Processing Response for id {} with number of messages: {}",
-                    singleRequestResponse.getId(),
-                    singleRequestResponse.getResultsCount());
             // Stream the response back to the sender
             responseObserver.onNext(singleRequestResponse);
         });
