@@ -9,7 +9,6 @@ import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -105,12 +104,13 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
+        this.service.shutDown();
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
-        }
-        // force shutdown if not terminated
-        if (!server.isTerminated()) {
-            server.shutdownNow();
+            // force shutdown if not terminated
+            if (!server.isTerminated()) {
+                server.shutdownNow();
+            }
         }
     }
 

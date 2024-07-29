@@ -1,7 +1,14 @@
 package io.numaproj.numaflow.batchmapper;
 
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.ForwardingServerCallListener;
 import io.grpc.ManagedChannel;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -28,6 +35,45 @@ public class ServerErrTest {
 
     @Before
     public void setUp() throws Exception {
+        ServerInterceptor interceptor = new ServerInterceptor() {
+            @Override
+            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                    ServerCall<ReqT, RespT> call,
+                    io.grpc.Metadata headers,
+                    ServerCallHandler<ReqT, RespT> next) {
+
+                final var context =
+                        Context.current();
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(
+                        context,
+                        call,
+                        headers,
+                        next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(
+                        listener) {
+                    @Override
+                    public void onHalfClose() {
+                        try {
+                            super.onHalfClose();
+                        } catch (RuntimeException ex) {
+                            handleException(ex, call, headers);
+                            throw ex;
+                        }
+                    }
+
+                    private void handleException(
+                            RuntimeException e,
+                            ServerCall<ReqT, RespT> serverCall,
+                            io.grpc.Metadata headers) {
+                        // Currently, we only have application level exceptions.
+                        // Translate it to UNKNOWN status.
+                        var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                        var newStatus = Status.fromThrowable(status.asException());
+                        serverCall.close(newStatus, headers);
+                    }
+                };
+            }
+        };
 
         String serverName = InProcessServerBuilder.generateName();
 
@@ -42,6 +88,7 @@ public class ServerErrTest {
                 grpcServerConfig);
 
         server.setServerBuilder(InProcessServerBuilder.forName(serverName)
+                .intercept(interceptor)
                 .directExecutor());
 
         server.start();

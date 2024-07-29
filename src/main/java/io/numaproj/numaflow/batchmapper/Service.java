@@ -1,8 +1,6 @@
 package io.numaproj.numaflow.batchmapper;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.AllDeadLetters;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -12,31 +10,29 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
 @AllArgsConstructor
 class Service extends BatchMapGrpc.BatchMapImplBase {
 
+    // batchMapTaskExecutor is the executor for the batchMap. It is a fixed size thread pool
+    // with the number of threads equal to the number of cores on the machine times 2.
+    private final ExecutorService batchMapTaskExecutor = Executors
+            .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
+    // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
+    // We use 30 seconds as the default value because it provides a balance between giving tasks enough time to complete
+    // and not delaying program termination unduly.
+    private final long SHUTDOWN_TIME = 30;
+
     private final BatchMapper batchMapper;
-    public static final ActorSystem batchMapActorSystem = ActorSystem.create("batchmap");
-
-
-    static void handleFailure(
-            CompletableFuture<Void> failedFuture,
-            StreamObserver<Batchmap.BatchMapResponse> responseStreamObserver) {
-        new Thread(() -> {
-            try {
-                failedFuture.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-                var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
-                responseStreamObserver.onError(status.asException());
-            }
-        }).start();
-
-    }
 
     @Override
     public StreamObserver<Batchmap.BatchMapRequest> batchMapFn(StreamObserver<Batchmap.BatchMapResponse> responseObserver) {
@@ -49,23 +45,8 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
 
         DatumIteratorImpl datumStream = new DatumIteratorImpl();
 
-        CompletableFuture<Void> failedFuture = new CompletableFuture<>();
-
-        // create a shutdown actor that listens to exceptions.
-        ActorRef shutdownActorRef = batchMapActorSystem.actorOf(BatchMapShutdownActor.props(
-                failedFuture));
-
-        // subscribe for dead letters
-        batchMapActorSystem.getEventStream().subscribe(shutdownActorRef, AllDeadLetters.class);
-
-        handleFailure(failedFuture, responseObserver);
-
-        ActorRef batchMapActor = batchMapActorSystem
-                .actorOf(BatchMapActor.props(
-                        batchMapper,
-                        shutdownActorRef,
-                        responseObserver
-                ));
+        Future<BatchResponses> result = batchMapTaskExecutor.submit(() -> this.batchMapper.processMessage(
+                datumStream));
 
         return new StreamObserver<Batchmap.BatchMapRequest>() {
             @Override
@@ -82,7 +63,8 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
             public void onError(Throwable throwable) {
                 // We close the stream and let the sender retry the messages
                 log.error("Error Encountered in batchMap Stream", throwable);
-                responseObserver.onError(throwable);
+                var status = Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable);
+                responseObserver.onError(status.asException());
             }
 
             @Override
@@ -90,13 +72,50 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
                 try {
                     // We Fire off the call to the client from here and stream the response back
                     datumStream.writeMessage(HandlerDatum.EOF_DATUM);
-                    batchMapActor.tell(datumStream, ActorRef.noSender());
+                    BatchResponses responses = result.get();
+                    log.debug(
+                            "Finished the call Result size is :{} and iterator count is :{}",
+                            responses.getItems().size(),
+                            datumStream.getCount());
+                    // Crash if the number of responses from the users don't match the input requests ignoring the EOF message
+                    if (responses.getItems().size() != datumStream.getCount() - 1) {
+                        throw new RuntimeException("Number of results did not match");
+                    }
+                    buildAndStreamResponse(responses, responseObserver);
                 } catch (Exception e) {
                     log.error("Error Encountered in batchMap Stream onCompleted", e);
                     onError(e);
                 }
             }
         };
+    }
+
+    private void buildAndStreamResponse(BatchResponses responses, StreamObserver<Batchmap.BatchMapResponse> responseObserver) {
+        responses.getItems().forEach(message -> {
+            List<Batchmap.BatchMapResponse.Result> batchMapResponseResult = new ArrayList<>();
+            message.getItems().forEach(res -> {
+                batchMapResponseResult.add(
+                        Batchmap.BatchMapResponse.Result
+                                .newBuilder()
+                                .setValue(res.getValue()
+                                        == null ? ByteString.EMPTY : ByteString.copyFrom(
+                                        res.getValue()))
+                                .addAllKeys(res.getKeys()
+                                        == null ? new ArrayList<>() : List.of(res.getKeys()))
+                                .addAllTags(res.getTags()
+                                        == null ? new ArrayList<>() : List.of(res.getTags()))
+                                .build()
+                );
+            });
+            Batchmap.BatchMapResponse singleRequestResponse = Batchmap.BatchMapResponse
+                    .newBuilder()
+                    .setId(message.getId())
+                    .addAllResults(batchMapResponseResult)
+                    .build();
+            // Stream the response back to the sender
+            responseObserver.onNext(singleRequestResponse);
+        });
+        responseObserver.onCompleted();
     }
 
 
@@ -121,6 +140,24 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
                 d.getId(),
                 d.getHeadersMap()
         );
+    }
+
+    // shuts down the executor service which is used for reduce
+    public void shutDown() {
+        this.batchMapTaskExecutor.shutdown();
+        try {
+            if (!batchMapTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
+                log.error("BatchMap executor did not terminate in the specified time.");
+                List<Runnable> droppedTasks = batchMapTaskExecutor.shutdownNow();
+                log.error("BatchMap executor was abruptly shut down. " + droppedTasks.size()
+                        + " tasks will not be executed.");
+            } else {
+                log.info("BatchMap executor was terminated.");
+            }
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+            e.printStackTrace();
+        }
     }
 
 }
