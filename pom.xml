@@ -303,6 +303,7 @@
                             </rules>
                             <excludes>
                                 <exclude>io/numaproj/numaflow/examples/*</exclude>
+                                <exclude>io/numaproj/numaflow/batchmap/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/mapstream/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/reduce/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/sessionreduce/v1/*</exclude>
@@ -340,6 +341,7 @@
                     <excludePackageNames>
                         io.numaproj.numaflow.info,
                         io.numaproj.numaflow.map.v1,
+                        io.numaproj.numaflow.batchmap.v1,
                         io.numaproj.numaflow.reduce.v1,
                         io.numaproj.numaflow.mapstream.v1,
                         io.numaproj.numaflow.sourcetransformer.v1,

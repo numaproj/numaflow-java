@@ -1,6 +1,7 @@
-package io.numaproj.numaflow.mapper;
+package io.numaproj.numaflow.batchmapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
@@ -11,7 +12,7 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Server is the gRPC server for executing map operation.
+ * Server is the gRPC server for executing batch map operation.
  */
 @Slf4j
 public class Server {
@@ -22,51 +23,44 @@ public class Server {
     private io.grpc.Server server;
 
     /**
-     * constructor to create gRPC server.
+     * constructor to create sink gRPC server.
      *
-     * @param mapper to process the message
+     * @param batchMapper to process the message
      */
-    public Server(Mapper mapper) {
-        this(mapper, GRPCConfig.defaultGrpcConfig());
+    public Server(BatchMapper batchMapper) {
+        this(batchMapper, GRPCConfig.defaultGrpcConfig());
     }
 
     /**
-     * constructor to create gRPC server with gRPC config.
+     * constructor to create sink gRPC server with gRPC config.
      *
      * @param grpcConfig to configure the max message size for grpc
-     * @param mapper to process the message
+     * @param batchMapper to process the message
      */
-    public Server(Mapper mapper, GRPCConfig grpcConfig) {
-        this.service = new Service(mapper);
+    public Server(BatchMapper batchMapper, GRPCConfig grpcConfig) {
+        this.service = new Service(batchMapper);
         this.grpcConfig = grpcConfig;
     }
 
     /**
-     * Starts the gRPC server and begins listening for requests. If the server is configured to be non-local,
-     * it writes server information to a specified path. A shutdown hook is registered to ensure the server
-     * is properly shut down when the JVM is shutting down.
+     * Start serving requests.
      *
-     * @throws Exception if the server fails to start
+     * @throws Exception if server fails to start
      */
     public void start() throws Exception {
-
-        if (!grpcConfig.isLocal()) {
-            GrpcServerUtils.writeServerInfo(
-                    serverInfoAccessor,
-                    grpcConfig.getSocketPath(),
-                    grpcConfig.getInfoFilePath(),
-                    Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
-        }
+        GrpcServerUtils.writeServerInfo(
+                serverInfoAccessor,
+                grpcConfig.getSocketPath(),
+                grpcConfig.getInfoFilePath(),
+                Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
 
         if (this.server == null) {
-            ServerBuilder<?> serverBuilder = null;
-            // create server builder for domain socket server
-            serverBuilder = GrpcServerUtils.createServerBuilder(
+            // create server builder
+            ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
                     grpcConfig.getPort());
-
             // build server
             this.server = serverBuilder
                     .addService(this.service)
@@ -77,8 +71,7 @@ public class Server {
         server.start();
 
         log.info(
-                "Server started, listening on {}",
-                grpcConfig.isLocal() ? "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
+                "Server started, listening on socket path: " + grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -111,6 +104,7 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
+        this.service.shutDown();
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             // force shutdown if not terminated
@@ -121,11 +115,11 @@ public class Server {
     }
 
     /**
-     * Sets the server builder. This method can be used for testing purposes to provide a different
-     * grpc server builder.
+     * Set server builder for testing.
      *
-     * @param serverBuilder the server builder to be used
+     * @param serverBuilder in process server builder can be used for testing
      */
+    @VisibleForTesting
     public void setServerBuilder(ServerBuilder<?> serverBuilder) {
         this.server = serverBuilder
                 .addService(this.service)

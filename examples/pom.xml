@@ -49,6 +49,25 @@
                 <version>3.3.0</version>
                 <executions>
                     <execution>
+                        <id>batch-map-example</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.batchmap.flatmap.BatchFlatMap
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>
+                                    numaflow-java-examples/batch-map-flatmap:${docker.tag}
+                                </image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>mapt-event-time-filter-function</id>
                         <phase>package</phase>
                         <goals>
