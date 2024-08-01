@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * GrpcServerUtils is the utility class for netty server channel.
@@ -80,6 +81,14 @@ public class GrpcServerUtils {
             ServerInfoAccessor serverInfoAccessor,
             String socketPath,
             String infoFilePath) throws Exception {
+        writeServerInfo(serverInfoAccessor, socketPath, infoFilePath, new HashMap<>());
+    }
+
+    public static void writeServerInfo(
+            ServerInfoAccessor serverInfoAccessor,
+            String socketPath,
+            String infoFilePath,
+            Map<String, String> metaData) throws Exception {
         // cleanup socket path if it exists (unit test builder doesn't use one)
         if (socketPath != null) {
             Path path = Paths.get(socketPath);
@@ -95,12 +104,16 @@ public class GrpcServerUtils {
             return;
         }
 
+        if (metaData == null) {
+            metaData = new HashMap<>();
+        }
+
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,
                 ServerInfo.MINIMUM_NUMAFLOW_VERSION,
                 serverInfoAccessor.getSDKVersion(),
-                new HashMap<>());
+                metaData);
         log.info("Writing server info {} to {}", serverInfo, infoFilePath);
         serverInfoAccessor.write(serverInfo, infoFilePath);
     }

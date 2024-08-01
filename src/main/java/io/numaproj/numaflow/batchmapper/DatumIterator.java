@@ -1,8 +1,9 @@
-package io.numaproj.numaflow.sinker;
+package io.numaproj.numaflow.batchmapper;
+
 
 /**
  * An iterator over a collection of {@link Datum} elements.
- * Passed to {@link Sinker#processMessages(DatumIterator)} method.
+ * Passed to {@link BatchMapper#processMessage(DatumIterator)} method.
  */
 public interface DatumIterator {
 
