@@ -79,7 +79,7 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
                             datumStream.getCount());
                     // Crash if the number of responses from the users don't match the input requests ignoring the EOF message
                     if (responses.getItems().size() != datumStream.getCount() - 1) {
-                        throw new RuntimeException("Number of results did not match");
+                        throw new RuntimeException("Number of results did not match expected " + (datumStream.getCount()-1) + " but got " + responses.getItems().size());
                     }
                     buildAndStreamResponse(responses, responseObserver);
                 } catch (Exception e) {

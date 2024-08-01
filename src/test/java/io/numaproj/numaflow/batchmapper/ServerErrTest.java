@@ -175,7 +175,7 @@ public class ServerErrTest {
             }
             try {
                 assertEquals(
-                        "UNKNOWN: Number of results did not match",
+                        "UNKNOWN: Number of results did not match expected 2 but got 1",
                         outputStreamObserver.t.getMessage());
             } catch (Throwable e) {
                 exceptionInThread.set(e);
@@ -194,6 +194,7 @@ public class ServerErrTest {
                 .addKeys("test")
                 .setId("test")
                 .build();
+        inputStreamObserver.onNext(request1);
         inputStreamObserver.onCompleted();
 
         try {
