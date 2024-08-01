@@ -49,7 +49,7 @@
                 <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>batch-map-example</id>
+                        <id>batch-map-flatmap</id>
                         <phase>package</phase>
                         <goals>
                             <goal>dockerBuild</goal>
