@@ -8,7 +8,7 @@ package io.numaproj.numaflow.batchmapper;
 
 public abstract class BatchMapper {
     /**
-     * method which will be used for processing messages.
+     * method which will be used for processing messages. Please implement the interface to ensure that each message generates a corresponding BatchResponse object with a matching ID.
      *
      * @param datumStream current message to be processed
      *
