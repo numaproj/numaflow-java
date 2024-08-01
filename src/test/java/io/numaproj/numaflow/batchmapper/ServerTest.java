@@ -61,7 +61,7 @@ public class ServerTest {
 
 
     @Test
-    public void testMapStreamHappyPath() {
+    public void testBatchMapHappyPath() {
         BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver();
         StreamObserver<Batchmap.BatchMapRequest> inputStreamObserver = BatchMapGrpc
                 .newStub(inProcessChannel)
@@ -83,7 +83,9 @@ public class ServerTest {
         while (outputStreamObserver.resultDatum.get().size() != 10);
         List<Batchmap.BatchMapResponse> result = outputStreamObserver.resultDatum.get();
         assertEquals(10, result.size());
-
+        for (int i=0; i < 10; i++) {
+            assertEquals(result.get(i).getId(),String.valueOf(i+1));
+        }
     }
 
     private static class TestMapFn extends BatchMapper {

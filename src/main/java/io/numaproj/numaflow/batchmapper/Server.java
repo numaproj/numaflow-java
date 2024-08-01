@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MapServer is the gRPC server for executing map operation.
+ * Server is the gRPC server for executing batch map operation.
  */
 @Slf4j
 public class Server {

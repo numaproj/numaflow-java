@@ -137,9 +137,63 @@ public class ServerErrTest {
         Batchmap.BatchMapRequest request = Batchmap.BatchMapRequest.newBuilder()
                 .setValue(ByteString.copyFromUtf8(message))
                 .addKeys("exception")
-                .setId(UUID.randomUUID().toString())
+                .setId("exception")
                 .build();
         inputStreamObserver.onNext(request);
+        inputStreamObserver.onCompleted();
+
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            fail("Thread got interrupted before test assertion.");
+        }
+        // Fail the test if any exception caught in the thread
+        if (exceptionInThread.get() != null) {
+            fail("Assertion failed in the thread: " + exceptionInThread.get().getMessage());
+        }
+    }
+
+    @Test
+    public void testMismatchSizeError() {
+
+        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver();
+        StreamObserver<Batchmap.BatchMapRequest> inputStreamObserver = BatchMapGrpc
+                .newStub(inProcessChannel)
+                .batchMapFn(outputStreamObserver);
+
+        // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
+        // the test can still succeed.
+        AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
+
+        Thread t = new Thread(() -> {
+            while (outputStreamObserver.t == null) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    exceptionInThread.set(e);
+                }
+            }
+            try {
+                assertEquals(
+                        "UNKNOWN: Number of results did not match",
+                        outputStreamObserver.t.getMessage());
+            } catch (Throwable e) {
+                exceptionInThread.set(e);
+            }
+        });
+        t.start();
+        String message = "message";
+        Batchmap.BatchMapRequest request = Batchmap.BatchMapRequest.newBuilder()
+                .setValue(ByteString.copyFromUtf8(message))
+                .addKeys("drop")
+                .setId("drop")
+                .build();
+        inputStreamObserver.onNext(request);
+        Batchmap.BatchMapRequest request1 = Batchmap.BatchMapRequest.newBuilder()
+                .setValue(ByteString.copyFromUtf8(message))
+                .addKeys("test")
+                .setId("test")
+                .build();
         inputStreamObserver.onCompleted();
 
         try {
@@ -157,7 +211,31 @@ public class ServerErrTest {
 
         @Override
         public BatchResponses processMessage(DatumIterator datumStream) {
-            throw new RuntimeException("unknown exception");
+            BatchResponses batchResponses = new BatchResponses();
+            while (true) {
+                Datum datum = null;
+                try {
+                    datum = datumStream.next();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    continue;
+                }
+                if (datum == null) {
+                    break;
+                }
+                if (datum.getId().equals("exception")) {
+                    throw new RuntimeException("unknown exception");
+                } else if (!datum.getId().equals("drop")) {
+                String msg = new String(datum.getValue());
+                String[] strs = msg.split(",");
+                BatchResponse batchResponse = new BatchResponse(datum.getId());
+                for (String str : strs) {
+                    batchResponse.append(new Message(str.getBytes()));
+                }
+                batchResponses.append(batchResponse);
+                }
+            }
+            return batchResponses;
         }
     }
 }
