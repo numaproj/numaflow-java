@@ -3,7 +3,7 @@ package io.numaproj.numaflow.batchmapper;
 
 /**
  * An iterator over a collection of {@link Datum} elements.
- * Passed to {@link BatchMapper#processMessage(DatumIterator)} (DatumIterator)} method.
+ * Passed to {@link BatchMapper#processMessage(DatumIterator)} method.
  */
 public interface DatumIterator {
 
