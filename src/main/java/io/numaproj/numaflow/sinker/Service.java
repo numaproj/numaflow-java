@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,9 +33,11 @@ class Service extends SinkGrpc.SinkImplBase {
 
 
     private final Sinker sinker;
+    private final CompletableFuture<Void> shutdownSignal;
 
-    public Service(Sinker sinker) {
+    public Service(Sinker sinker, CompletableFuture<Void> shutdownSignal) {
         this.sinker = sinker;
+        this.shutdownSignal = shutdownSignal;
     }
 
     /**
@@ -52,7 +56,7 @@ class Service extends SinkGrpc.SinkImplBase {
         Future<ResponseList> result = sinkTaskExecutor.submit(() -> this.sinker.processMessages(
                 datumStream));
 
-        return new StreamObserver<SinkOuterClass.SinkRequest>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(SinkOuterClass.SinkRequest d) {
                 try {
@@ -83,7 +87,8 @@ class Service extends SinkGrpc.SinkImplBase {
 
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
-                    onError(e);
+                    shutdownSignal.completeExceptionally(e);
+                    responseObserver.onError(Status.UNKNOWN.withDescription(e.getMessage()).asException());
                 }
                 responseObserver.onNext(response);
                 responseObserver.onCompleted();
