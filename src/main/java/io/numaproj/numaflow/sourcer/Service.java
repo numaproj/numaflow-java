@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sourcer;
 
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
@@ -27,59 +28,87 @@ class Service extends SourceGrpc.SourceImplBase {
     /**
      * readFn is the endpoint for reading data from the sourcer.
      *
-     * @param request the request
      * @param responseObserver the response observer
      */
     @Override
-    public void readFn(
-            SourceOuterClass.ReadRequest request,
-            StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
-        if (this.sourcer == null) {
-            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
-                    getReadFnMethod(),
-                    responseObserver);
-            return;
-        }
-        OutputObserverImpl outputObserver = new OutputObserverImpl(responseObserver);
-        ReadRequestImpl readRequest = new ReadRequestImpl(
-                request.getRequest().getNumRecords(),
-                Duration.ofMillis(request.getRequest().getTimeoutInMs()));
-        this.sourcer.read(readRequest, outputObserver);
-        responseObserver.onCompleted();
+    public StreamObserver<SourceOuterClass.ReadRequest> readFn(final StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
+        return new StreamObserver<>() {
+            @Override
+            public void onNext(SourceOuterClass.ReadRequest request) {
+                ReadRequestImpl readRequest = new ReadRequestImpl(
+                        request.getRequest().getNumRecords(),
+                        Duration.ofMillis(request.getRequest().getTimeoutInMs()));
+
+                // Create an observer to write the response back to the client
+                OutputObserverImpl outputObserver = new OutputObserverImpl(responseObserver);
+
+                // invoke the sourcer's read method
+                sourcer.read(readRequest, outputObserver);
+
+                // once the read is done, send an EOT message to indicate the client
+                // that the end of batch has been reached
+                SourceOuterClass.ReadResponse.Status status = SourceOuterClass.ReadResponse.Status
+                        .newBuilder()
+                        .setEot(true)
+                        .setCode(SourceOuterClass.ReadResponse.Status.Code.SUCCESS)
+                        .build();
+
+                SourceOuterClass.ReadResponse response = SourceOuterClass.ReadResponse.newBuilder()
+                        .setStatus(status)
+                        .build();
+
+                responseObserver.onNext(response);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                responseObserver.onError(Status.UNKNOWN.withDescription(t.getMessage()).asException());            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted();
+            }
+        };
     }
 
     /**
      * ackFn is the endpoint for acknowledging data from the sourcer.
      *
-     * @param request the request
      * @param responseObserver the response observer
      */
     @Override
-    public void ackFn(
-            SourceOuterClass.AckRequest request,
-            StreamObserver<SourceOuterClass.AckResponse> responseObserver) {
+    public StreamObserver<SourceOuterClass.AckRequest> ackFn(final StreamObserver<SourceOuterClass.AckResponse> responseObserver) {
+        return new StreamObserver<>() {
+            @Override
+            public void onNext(SourceOuterClass.AckRequest request) {
+                SourceOuterClass.Offset offset = request.getRequest().getOffset();
 
-        if (this.sourcer == null) {
-            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
-                    getAckFnMethod(),
-                    responseObserver);
-            return;
-        }
+                AckRequestImpl ackRequest = new AckRequestImpl(new Offset(
+                        offset.toByteArray(),
+                        offset.getPartitionId()));
 
-        List<Offset> offsets = new ArrayList<>(request.getRequest().getOffsetsCount());
-        for (SourceOuterClass.Offset offset : request.getRequest().getOffsetsList()) {
-            offsets.add(new Offset(offset.getOffset().toByteArray(), offset.getPartitionId()));
-        }
+                // invoke the sourcer's ack method
+                sourcer.ack(ackRequest);
+            }
 
-        AckRequestImpl ackRequest = new AckRequestImpl(offsets);
-        this.sourcer.ack(ackRequest);
+            @Override
+            public void onError(Throwable t) {
+                responseObserver.onError(t);
+            }
 
-        responseObserver.onNext(SourceOuterClass.AckResponse
-                .newBuilder()
-                .setResult(SourceOuterClass.AckResponse.Result.newBuilder().setSuccess(
-                        Empty.newBuilder().build()))
-                .build());
-        responseObserver.onCompleted();
+            @Override
+            public void onCompleted() {
+                // once all the acks are done, send an ack response to the client
+                SourceOuterClass.AckResponse response = SourceOuterClass.AckResponse
+                        .newBuilder()
+                        .setResult(SourceOuterClass.AckResponse.Result.newBuilder().setSuccess(
+                                Empty.newBuilder().build()))
+                        .build();
+
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            }
+        };
     }
 
     /**

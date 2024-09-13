@@ -9,10 +9,10 @@ import java.util.List;
  */
 @AllArgsConstructor
 class AckRequestImpl implements AckRequest {
-    private final List<Offset> offsets;
+    private final Offset offset;
 
     @Override
-    public List<Offset> getOffsets() {
-        return this.offsets;
+    public Offset getOffset() {
+        return this.offset;
     }
 }
