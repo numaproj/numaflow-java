@@ -165,7 +165,8 @@ public class SinkerTestKit {
                                 .build() : Timestamp.newBuilder()
                                 .setSeconds(datum.getWatermark().getEpochSecond())
                                 .setNanos(datum.getWatermark().getNano()).build())
-                        .putAllHeaders(datum.getHeaders() == null ? new HashMap<>() : datum.getHeaders())
+                        .putAllHeaders(
+                                datum.getHeaders() == null ? new HashMap<>() : datum.getHeaders())
                         .build();
                 requestObserver.onNext(request);
             }

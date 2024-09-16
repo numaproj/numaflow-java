@@ -2,8 +2,6 @@ package io.numaproj.numaflow.sourcer;
 
 import lombok.AllArgsConstructor;
 
-import java.util.List;
-
 /**
  * AckRequestImpl is the implementation of AckRequest.
  */

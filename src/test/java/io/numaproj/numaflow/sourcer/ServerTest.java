@@ -8,7 +8,6 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -78,15 +77,23 @@ public class ServerTest {
 
         List<SourceOuterClass.AckRequest> ackRequests = new ArrayList<>();
 
-        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver  = stub.readFn(new StreamObserver<SourceOuterClass.ReadResponse>() {
+        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<SourceOuterClass.ReadResponse>() {
             int count = 0;
 
             @Override
             public void onNext(SourceOuterClass.ReadResponse readResponse) {
                 count++;
                 SourceOuterClass.Offset offset = readResponse.getResult().getOffset();
-                SourceOuterClass.AckRequest.Request ackRequest = SourceOuterClass.AckRequest.newBuilder().getRequest().toBuilder().setOffset(offset).build();
-                ackRequests.add(SourceOuterClass.AckRequest.newBuilder().setRequest(ackRequest).build());
+                SourceOuterClass.AckRequest.Request ackRequest = SourceOuterClass.AckRequest
+                        .newBuilder()
+                        .getRequest()
+                        .toBuilder()
+                        .setOffset(offset)
+                        .build();
+                ackRequests.add(SourceOuterClass.AckRequest
+                        .newBuilder()
+                        .setRequest(ackRequest)
+                        .build());
             }
 
             @Override
@@ -105,14 +112,19 @@ public class ServerTest {
 
         StreamObserver<SourceOuterClass.AckRequest> ackRequestObserver = stub.ackFn(new StreamObserver<SourceOuterClass.AckResponse>() {
             @Override
-            public void onNext(SourceOuterClass.AckResponse ackResponse) {}
+            public void onNext(SourceOuterClass.AckResponse ackResponse) {
+            }
 
             @Override
-            public void onError(Throwable throwable) {}
+            public void onError(Throwable throwable) {
+            }
 
             @Override
-            public void onCompleted() {}
+            public void onCompleted() {
+            }
         });
+
+        ackRequests.forEach(ackRequestObserver::onNext);
 
         // get pending messages
         stub.pendingFn(Empty.newBuilder().build(), new StreamObserver<>() {
@@ -191,7 +203,8 @@ public class ServerTest {
 
         @Override
         public void ack(AckRequest request) {
-            yetToBeAcked.remove(ByteBuffer.wrap(request.getOffset().getValue()).getInt());
+            Integer offset = ByteBuffer.wrap(request.getOffset().getValue()).getInt();
+            yetToBeAcked.remove(offset);
         }
 
         @Override

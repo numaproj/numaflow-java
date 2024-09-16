@@ -165,9 +165,12 @@ public class SourcerTestKit {
          */
         public void sendAckRequest(AckRequest request) throws Exception {
             CompletableFuture<SourceOuterClass.AckResponse> future = new CompletableFuture<>();
-            SourceOuterClass.AckRequest.Request.Builder builder = SourceOuterClass.AckRequest.Request.newBuilder()
+            SourceOuterClass.AckRequest.Request.Builder builder = SourceOuterClass.AckRequest.Request
+                    .newBuilder()
                     .setOffset(SourceOuterClass.Offset.newBuilder()
-                            .setOffset(com.google.protobuf.ByteString.copyFrom(request.getOffset().getValue()))
+                            .setOffset(com.google.protobuf.ByteString.copyFrom(request
+                                    .getOffset()
+                                    .getValue()))
                             .setPartitionId(request.getOffset().getPartitionId())
                             .build());
 
@@ -175,25 +178,26 @@ public class SourcerTestKit {
                     .setRequest(builder.build())
                     .build();
 
-            StreamObserver<SourceOuterClass.AckRequest> ackRequestStreamObserver = sourceStub.ackFn(new StreamObserver<>() {
-                @Override
-                public void onNext(SourceOuterClass.AckResponse value) {
-                    future.complete(value);
-                }
+            StreamObserver<SourceOuterClass.AckRequest> ackRequestStreamObserver = sourceStub.ackFn(
+                    new StreamObserver<>() {
+                        @Override
+                        public void onNext(SourceOuterClass.AckResponse value) {
+                            future.complete(value);
+                        }
 
-                @Override
-                public void onError(Throwable t) {
-                    future.completeExceptionally(t);
-                }
+                        @Override
+                        public void onError(Throwable t) {
+                            future.completeExceptionally(t);
+                        }
 
-                @Override
-                public void onCompleted() {
-                    if (!future.isDone()) {
-                        future.completeExceptionally(new RuntimeException(
-                                "Server completed without a response"));
-                    }
-                }
-            });
+                        @Override
+                        public void onCompleted() {
+                            if (!future.isDone()) {
+                                future.completeExceptionally(new RuntimeException(
+                                        "Server completed without a response"));
+                            }
+                        }
+                    });
             ackRequestStreamObserver.onNext(grpcRequest);
             future.get();
         }

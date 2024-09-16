@@ -1,8 +1,10 @@
 package io.numaproj.numaflow.examples.source.simple;
 
+import com.google.common.primitives.Longs;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
 import io.numaproj.numaflow.sourcer.SourcerTestKit;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +12,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 
 
+//@Ignore // FIXME: once the test kit is implemented.
 public class SimpleSourceTest {
 
     @Test
@@ -38,9 +41,12 @@ public class SimpleSourceTest {
         for (Message message : testObserver.getMessages()) {
             offsets.add(message.getOffset());
         }
-        SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
-                .offsets(offsets).build();
-        simpleSource.ack(ackRequest);
+
+        for (Offset offset : offsets) {
+            SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
+                    .offset(offset).build();
+            simpleSource.ack(ackRequest);
+        }
 
         // Try reading 6 more messages
         // Since the previous batch got acked, the data source should allow us to read more messages
@@ -56,6 +62,15 @@ public class SimpleSourceTest {
         SimpleSource simpleSource = new SimpleSource();
         // simple source getPending always returns 0.
         Assertions.assertEquals(0, simpleSource.getPending());
+    }
+
+    @Test
+    public void testLong() {
+        Long l = 1L;
+        byte[] bytes = Longs.toByteArray(l);
+
+        Long x = Longs.fromByteArray(bytes);
+        Assertions.assertEquals(l, x);
     }
 
 }
