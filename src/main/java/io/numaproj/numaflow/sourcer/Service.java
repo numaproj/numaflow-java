@@ -32,6 +32,15 @@ class Service extends SourceGrpc.SourceImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(SourceOuterClass.ReadRequest request) {
+                if (request.hasHandshake() && request.getHandshake().getSot()) {
+                    responseObserver.onNext(SourceOuterClass.ReadResponse.newBuilder()
+                            .setHandshake(request.getHandshake())
+                            .setStatus(SourceOuterClass.ReadResponse.Status.newBuilder()
+                                    .setCode(SourceOuterClass.ReadResponse.Status.Code.SUCCESS)
+                                    .build())
+                            .build());
+                    return;
+                }
                 ReadRequestImpl readRequest = new ReadRequestImpl(
                         request.getRequest().getNumRecords(),
                         Duration.ofMillis(request.getRequest().getTimeoutInMs()));
