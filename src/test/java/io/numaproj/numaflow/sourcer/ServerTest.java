@@ -77,7 +77,7 @@ public class ServerTest {
 
         List<SourceOuterClass.AckRequest> ackRequests = new ArrayList<>();
 
-        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<SourceOuterClass.ReadResponse>() {
+        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<>() {
             int count = 0;
 
             @Override
@@ -110,7 +110,7 @@ public class ServerTest {
 
         readRequestObserver.onNext(request);
 
-        StreamObserver<SourceOuterClass.AckRequest> ackRequestObserver = stub.ackFn(new StreamObserver<SourceOuterClass.AckResponse>() {
+        StreamObserver<SourceOuterClass.AckRequest> ackRequestObserver = stub.ackFn(new StreamObserver<>() {
             @Override
             public void onNext(SourceOuterClass.AckResponse ackResponse) {
             }

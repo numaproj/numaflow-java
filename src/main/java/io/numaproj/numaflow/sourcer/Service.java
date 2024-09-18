@@ -90,6 +90,16 @@ class Service extends SourceGrpc.SourceImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(SourceOuterClass.AckRequest request) {
+                // if the request is a handshake, send a handshake response
+                if (request.hasHandshake() && request.getHandshake().getSot()) {
+                    responseObserver.onNext(SourceOuterClass.AckResponse.newBuilder()
+                            .setHandshake(request.getHandshake())
+                            .setResult(SourceOuterClass.AckResponse.Result.newBuilder().setSuccess(
+                                    Empty.newBuilder().build()))
+                            .build());
+                    return;
+                }
+
                 SourceOuterClass.Offset offset = request.getRequest().getOffset();
 
                 AckRequestImpl ackRequest = new AckRequestImpl(new Offset(
@@ -97,7 +107,17 @@ class Service extends SourceGrpc.SourceImplBase {
                         offset.getPartitionId()));
 
                 // invoke the sourcer's ack method
+
                 sourcer.ack(ackRequest);
+
+                // send an ack response to the client after acking the message
+                SourceOuterClass.AckResponse response = SourceOuterClass.AckResponse
+                        .newBuilder()
+                        .setResult(SourceOuterClass.AckResponse.Result.newBuilder().setSuccess(
+                                Empty.newBuilder().build()))
+                        .build();
+
+                responseObserver.onNext(response);
             }
 
             @Override
@@ -107,14 +127,6 @@ class Service extends SourceGrpc.SourceImplBase {
 
             @Override
             public void onCompleted() {
-                // once all the acks are done, send an ack response to the client
-                SourceOuterClass.AckResponse response = SourceOuterClass.AckResponse
-                        .newBuilder()
-                        .setResult(SourceOuterClass.AckResponse.Result.newBuilder().setSuccess(
-                                Empty.newBuilder().build()))
-                        .build();
-
-                responseObserver.onNext(response);
                 responseObserver.onCompleted();
             }
         };
