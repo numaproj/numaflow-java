@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 
 
-//@Ignore // FIXME: once the test kit is implemented.
 public class SimpleSourceTest {
 
     @Test

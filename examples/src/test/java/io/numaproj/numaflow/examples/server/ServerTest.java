@@ -203,7 +203,7 @@ public class ServerTest {
         // we can add the logic to verify if the messages were
         // successfully written to the sink(could be a file, database, etc.)
     }
-
+// FIXME: once tester kit changes are done for bidirectional streaming source
 //    @Ignore
 //    @Test
 //    @Order(5)
