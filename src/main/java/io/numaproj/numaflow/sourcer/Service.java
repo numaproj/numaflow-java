@@ -32,6 +32,7 @@ class Service extends SourceGrpc.SourceImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(SourceOuterClass.ReadRequest request) {
+                // if the request is a handshake, send handshake response.
                 if (request.hasHandshake() && request.getHandshake().getSot()) {
                     responseObserver.onNext(SourceOuterClass.ReadResponse.newBuilder()
                             .setHandshake(request.getHandshake())
