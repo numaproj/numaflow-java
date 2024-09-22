@@ -1,10 +1,8 @@
 package io.numaproj.numaflow.examples.source.simple;
 
-import com.google.common.primitives.Longs;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.Offset;
 import io.numaproj.numaflow.sourcer.SourcerTestKit;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -59,18 +57,8 @@ public class SimpleSourceTest {
     @Test
     public void testPending() {
         SimpleSource simpleSource = new SimpleSource();
-        // simple source getPending always returns 0.
+        // since we haven't read any messages, the pending should be 0
         Assertions.assertEquals(0, simpleSource.getPending());
     }
-
-    @Test
-    public void testLong() {
-        Long l = 1L;
-        byte[] bytes = Longs.toByteArray(l);
-
-        Long x = Longs.fromByteArray(bytes);
-        Assertions.assertEquals(l, x);
-    }
-
 }
 

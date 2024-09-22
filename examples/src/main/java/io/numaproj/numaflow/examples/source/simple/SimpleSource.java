@@ -79,7 +79,7 @@ public class SimpleSource extends Sourcer {
 
     @Override
     public long getPending() {
-        // pending messages will be zero for a simple source
+        // number of messages not acknowledged yet
         return messages.size();
     }
 

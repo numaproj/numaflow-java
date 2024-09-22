@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class ServerTest {
@@ -65,6 +66,11 @@ public class ServerTest {
     public void TestSourcer() {
         var stub = SourceGrpc.newStub(inProcessChannel);
 
+        // Create a handshake request
+        SourceOuterClass.ReadRequest handshakeRequest = SourceOuterClass.ReadRequest.newBuilder()
+                .setHandshake(SourceOuterClass.Handshake.newBuilder().setSot(true).build())
+                .build();
+
         // Test readFn, source has 10 messages
         // we read 5 messages, ack them, then read another 5 messages
         SourceOuterClass.ReadRequest request = SourceOuterClass.ReadRequest.newBuilder()
@@ -74,14 +80,23 @@ public class ServerTest {
                         .setTimeoutInMs(1000)
                         .build())
                 .build();
-
         List<SourceOuterClass.AckRequest> ackRequests = new ArrayList<>();
 
         StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<>() {
             int count = 0;
-
+            boolean handshake = false;
+            boolean eot = false;
             @Override
             public void onNext(SourceOuterClass.ReadResponse readResponse) {
+                // Handle handshake response
+                if (readResponse.hasHandshake() && readResponse.getHandshake().getSot()) {
+                    handshake = true;
+                    return;
+                }
+                if (readResponse.getStatus().getEot()) {
+                    eot = true;
+                    return;
+                }
                 count++;
                 SourceOuterClass.Offset offset = readResponse.getResult().getOffset();
                 SourceOuterClass.AckRequest.Request ackRequest = SourceOuterClass.AckRequest
@@ -103,16 +118,31 @@ public class ServerTest {
 
             @Override
             public void onCompleted() {
-                // we should have read 10 messages and 2 eot messages
-                assertEquals(12, count);
+                // we should have read 10 messages
+                assertEquals(10, count);
+                assertTrue(handshake);
+                assertTrue(eot);
             }
         });
 
+        // Send handshake request
+        readRequestObserver.onNext(handshakeRequest);
+
+        // Send other read requests
         readRequestObserver.onNext(request);
 
+        List<SourceOuterClass.AckResponse> ackResponses = new ArrayList<>();
         StreamObserver<SourceOuterClass.AckRequest> ackRequestObserver = stub.ackFn(new StreamObserver<>() {
+            boolean handshake = false;
+            int count = 0;
             @Override
             public void onNext(SourceOuterClass.AckResponse ackResponse) {
+                if (ackResponse.hasHandshake() && ackResponse.getHandshake().getSot()) {
+                    handshake = true;
+                    return;
+                }
+                count++;
+                ackResponses.add(ackResponse);
             }
 
             @Override
@@ -121,9 +151,17 @@ public class ServerTest {
 
             @Override
             public void onCompleted() {
+                assertEquals(5, count);
+                assertTrue(handshake);
             }
         });
 
+        // Send handshake request
+        ackRequestObserver.onNext(SourceOuterClass.AckRequest.newBuilder()
+                .setHandshake(SourceOuterClass.Handshake.newBuilder().setSot(true).build())
+                .build());
+
+        // Send other ack requests
         ackRequests.forEach(ackRequestObserver::onNext);
 
         // get pending messages

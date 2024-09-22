@@ -6,7 +6,7 @@ package io.numaproj.numaflow.sourcer;
  */
 public interface AckRequest {
     /**
-     * @return the offsets to be acknowledged
+     * @return the offset to be acknowledged
      */
     Offset getOffset();
 }
