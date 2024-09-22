@@ -124,33 +124,35 @@ public class SourcerTestKit {
                     .build();
 
             CompletableFuture<Boolean> future = new CompletableFuture<>();
-            sourceStub.readFn(grpcRequest, new StreamObserver<>() {
-                @Override
-                public void onNext(SourceOuterClass.ReadResponse value) {
-                    Message message = new Message(
-                            value.getResult().getPayload().toByteArray(),
-                            new Offset(
-                                    value.getResult().getOffset().getOffset().toByteArray(),
-                                    value.getResult().getOffset().getPartitionId()),
-                            Instant.ofEpochSecond(
-                                    value.getResult().getEventTime().getSeconds(),
-                                    value.getResult().getEventTime().getNanos()
-                            ),
-                            value.getResult().getKeysList().toArray(new String[0]),
-                            value.getResult().getHeadersMap());
-                    observer.send(message);
-                }
+            StreamObserver<SourceOuterClass.ReadRequest> readRequestStreamObserver = sourceStub.readFn(
+                    new StreamObserver<>() {
+                        @Override
+                        public void onNext(SourceOuterClass.ReadResponse value) {
+                            Message message = new Message(
+                                    value.getResult().getPayload().toByteArray(),
+                                    new Offset(
+                                            value.getResult().getOffset().getOffset().toByteArray(),
+                                            value.getResult().getOffset().getPartitionId()),
+                                    Instant.ofEpochSecond(
+                                            value.getResult().getEventTime().getSeconds(),
+                                            value.getResult().getEventTime().getNanos()
+                                    ),
+                                    value.getResult().getKeysList().toArray(new String[0]),
+                                    value.getResult().getHeadersMap());
+                            observer.send(message);
+                        }
 
-                @Override
-                public void onError(Throwable t) {
-                    future.completeExceptionally(t);
-                }
+                        @Override
+                        public void onError(Throwable t) {
+                            future.completeExceptionally(t);
+                        }
 
-                @Override
-                public void onCompleted() {
-                    future.complete(true);
-                }
-            });
+                        @Override
+                        public void onCompleted() {
+                            future.complete(true);
+                        }
+                    });
+            readRequestStreamObserver.onNext(grpcRequest);
             future.get();
         }
 
@@ -163,37 +165,40 @@ public class SourcerTestKit {
          */
         public void sendAckRequest(AckRequest request) throws Exception {
             CompletableFuture<SourceOuterClass.AckResponse> future = new CompletableFuture<>();
-            SourceOuterClass.AckRequest.Request.Builder builder = SourceOuterClass.AckRequest.Request.newBuilder();
-            for (Offset offset : request.getOffsets()) {
-                builder.addOffsets(SourceOuterClass.Offset.newBuilder()
-                        .setOffset(com.google.protobuf.ByteString.copyFrom(offset.getValue()))
-                        .setPartitionId(offset.getPartitionId())
-                        .build());
-            }
+            SourceOuterClass.AckRequest.Request.Builder builder = SourceOuterClass.AckRequest.Request
+                    .newBuilder()
+                    .setOffset(SourceOuterClass.Offset.newBuilder()
+                            .setOffset(com.google.protobuf.ByteString.copyFrom(request
+                                    .getOffset()
+                                    .getValue()))
+                            .setPartitionId(request.getOffset().getPartitionId())
+                            .build());
 
             SourceOuterClass.AckRequest grpcRequest = SourceOuterClass.AckRequest.newBuilder()
                     .setRequest(builder.build())
                     .build();
 
-            sourceStub.ackFn(grpcRequest, new StreamObserver<>() {
-                @Override
-                public void onNext(SourceOuterClass.AckResponse value) {
-                    future.complete(value);
-                }
+            StreamObserver<SourceOuterClass.AckRequest> ackRequestStreamObserver = sourceStub.ackFn(
+                    new StreamObserver<>() {
+                        @Override
+                        public void onNext(SourceOuterClass.AckResponse value) {
+                            future.complete(value);
+                        }
 
-                @Override
-                public void onError(Throwable t) {
-                    future.completeExceptionally(t);
-                }
+                        @Override
+                        public void onError(Throwable t) {
+                            future.completeExceptionally(t);
+                        }
 
-                @Override
-                public void onCompleted() {
-                    if (!future.isDone()) {
-                        future.completeExceptionally(new RuntimeException(
-                                "Server completed without a response"));
-                    }
-                }
-            });
+                        @Override
+                        public void onCompleted() {
+                            if (!future.isDone()) {
+                                future.completeExceptionally(new RuntimeException(
+                                        "Server completed without a response"));
+                            }
+                        }
+                    });
+            ackRequestStreamObserver.onNext(grpcRequest);
             future.get();
         }
 
@@ -283,7 +288,7 @@ public class SourcerTestKit {
     @Setter
     @Builder
     public static class TestAckRequest implements AckRequest {
-        List<Offset> offsets;
+        Offset offset;
     }
 
     /**

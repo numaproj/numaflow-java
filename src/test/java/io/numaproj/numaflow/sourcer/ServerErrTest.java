@@ -10,6 +10,7 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
@@ -102,15 +103,37 @@ public class ServerErrTest {
 
     @Test
     public void TestSourcerErr() {
+        var stub = SourceGrpc.newStub(inProcessChannel);
+
+        // Test readFn, source has 10 messages
+        // we read 5 messages, ack them, then read another 5 messages
         SourceOuterClass.ReadRequest request = SourceOuterClass.ReadRequest.newBuilder()
+                .setRequest(SourceOuterClass.ReadRequest.Request
+                        .newBuilder()
+                        .setNumRecords(5)
+                        .setTimeoutInMs(1000)
+                        .build())
                 .build();
 
-        var stub = SourceGrpc.newBlockingStub(inProcessChannel);
-        try {
-            stub.readFn(request);
-        } catch (Exception e) {
-            assertEquals("UNKNOWN: unknown exception", e.getMessage());
-        }
+        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<SourceOuterClass.ReadResponse>() {
+            @Override
+            public void onNext(SourceOuterClass.ReadResponse readResponse) {
+                // Handle onNext
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                assertEquals("UNKNOWN: Application error processing RPC", throwable.getMessage());
+            }
+
+            @Override
+            public void onCompleted() {
+                // Handle onCompleted
+            }
+        });
+
+        readRequestObserver.onNext(request);
+        readRequestObserver.onCompleted();
     }
 
     private static class TestSourcerErr extends Sourcer {

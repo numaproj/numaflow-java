@@ -38,9 +38,12 @@ public class SimpleSourceTest {
         for (Message message : testObserver.getMessages()) {
             offsets.add(message.getOffset());
         }
-        SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
-                .offsets(offsets).build();
-        simpleSource.ack(ackRequest);
+
+        for (Offset offset : offsets) {
+            SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
+                    .offset(offset).build();
+            simpleSource.ack(ackRequest);
+        }
 
         // Try reading 6 more messages
         // Since the previous batch got acked, the data source should allow us to read more messages
@@ -54,9 +57,8 @@ public class SimpleSourceTest {
     @Test
     public void testPending() {
         SimpleSource simpleSource = new SimpleSource();
-        // simple source getPending always returns 0.
+        // since we haven't read any messages, the pending should be 0
         Assertions.assertEquals(0, simpleSource.getPending());
     }
-
 }
 

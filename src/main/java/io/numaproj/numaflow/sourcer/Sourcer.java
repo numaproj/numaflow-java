@@ -35,7 +35,7 @@ public abstract class Sourcer {
     /**
      * method will be used for acknowledging messages from source.
      *
-     * @param request the request containing the offsets to be acknowledged
+     * @param request the request contains the offset to be acknowledged
      */
     public abstract void ack(AckRequest request);
 

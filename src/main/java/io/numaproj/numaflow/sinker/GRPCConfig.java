@@ -39,7 +39,8 @@ public class GRPCConfig {
         return GRPCConfig.newBuilder()
                 .infoFilePath(infoFilePath)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
-                .isLocal(containerType == null) // if ENV_UD_CONTAINER_TYPE is not set, then we are not running using numaflow
+                .isLocal(containerType
+                        == null) // if ENV_UD_CONTAINER_TYPE is not set, then we are not running using numaflow
                 .socketPath(socketPath)
                 .build();
     }

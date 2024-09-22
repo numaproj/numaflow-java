@@ -21,6 +21,7 @@ public class BatchResponses {
      * Appends a BatchResponse to the list of batchResponses.
      *
      * @param batchResponse the BatchResponse to be added
+     *
      * @return the current BatchResponses object
      */
     public BatchResponses append(BatchResponse batchResponse) {
