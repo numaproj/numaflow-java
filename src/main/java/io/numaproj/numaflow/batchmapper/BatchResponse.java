@@ -27,6 +27,7 @@ public class BatchResponse {
      * Appends a Message to the batch.
      *
      * @param msg the Message to be added to the batch
+     *
      * @return the current BatchResponse instance for method chaining
      */
     public BatchResponse append(Message msg) {

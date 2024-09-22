@@ -67,9 +67,9 @@ public class ServerTest {
                 .newStub(inProcessChannel)
                 .batchMapFn(outputStreamObserver);
 
-        for (int i =1; i <= 10; i++) {
+        for (int i = 1; i <= 10; i++) {
             String uuid = Integer.toString(i);
-            String message = i + "," + String.valueOf(i+10);
+            String message = i + "," + (i + 10);
             Batchmap.BatchMapRequest request = Batchmap.BatchMapRequest.newBuilder()
                     .setValue(ByteString.copyFromUtf8(message))
                     .addKeys(key)
@@ -80,11 +80,11 @@ public class ServerTest {
         }
 
         inputStreamObserver.onCompleted();
-        while (outputStreamObserver.resultDatum.get().size() != 10);
+        while (outputStreamObserver.resultDatum.get().size() != 10) ;
         List<Batchmap.BatchMapResponse> result = outputStreamObserver.resultDatum.get();
         assertEquals(10, result.size());
-        for (int i=0; i < 10; i++) {
-            assertEquals(result.get(i).getId(),String.valueOf(i+1));
+        for (int i = 0; i < 10; i++) {
+            assertEquals(result.get(i).getId(), String.valueOf(i + 1));
         }
     }
 

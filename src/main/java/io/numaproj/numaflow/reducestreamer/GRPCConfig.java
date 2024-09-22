@@ -29,7 +29,8 @@ public class GRPCConfig {
         return GRPCConfig.newBuilder()
                 .infoFilePath(Constants.DEFAULT_SERVER_INFO_FILE_PATH)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
-                .isLocal(System.getenv("NUMAFLOW_POD") == null) // if NUMAFLOW_POD is not set, then we are not running using numaflow
+                .isLocal(System.getenv("NUMAFLOW_POD")
+                        == null) // if NUMAFLOW_POD is not set, then we are not running using numaflow
                 .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }
 }

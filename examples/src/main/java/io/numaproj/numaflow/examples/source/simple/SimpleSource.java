@@ -8,6 +8,7 @@ import io.numaproj.numaflow.sourcer.OutputObserver;
 import io.numaproj.numaflow.sourcer.ReadRequest;
 import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.Sourcer;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * acknowledges them when ack is called.
  */
 
+@Slf4j
 public class SimpleSource extends Sourcer {
     private final Map<Long, Boolean> messages = new ConcurrentHashMap<>();
     private long readIndex = 0;
@@ -70,16 +72,15 @@ public class SimpleSource extends Sourcer {
 
     @Override
     public void ack(AckRequest request) {
+        Long offset = Longs.fromByteArray(request.getOffset().getValue());
         // remove the acknowledged messages from the map
-        for (Offset offset : request.getOffsets()) {
-            messages.remove(Longs.fromByteArray(offset.getValue()));
-        }
+        messages.remove(offset);
     }
 
     @Override
     public long getPending() {
-        // pending messages will be zero for a simple source
-        return 0;
+        // number of messages not acknowledged yet
+        return messages.size();
     }
 
     @Override

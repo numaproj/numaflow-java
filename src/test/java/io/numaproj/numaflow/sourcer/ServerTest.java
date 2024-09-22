@@ -4,6 +4,7 @@ import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
@@ -21,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class ServerTest {
@@ -62,7 +64,12 @@ public class ServerTest {
 
     @Test
     public void TestSourcer() {
-        var stub = SourceGrpc.newBlockingStub(inProcessChannel);
+        var stub = SourceGrpc.newStub(inProcessChannel);
+
+        // Create a handshake request
+        SourceOuterClass.ReadRequest handshakeRequest = SourceOuterClass.ReadRequest.newBuilder()
+                .setHandshake(SourceOuterClass.Handshake.newBuilder().setSot(true).build())
+                .build();
 
         // Test readFn, source has 10 messages
         // we read 5 messages, ack them, then read another 5 messages
@@ -73,62 +80,126 @@ public class ServerTest {
                         .setTimeoutInMs(1000)
                         .build())
                 .build();
+        List<SourceOuterClass.AckRequest> ackRequests = new ArrayList<>();
 
-        var response = stub.readFn(request);
-
-        SourceOuterClass.AckRequest.Builder ackRequestBuilder = SourceOuterClass.AckRequest.newBuilder();
-        int count = 0;
-        while (response.hasNext()) {
-            var message = response.next();
-            count++;
-            SourceOuterClass.Offset offset = message.getResult().getOffset();
-            ackRequestBuilder.getRequest().toBuilder().addOffsets(offset);
-        }
-
-        // we should have read 5 messages
-        assertEquals(5, count);
-
-        // since total messages is 10, we should have 5 pending
-        var pending = stub.pendingFn(Empty.newBuilder().build());
-        assertEquals(5, pending.getResult().getCount());
-
-        var partitions = stub.partitionsFn(Empty.newBuilder().build());
-        assertEquals(1, partitions.getResult().getPartitionsCount());
-        assertEquals(0, partitions.getResult().getPartitions(0));
-
-        // ack the 5 messages
-        var ackResponse = stub.ackFn(ackRequestBuilder.build());
-        assertEquals(Empty.newBuilder().build(), ackResponse.getResult().getSuccess());
-
-        // read another 5 messages
-        request = SourceOuterClass.ReadRequest.newBuilder()
-                .setRequest(SourceOuterClass.ReadRequest.Request
+        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<>() {
+            int count = 0;
+            boolean handshake = false;
+            boolean eot = false;
+            @Override
+            public void onNext(SourceOuterClass.ReadResponse readResponse) {
+                // Handle handshake response
+                if (readResponse.hasHandshake() && readResponse.getHandshake().getSot()) {
+                    handshake = true;
+                    return;
+                }
+                if (readResponse.getStatus().getEot()) {
+                    eot = true;
+                    return;
+                }
+                count++;
+                SourceOuterClass.Offset offset = readResponse.getResult().getOffset();
+                SourceOuterClass.AckRequest.Request ackRequest = SourceOuterClass.AckRequest
                         .newBuilder()
-                        .setNumRecords(5)
-                        .setTimeoutInMs(1000)
-                        .build())
-                .build();
+                        .getRequest()
+                        .toBuilder()
+                        .setOffset(offset)
+                        .build();
+                ackRequests.add(SourceOuterClass.AckRequest
+                        .newBuilder()
+                        .setRequest(ackRequest)
+                        .build());
+            }
 
-        response = stub.readFn(request);
+            @Override
+            public void onError(Throwable throwable) {
 
-        ackRequestBuilder = SourceOuterClass.AckRequest.newBuilder();
-        while (response.hasNext()) {
-            var message = response.next();
-            count++;
-            SourceOuterClass.Offset offset = message.getResult().getOffset();
-            ackRequestBuilder.getRequest().toBuilder().addOffsets(offset);
-        }
+            }
 
-        // we should have read 5 messages
-        assertEquals(10, count);
+            @Override
+            public void onCompleted() {
+                // we should have read 10 messages
+                assertEquals(10, count);
+                assertTrue(handshake);
+                assertTrue(eot);
+            }
+        });
 
-        // since total messages is 10, we should have 0 pending
-        pending = stub.pendingFn(Empty.newBuilder().build());
-        assertEquals(0, pending.getResult().getCount());
+        // Send handshake request
+        readRequestObserver.onNext(handshakeRequest);
 
-        // ack the 5 messages
-        ackResponse = stub.ackFn(ackRequestBuilder.build());
-        assertEquals(Empty.newBuilder().build(), ackResponse.getResult().getSuccess());
+        // Send other read requests
+        readRequestObserver.onNext(request);
+
+        List<SourceOuterClass.AckResponse> ackResponses = new ArrayList<>();
+        StreamObserver<SourceOuterClass.AckRequest> ackRequestObserver = stub.ackFn(new StreamObserver<>() {
+            boolean handshake = false;
+            int count = 0;
+            @Override
+            public void onNext(SourceOuterClass.AckResponse ackResponse) {
+                if (ackResponse.hasHandshake() && ackResponse.getHandshake().getSot()) {
+                    handshake = true;
+                    return;
+                }
+                count++;
+                ackResponses.add(ackResponse);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onCompleted() {
+                assertEquals(5, count);
+                assertTrue(handshake);
+            }
+        });
+
+        // Send handshake request
+        ackRequestObserver.onNext(SourceOuterClass.AckRequest.newBuilder()
+                .setHandshake(SourceOuterClass.Handshake.newBuilder().setSot(true).build())
+                .build());
+
+        // Send other ack requests
+        ackRequests.forEach(ackRequestObserver::onNext);
+
+        // get pending messages
+        stub.pendingFn(Empty.newBuilder().build(), new StreamObserver<>() {
+            @Override
+            public void onNext(SourceOuterClass.PendingResponse pendingResponse) {
+                assertEquals(5, pendingResponse.getResult().getCount());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        });
+
+        readRequestObserver.onNext(request);
+
+        // get partitions
+        stub.partitionsFn(Empty.newBuilder().build(), new StreamObserver<>() {
+            @Override
+            public void onNext(SourceOuterClass.PartitionsResponse partitionsResponse) {
+                assertEquals(1, partitionsResponse.getResult().getPartitionsCount());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        });
+
+        readRequestObserver.onCompleted();
+        ackRequestObserver.onCompleted();
     }
 
     private static class TestSourcer extends Sourcer {
@@ -170,9 +241,8 @@ public class ServerTest {
 
         @Override
         public void ack(AckRequest request) {
-            for (Offset offset : request.getOffsets()) {
-                yetToBeAcked.remove(ByteBuffer.wrap(offset.getValue()).getInt());
-            }
+            Integer offset = ByteBuffer.wrap(request.getOffset().getValue()).getInt();
+            yetToBeAcked.remove(offset);
         }
 
         @Override

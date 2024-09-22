@@ -5,9 +5,7 @@ public class Constants {
     static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/sideinput.sock";
 
     static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/sideinput-server-info";
-    static int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
-
-    static int DEFAULT_PORT = 50051;
-
     static final String DEFAULT_HOST = "localhost";
+    static int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
+    static int DEFAULT_PORT = 50051;
 }

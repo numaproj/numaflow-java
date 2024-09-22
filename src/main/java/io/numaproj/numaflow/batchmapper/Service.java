@@ -63,7 +63,9 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
             public void onError(Throwable throwable) {
                 // We close the stream and let the sender retry the messages
                 log.error("Error Encountered in batchMap Stream", throwable);
-                var status = Status.UNKNOWN.withDescription(throwable.getMessage()).withCause(throwable);
+                var status = Status.UNKNOWN
+                        .withDescription(throwable.getMessage())
+                        .withCause(throwable);
                 responseObserver.onError(status.asException());
             }
 
@@ -79,7 +81,10 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
                             datumStream.getCount());
                     // Crash if the number of responses from the users don't match the input requests ignoring the EOF message
                     if (responses.getItems().size() != datumStream.getCount() - 1) {
-                        throw new RuntimeException("Number of results did not match expected " + (datumStream.getCount()-1) + " but got " + responses.getItems().size());
+                        throw new RuntimeException("Number of results did not match expected " + (
+                                datumStream.getCount() - 1) + " but got " + responses
+                                .getItems()
+                                .size());
                     }
                     buildAndStreamResponse(responses, responseObserver);
                 } catch (Exception e) {
@@ -90,7 +95,9 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
         };
     }
 
-    private void buildAndStreamResponse(BatchResponses responses, StreamObserver<Batchmap.BatchMapResponse> responseObserver) {
+    private void buildAndStreamResponse(
+            BatchResponses responses,
+            StreamObserver<Batchmap.BatchMapResponse> responseObserver) {
         responses.getItems().forEach(message -> {
             List<Batchmap.BatchMapResponse.Result> batchMapResponseResult = new ArrayList<>();
             message.getItems().forEach(res -> {

@@ -15,9 +15,9 @@ import io.numaproj.numaflow.sessionreducer.model.SessionReducer;
  */
 class SessionReducerActor extends AbstractActor {
     private final SessionReducer sessionReducer;
+    private final OutputStreamObserver outputStream;
     // the session window the actor is working on
     private Sessionreduce.KeyedWindow keyedWindow;
-    private final OutputStreamObserver outputStream;
     // when set to true, it means this session is already closed.
     private boolean isClosed = false;
 
