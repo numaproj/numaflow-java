@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum Language {
     GO("go"),
     PYTHON("python"),
-    JAVA("java");
+    JAVA("java"),
+    RUST("rust");
 
     private final String name;
 
