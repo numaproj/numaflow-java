@@ -7,10 +7,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * to form a contract between server and clients.
  */
 public enum Language {
-    GO("go"),
-    PYTHON("python"),
-    JAVA("java"),
-    RUST("rust");
+    JAVA("java");
 
     private final String name;
 
