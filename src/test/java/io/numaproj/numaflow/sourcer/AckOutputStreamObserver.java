@@ -1,25 +1,25 @@
-package io.numaproj.numaflow.sinker;
+package io.numaproj.numaflow.sourcer;
 
 
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.sink.v1.SinkOuterClass;
+import io.numaproj.numaflow.source.v1.SourceOuterClass;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class SinkOutputStreamObserver implements StreamObserver<SinkOuterClass.SinkResponse> {
-    private final List<SinkOuterClass.SinkResponse> sinkResponses = new ArrayList<>();
+public class AckOutputStreamObserver implements StreamObserver<SourceOuterClass.AckResponse> {
+    private final List<SourceOuterClass.AckResponse> ackResponses = new ArrayList<>();
     public AtomicReference<Boolean> completed = new AtomicReference<>(false);
     public Throwable t;
 
-    public List<SinkOuterClass.SinkResponse> getSinkResponse() {
-        return sinkResponses;
+    public List<SourceOuterClass.AckResponse> getSinkResponse() {
+        return ackResponses;
     }
 
     @Override
-    public void onNext(SinkOuterClass.SinkResponse datum) {
-        sinkResponses.add(datum);
+    public void onNext(SourceOuterClass.AckResponse datum) {
+        ackResponses.add(datum);
     }
 
     @Override

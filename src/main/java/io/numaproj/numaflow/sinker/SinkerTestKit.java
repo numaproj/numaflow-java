@@ -113,11 +113,13 @@ public class SinkerTestKit {
          * @return response from the server as a ResponseList
          */
         public ResponseList sendRequest(DatumIterator datumIterator) {
-            CompletableFuture<SinkOuterClass.SinkResponse> future = new CompletableFuture<>();
+            List<SinkOuterClass.SinkResponse> responses = new ArrayList<>();
+            CompletableFuture<List<SinkOuterClass.SinkResponse>> future = new CompletableFuture<>();
+
             StreamObserver<SinkOuterClass.SinkResponse> responseObserver = new StreamObserver<>() {
                 @Override
                 public void onNext(SinkOuterClass.SinkResponse response) {
-                    future.complete(response);
+                    responses.add(response);
                 }
 
                 @Override
@@ -127,16 +129,19 @@ public class SinkerTestKit {
 
                 @Override
                 public void onCompleted() {
-                    if (!future.isDone()) {
-                        future.completeExceptionally(new RuntimeException(
-                                "Server completed without a response"));
-                    }
+                    future.complete(responses);
                 }
             };
 
             StreamObserver<SinkOuterClass.SinkRequest> requestObserver = sinkStub.sinkFn(
                     responseObserver);
 
+            // send handshake request
+            requestObserver.onNext(SinkOuterClass.SinkRequest.newBuilder()
+                    .setHandshake(SinkOuterClass.Handshake.newBuilder().setSot(true).build())
+                    .build());
+
+            // send actual requests
             while (true) {
                 Datum datum = null;
                 try {
@@ -148,7 +153,8 @@ public class SinkerTestKit {
                 if (datum == null) {
                     break;
                 }
-                SinkOuterClass.SinkRequest request = SinkOuterClass.SinkRequest.newBuilder()
+                SinkOuterClass.SinkRequest.Request request = SinkOuterClass.SinkRequest.Request
+                        .newBuilder()
                         .addAllKeys(
                                 datum.getKeys()
                                         == null ? new ArrayList<>() : List.of(datum.getKeys()))
@@ -168,28 +174,39 @@ public class SinkerTestKit {
                         .putAllHeaders(
                                 datum.getHeaders() == null ? new HashMap<>() : datum.getHeaders())
                         .build();
-                requestObserver.onNext(request);
+                requestObserver.onNext(SinkOuterClass.SinkRequest
+                        .newBuilder()
+                        .setRequest(request)
+                        .build());
             }
+            // send end of transmission message
+            requestObserver.onNext(SinkOuterClass.SinkRequest.newBuilder().setStatus(
+                    SinkOuterClass.SinkRequest.Status.newBuilder().setEot(true)).build());
 
             requestObserver.onCompleted();
 
-            SinkOuterClass.SinkResponse response;
+            List<SinkOuterClass.SinkResponse> outputResponses;
             try {
-                response = future.get();
+                outputResponses = future.get();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
 
             ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
-            for (SinkOuterClass.SinkResponse.Result result : response.getResultsList()) {
-                if (result.getStatus() == SinkOuterClass.Status.SUCCESS) {
-                    responseListBuilder.addResponse(Response.responseOK(result.getId()));
-                } else if (result.getStatus() == SinkOuterClass.Status.FALLBACK) {
+            for (SinkOuterClass.SinkResponse result : outputResponses) {
+                if (result.getHandshake().getSot()) {
+                    continue;
+                }
+                if (result.getResult().getStatus() == SinkOuterClass.Status.SUCCESS) {
+                    responseListBuilder.addResponse(Response.responseOK(result
+                            .getResult()
+                            .getId()));
+                } else if (result.getResult().getStatus() == SinkOuterClass.Status.FALLBACK) {
                     responseListBuilder.addResponse(Response.responseFallback(
-                            result.getId()));
+                            result.getResult().getId()));
                 } else {
                     responseListBuilder.addResponse(Response.responseFailure(
-                            result.getId(), result.getErrMsg()));
+                            result.getResult().getId(), result.getResult().getErrMsg()));
                 }
             }
 

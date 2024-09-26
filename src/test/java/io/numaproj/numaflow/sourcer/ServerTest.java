@@ -86,6 +86,7 @@ public class ServerTest {
             int count = 0;
             boolean handshake = false;
             boolean eot = false;
+
             @Override
             public void onNext(SourceOuterClass.ReadResponse readResponse) {
                 // Handle handshake response
@@ -135,6 +136,7 @@ public class ServerTest {
         StreamObserver<SourceOuterClass.AckRequest> ackRequestObserver = stub.ackFn(new StreamObserver<>() {
             boolean handshake = false;
             int count = 0;
+
             @Override
             public void onNext(SourceOuterClass.AckResponse ackResponse) {
                 if (ackResponse.hasHandshake() && ackResponse.getHandshake().getSot()) {
