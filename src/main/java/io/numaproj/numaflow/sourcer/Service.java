@@ -31,12 +31,15 @@ class Service extends SourceGrpc.SourceImplBase {
     public StreamObserver<SourceOuterClass.ReadRequest> readFn(final StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
         return new StreamObserver<>() {
             private boolean handshakeDone = false;
+
             @Override
             public void onNext(SourceOuterClass.ReadRequest request) {
                 // make sure that the handshake is done before processing the read requests
                 if (!handshakeDone) {
-                    if (!request.getHandshake().getSot()) {
-                        responseObserver.onError(new Exception("Handshake request not received"));
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
                         return;
                     }
                     responseObserver.onNext(SourceOuterClass.ReadResponse.newBuilder()
@@ -94,12 +97,15 @@ class Service extends SourceGrpc.SourceImplBase {
     public StreamObserver<SourceOuterClass.AckRequest> ackFn(final StreamObserver<SourceOuterClass.AckResponse> responseObserver) {
         return new StreamObserver<>() {
             private boolean handshakeDone = false;
+
             @Override
             public void onNext(SourceOuterClass.AckRequest request) {
                 // make sure that the handshake is done before processing the ack requests
                 if (!handshakeDone) {
-                    if (!request.getHandshake().getSot()) {
-                        responseObserver.onError(new Exception("Handshake request not received"));
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
                         return;
                     }
                     responseObserver.onNext(SourceOuterClass.AckResponse.newBuilder()

@@ -19,6 +19,8 @@ import org.junit.runners.JUnit4;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Slf4j
@@ -60,7 +62,7 @@ public class ServerErrTest {
     }
 
     @Test
-    public void sinkerSuccess() {
+    public void sinkerException() {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
@@ -118,6 +120,35 @@ public class ServerErrTest {
         } catch (InterruptedException e) {
             fail("Thread interrupted");
         }
+    }
+
+    @Test
+    public void sinkerNoHandshake() {
+        // Create an output stream observer
+        SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
+
+        StreamObserver<SinkOuterClass.SinkRequest> inputStreamObserver = SinkGrpc
+                .newStub(inProcessChannel)
+                .sinkFn(outputStreamObserver);
+
+        // Send a request without sending a handshake request
+        SinkOuterClass.SinkRequest request = SinkOuterClass.SinkRequest.newBuilder()
+                .setRequest(SinkOuterClass.SinkRequest.Request.newBuilder()
+                        .setValue(ByteString.copyFromUtf8("test"))
+                        .setId("test_id")
+                        .addKeys("test_key")
+                        .build())
+                .build();
+        inputStreamObserver.onNext(request);
+
+        // Wait for the server to process the request
+        while (!outputStreamObserver.completed.get()) ;
+
+        // Check if an error was received
+        assertNotNull(outputStreamObserver.t);
+        assertEquals(
+                "INVALID_ARGUMENT: Handshake request not received",
+                outputStreamObserver.t.getMessage());
     }
 
     @Slf4j

@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
@@ -9,8 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -44,8 +43,10 @@ class Service extends SinkGrpc.SinkImplBase {
             public void onNext(SinkOuterClass.SinkRequest request) {
                 // make sure the handshake is done before processing the messages
                 if (!handshakeDone) {
-                    if (!request.getHandshake().getSot()) {
-                        responseObserver.onError(new Exception("Handshake request not received"));
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
                         return;
                     }
                     responseObserver.onNext(SinkOuterClass.SinkResponse.newBuilder()
