@@ -7,16 +7,16 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * DO NOT change it unless the server info file name is changed.
  */
 public enum ContainerType {
-    Sourcer("sourcer"),
-    Sourcetransformer("sourcetransformer"),
-    Sinker("sinker"),
-    Mapper("mapper"),
-    Reducer("reducer"),
-    Reducestreamer("reducestreamer"),
-    Sessionreducer("sessionreducer"),
-    Sideinput("sideinput"),
-    Fbsinker("fb-sinker"),
-    Unknown("unknown");
+    SOURCER("sourcer"),
+    SOURCE_TRANSFORMER("sourcetransformer"),
+    SINKER("sinker"),
+    MAPPER("mapper"),
+    REDUCER("reducer"),
+    REDUCE_STREAMER("reducestreamer"),
+    SESSION_REDUCER("sessionreducer"),
+    SIDEINPUT("sideinput"),
+    FBSINKER("fb-sinker"),
+    UNKNOWN("unknown");
 
     private final String name;
 
@@ -35,6 +35,6 @@ public enum ContainerType {
                 return b;
             }
         }
-        return Unknown;
+        return UNKNOWN;
     }
 }

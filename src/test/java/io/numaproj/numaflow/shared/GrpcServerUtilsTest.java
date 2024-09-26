@@ -40,9 +40,9 @@ public class GrpcServerUtilsTest {
     public void testGetContainerType() {
         ContainerType expectMapper = GrpcServerUtils.getContainerType(
                 "/var/run/numaflow/mapper-server-info");
-        Assert.assertEquals(ContainerType.Mapper, expectMapper);
+        Assert.assertEquals(ContainerType.MAPPER, expectMapper);
         ContainerType expectUnknown = GrpcServerUtils.getContainerType("/var/run/numaflow/malformed");
-        Assert.assertEquals(ContainerType.Unknown, expectUnknown);
+        Assert.assertEquals(ContainerType.UNKNOWN, expectUnknown);
     }
 
     @Test

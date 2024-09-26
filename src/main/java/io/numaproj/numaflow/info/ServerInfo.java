@@ -27,16 +27,18 @@ public class ServerInfo {
     // To update this value, please follow the instructions for MINIMUM_NUMAFLOW_VERSION in
     // https://github.com/numaproj/numaflow-rs/blob/main/src/shared.rs
     public static final Map<ContainerType, String> MINIMUM_NUMAFLOW_VERSION = Map.ofEntries(
-            entry(ContainerType.Sourcer, "1.3.1-z"),
-            entry(ContainerType.Sourcetransformer, "1.3.1-z"),
-            entry(ContainerType.Sinker, "1.3.1-z"),
-            entry(ContainerType.Mapper, "1.3.1-z"),
-            entry(ContainerType.Reducer, "1.3.1-z"),
-            entry(ContainerType.Reducestreamer, "1.3.1-z"),
-            entry(ContainerType.Sessionreducer, "1.3.1-z"),
-            entry(ContainerType.Sideinput, "1.3.1-z"),
-            entry(ContainerType.Fbsinker, "1.3.1-z"),
-            entry(ContainerType.Unknown, "1.3.1-z")
+            entry(ContainerType.SOURCER, "1.3.1-z"),
+            entry(ContainerType.SOURCE_TRANSFORMER, "1.3.1-z"),
+            entry(ContainerType.SINKER, "1.3.1-z"),
+            entry(ContainerType.MAPPER, "1.3.1-z"),
+            entry(ContainerType.REDUCER, "1.3.1-z"),
+            entry(ContainerType.REDUCE_STREAMER, "1.3.1-z"),
+            entry(ContainerType.SESSION_REDUCER, "1.3.1-z"),
+            entry(ContainerType.SIDEINPUT, "1.3.1-z"),
+            entry(ContainerType.FBSINKER, "1.3.1-z"),
+            // if container type is unknown, set the value to be an empty string,
+            // the platform will skip version compatibility check.
+            entry(ContainerType.UNKNOWN, "")
     );
     @JsonProperty("protocol")
     private Protocol protocol;

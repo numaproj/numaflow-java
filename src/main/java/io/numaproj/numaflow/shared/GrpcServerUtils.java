@@ -203,6 +203,6 @@ public class GrpcServerUtils {
             String containerTypeName = fileName.substring(0, fileName.indexOf("-server-info"));
             return ContainerType.fromString(containerTypeName);
         }
-        return ContainerType.Unknown;
+        return ContainerType.UNKNOWN;
     }
 }
