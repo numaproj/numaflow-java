@@ -35,10 +35,7 @@ public class ServerInfo {
             entry(ContainerType.REDUCE_STREAMER, "1.3.1-z"),
             entry(ContainerType.SESSION_REDUCER, "1.3.1-z"),
             entry(ContainerType.SIDEINPUT, "1.3.1-z"),
-            entry(ContainerType.FBSINKER, "1.3.1-z"),
-            // if container type is unknown, set the value to be an empty string,
-            // the platform will skip version compatibility check.
-            entry(ContainerType.UNKNOWN, "")
+            entry(ContainerType.FBSINKER, "1.3.1-z")
     );
     @JsonProperty("protocol")
     private Protocol protocol;

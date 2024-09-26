@@ -30,19 +30,10 @@ public class GrpcServerUtilsTest {
     public void testWriteServerInfo() throws Exception {
         ServerInfoAccessor mockAccessor = Mockito.mock(ServerInfoAccessor.class);
         Mockito.when(mockAccessor.getSDKVersion()).thenReturn("1.0.0");
-        GrpcServerUtils.writeServerInfo(mockAccessor, null, "infoFilePath");
+        GrpcServerUtils.writeServerInfo(mockAccessor, null, "infoFilePath", ContainerType.MAPPER);
         Mockito
                 .verify(mockAccessor, Mockito.times(1))
                 .write(Mockito.any(), Mockito.eq("infoFilePath"));
-    }
-
-    @Test
-    public void testGetContainerType() {
-        ContainerType expectMapper = GrpcServerUtils.getContainerType(
-                "/var/run/numaflow/mapper-server-info");
-        Assert.assertEquals(ContainerType.MAPPER, expectMapper);
-        ContainerType expectUnknown = GrpcServerUtils.getContainerType("/var/run/numaflow/malformed");
-        Assert.assertEquals(ContainerType.UNKNOWN, expectUnknown);
     }
 
     @Test

@@ -3,6 +3,7 @@ package io.numaproj.numaflow.sourcer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
@@ -51,7 +52,8 @@ public class Server {
             GrpcServerUtils.writeServerInfo(
                     serverInfoAccessor,
                     grpcConfig.getSocketPath(),
-                    grpcConfig.getInfoFilePath());
+                    grpcConfig.getInfoFilePath(),
+                    ContainerType.SOURCER);
         }
 
         if (this.server == null) {
@@ -74,7 +76,7 @@ public class Server {
         log.info(
                 "Server started, listening on {}",
                 grpcConfig.isLocal() ?
-                        "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
+                        "localhost:" + grpcConfig.getPort():grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

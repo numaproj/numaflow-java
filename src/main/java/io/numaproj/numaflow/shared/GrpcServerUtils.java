@@ -83,14 +83,21 @@ public class GrpcServerUtils {
     public static void writeServerInfo(
             ServerInfoAccessor serverInfoAccessor,
             String socketPath,
-            String infoFilePath) throws Exception {
-        writeServerInfo(serverInfoAccessor, socketPath, infoFilePath, new HashMap<>());
+            String infoFilePath,
+            ContainerType containerType) throws Exception {
+        writeServerInfo(
+                serverInfoAccessor,
+                socketPath,
+                infoFilePath,
+                containerType,
+                new HashMap<>());
     }
 
     public static void writeServerInfo(
             ServerInfoAccessor serverInfoAccessor,
             String socketPath,
             String infoFilePath,
+            ContainerType containerType,
             Map<String, String> metaData) throws Exception {
         // cleanup socket path if it exists (unit test builder doesn't use one)
         if (socketPath != null) {
@@ -114,7 +121,7 @@ public class GrpcServerUtils {
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,
-                MINIMUM_NUMAFLOW_VERSION.get(getContainerType(infoFilePath)),
+                MINIMUM_NUMAFLOW_VERSION.get(containerType),
                 serverInfoAccessor.getSDKVersion(),
                 metaData);
         log.info("Writing server info {} to {}", serverInfo, infoFilePath);
@@ -187,22 +194,5 @@ public class GrpcServerUtils {
                         ThreadUtils.INSTANCE.availableProcessors(),
                         "netty-worker"))
                 .intercept(interceptor);
-    }
-
-    /**
-     * Returns the container type from the server info file path.
-     * serverInfoFilePath is in the format of "/var/run/numaflow/{ContainerType}-server-info"
-     *
-     * @param serverInfoFilePath the file path from which to extract the container type
-     *
-     * @return the ContainerType derived from the file path
-     */
-    public static ContainerType getContainerType(String serverInfoFilePath) {
-        String fileName = Paths.get(serverInfoFilePath).getFileName().toString();
-        if (fileName.endsWith("-server-info")) {
-            String containerTypeName = fileName.substring(0, fileName.indexOf("-server-info"));
-            return ContainerType.fromString(containerTypeName);
-        }
-        return ContainerType.UNKNOWN;
     }
 }
