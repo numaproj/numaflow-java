@@ -8,6 +8,8 @@ import lombok.Setter;
 
 import java.util.Map;
 
+import static java.util.Map.entry;
+
 /**
  * Server Information to be used by client to determine:
  * - protocol: what is right protocol to use (UDS or TCP)
@@ -24,7 +26,17 @@ public class ServerInfo {
     // Specify the minimum Numaflow version required by the current SDK version
     // To update this value, please follow the instructions for MINIMUM_NUMAFLOW_VERSION in
     // https://github.com/numaproj/numaflow-rs/blob/main/src/shared.rs
-    public static final String MINIMUM_NUMAFLOW_VERSION = "1.3.1-z";
+    public static final Map<ContainerType, String> MINIMUM_NUMAFLOW_VERSION = Map.ofEntries(
+            entry(ContainerType.SOURCER, "1.3.1-z"),
+            entry(ContainerType.SOURCE_TRANSFORMER, "1.3.1-z"),
+            entry(ContainerType.SINKER, "1.3.1-z"),
+            entry(ContainerType.MAPPER, "1.3.1-z"),
+            entry(ContainerType.REDUCER, "1.3.1-z"),
+            entry(ContainerType.REDUCE_STREAMER, "1.3.1-z"),
+            entry(ContainerType.SESSION_REDUCER, "1.3.1-z"),
+            entry(ContainerType.SIDEINPUT, "1.3.1-z"),
+            entry(ContainerType.FBSINKER, "1.3.1-z")
+    );
     @JsonProperty("protocol")
     private Protocol protocol;
     @JsonProperty("language")

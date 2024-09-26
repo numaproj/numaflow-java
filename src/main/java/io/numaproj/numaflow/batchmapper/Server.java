@@ -3,6 +3,7 @@ package io.numaproj.numaflow.batchmapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
@@ -52,6 +53,7 @@ public class Server {
                 serverInfoAccessor,
                 grpcConfig.getSocketPath(),
                 grpcConfig.getInfoFilePath(),
+                ContainerType.MAPPER,
                 Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
 
         if (this.server == null) {
