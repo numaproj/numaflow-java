@@ -22,6 +22,8 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ServerErrTest {
 
@@ -134,6 +136,58 @@ public class ServerErrTest {
 
         readRequestObserver.onNext(request);
         readRequestObserver.onCompleted();
+    }
+
+    @Test
+    public void sourceWithoutAckHandshake() {
+        // Create an output stream observer
+        AckOutputStreamObserver outputStreamObserver = new AckOutputStreamObserver();
+
+        StreamObserver<SourceOuterClass.AckRequest> inputStreamObserver = SourceGrpc
+                .newStub(inProcessChannel)
+                .ackFn(outputStreamObserver);
+
+        // Send a request without sending a handshake request
+        SourceOuterClass.AckRequest request = SourceOuterClass.AckRequest.newBuilder()
+                .setRequest(SourceOuterClass.AckRequest.Request.newBuilder()
+                        .build())
+                .build();
+        inputStreamObserver.onNext(request);
+
+        // Wait for the server to process the request
+        while (!outputStreamObserver.completed.get()) ;
+
+        // Check if an error was received
+        assertNotNull(outputStreamObserver.t);
+        assertEquals(
+                "INVALID_ARGUMENT: Handshake request not received",
+                outputStreamObserver.t.getMessage());
+    }
+
+    @Test
+    public void sourceWithoutReadHandshake() {
+        // Create an output stream observer
+        ReadOutputStreamObserver outputStreamObserver = new ReadOutputStreamObserver();
+
+        StreamObserver<SourceOuterClass.ReadRequest> inputStreamObserver = SourceGrpc
+                .newStub(inProcessChannel)
+                .readFn(outputStreamObserver);
+
+        // Send a request without sending a handshake request
+        SourceOuterClass.ReadRequest request = SourceOuterClass.ReadRequest.newBuilder()
+                .setRequest(SourceOuterClass.ReadRequest.Request.newBuilder()
+                        .build())
+                .build();
+        inputStreamObserver.onNext(request);
+
+        // Wait for the server to process the request
+        while (!outputStreamObserver.completed.get()) ;
+
+        // Check if an error was received
+        assertNotNull(outputStreamObserver.t);
+        assertEquals(
+                "INVALID_ARGUMENT: Handshake request not received",
+                outputStreamObserver.t.getMessage());
     }
 
     private static class TestSourcerErr extends Sourcer {

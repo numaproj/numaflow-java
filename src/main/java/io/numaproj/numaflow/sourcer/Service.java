@@ -30,18 +30,25 @@ class Service extends SourceGrpc.SourceImplBase {
     @Override
     public StreamObserver<SourceOuterClass.ReadRequest> readFn(final StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
         return new StreamObserver<>() {
+            private boolean handshakeDone = false;
+
             @Override
             public void onNext(SourceOuterClass.ReadRequest request) {
-                // if the request is a handshake, send handshake response.
-                if (request.hasHandshake() && request.getHandshake().getSot()) {
+                // make sure that the handshake is done before processing the read requests
+                if (!handshakeDone) {
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
+                        return;
+                    }
                     responseObserver.onNext(SourceOuterClass.ReadResponse.newBuilder()
                             .setHandshake(request.getHandshake())
-                            .setStatus(SourceOuterClass.ReadResponse.Status.newBuilder()
-                                    .setCode(SourceOuterClass.ReadResponse.Status.Code.SUCCESS)
-                                    .build())
                             .build());
+                    handshakeDone = true;
                     return;
                 }
+
                 ReadRequestImpl readRequest = new ReadRequestImpl(
                         request.getRequest().getNumRecords(),
                         Duration.ofMillis(request.getRequest().getTimeoutInMs()));
@@ -89,16 +96,22 @@ class Service extends SourceGrpc.SourceImplBase {
     @Override
     public StreamObserver<SourceOuterClass.AckRequest> ackFn(final StreamObserver<SourceOuterClass.AckResponse> responseObserver) {
         return new StreamObserver<>() {
+            private boolean handshakeDone = false;
+
             @Override
             public void onNext(SourceOuterClass.AckRequest request) {
-                // if the request is a handshake, send a handshake response
-                if (request.hasHandshake() && request.getHandshake().getSot()) {
+                // make sure that the handshake is done before processing the ack requests
+                if (!handshakeDone) {
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
+                        return;
+                    }
                     responseObserver.onNext(SourceOuterClass.AckResponse.newBuilder()
                             .setHandshake(request.getHandshake())
-                            .setResult(SourceOuterClass.AckResponse.Result.newBuilder().setSuccess(
-                                    Empty.newBuilder().build()))
                             .build());
-                    return;
+                    handshakeDone = true;
                 }
 
                 SourceOuterClass.Offset offset = request.getRequest().getOffset();

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(JUnit4.class)
@@ -72,6 +73,12 @@ public class ServerTest {
         String actualId = "sink_test_id";
         String expectedId = actualId + processedIdSuffix;
 
+        // Send a handshake request
+        SinkOuterClass.SinkRequest handshakeRequest = SinkOuterClass.SinkRequest.newBuilder()
+                .setHandshake(SinkOuterClass.Handshake.newBuilder().setSot(true).build())
+                .build();
+        inputStreamObserver.onNext(handshakeRequest);
+
         for (int i = 1; i <= 100; i++) {
             String[] keys;
             if (i < 100) {
@@ -79,38 +86,55 @@ public class ServerTest {
             } else {
                 keys = new String[]{"invalid-key"};
             }
-            SinkOuterClass.SinkRequest sinkRequest = SinkOuterClass.SinkRequest.newBuilder()
+
+            SinkOuterClass.SinkRequest.Request request = SinkOuterClass.SinkRequest.Request
+                    .newBuilder()
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .setId(actualId)
                     .addAllKeys(List.of(keys))
                     .build();
+
+            SinkOuterClass.SinkRequest sinkRequest = SinkOuterClass.SinkRequest.newBuilder()
+                    .setRequest(request).build();
             inputStreamObserver.onNext(sinkRequest);
+
+            // If it's the end of the batch, send an EOT message
+            if (i % 10 == 0) {
+                SinkOuterClass.SinkRequest eotRequest = SinkOuterClass.SinkRequest.newBuilder()
+                        .setStatus(SinkOuterClass.SinkRequest.Status
+                                .newBuilder()
+                                .setEot(true)
+                                .build())
+                        .build();
+                inputStreamObserver.onNext(eotRequest);
+            }
         }
 
         inputStreamObserver.onCompleted();
 
         while (!outputStreamObserver.completed.get()) ;
-        SinkOuterClass.SinkResponse responseList = outputStreamObserver.getSinkResponse();
-        assertEquals(100, responseList.getResultsCount());
-        responseList.getResultsList().forEach((response -> {
-            assertEquals(response.getId(), expectedId);
-        }));
+        List<SinkOuterClass.SinkResponse> responseList = outputStreamObserver.getSinkResponse();
+        assertEquals(101, responseList.size());
+        // first response is the handshake response
+        assertTrue(responseList.get(0).getHandshake().getSot());
 
-        assertEquals(
-                responseList.getResults(responseList.getResultsCount() - 1).getErrMsg(),
-                "error message");
+        responseList = responseList.subList(1, responseList.size());
+        responseList.forEach(response -> {
+            assertEquals(response.getResult().getId(), expectedId);
+            if (response.getResult().getStatus() == SinkOuterClass.Status.FAILURE) {
+                assertEquals(response.getResult().getErrMsg(), "error message");
+            }
+        });
     }
 
     @Slf4j
     private static class TestSinkFn extends Sinker {
-
-
         @Override
         public ResponseList processMessages(DatumIterator datumIterator) {
             ResponseList.ResponseListBuilder builder = ResponseList.newBuilder();
 
             while (true) {
-                Datum datum = null;
+                Datum datum;
                 try {
                     datum = datumIterator.next();
                 } catch (InterruptedException e) {

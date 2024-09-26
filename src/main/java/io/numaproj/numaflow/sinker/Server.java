@@ -75,7 +75,7 @@ public class Server {
         log.info(
                 "Server started, listening on {}",
                 grpcConfig.isLocal() ?
-                        "localhost:" + grpcConfig.getPort():grpcConfig.getSocketPath());
+                        "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
