@@ -18,6 +18,7 @@ import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
@@ -29,6 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.numaproj.numaflow.info.ServerInfo.MINIMUM_NUMAFLOW_VERSION;
 
 /**
  * GrpcServerUtils is the utility class for netty server channel.
@@ -111,7 +114,7 @@ public class GrpcServerUtils {
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,
-                ServerInfo.MINIMUM_NUMAFLOW_VERSION,
+                MINIMUM_NUMAFLOW_VERSION.get(getContainerType(infoFilePath)),
                 serverInfoAccessor.getSDKVersion(),
                 metaData);
         log.info("Writing server info {} to {}", serverInfo, infoFilePath);
@@ -184,5 +187,22 @@ public class GrpcServerUtils {
                         ThreadUtils.INSTANCE.availableProcessors(),
                         "netty-worker"))
                 .intercept(interceptor);
+    }
+
+    /**
+     * Returns the container type from the server info file path.
+     * serverInfoFilePath is in the format of "/var/run/numaflow/{ContainerType}-server-info"
+     *
+     * @param serverInfoFilePath the file path from which to extract the container type
+     *
+     * @return the ContainerType derived from the file path
+     */
+    public static ContainerType getContainerType(String serverInfoFilePath) {
+        String fileName = Paths.get(serverInfoFilePath).getFileName().toString();
+        if (fileName.endsWith("-server-info")) {
+            String containerTypeName = fileName.substring(0, fileName.indexOf("-server-info"));
+            return ContainerType.fromString(containerTypeName);
+        }
+        return ContainerType.Unknown;
     }
 }

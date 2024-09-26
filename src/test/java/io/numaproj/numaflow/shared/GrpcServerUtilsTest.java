@@ -4,6 +4,7 @@ import io.grpc.Context;
 import io.grpc.ServerBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,6 +34,15 @@ public class GrpcServerUtilsTest {
         Mockito
                 .verify(mockAccessor, Mockito.times(1))
                 .write(Mockito.any(), Mockito.eq("infoFilePath"));
+    }
+
+    @Test
+    public void testGetContainerType() {
+        ContainerType expectMapper = GrpcServerUtils.getContainerType(
+                "/var/run/numaflow/mapper-server-info");
+        Assert.assertEquals(ContainerType.Mapper, expectMapper);
+        ContainerType expectUnknown = GrpcServerUtils.getContainerType("/var/run/numaflow/malformed");
+        Assert.assertEquals(ContainerType.Unknown, expectUnknown);
     }
 
     @Test
