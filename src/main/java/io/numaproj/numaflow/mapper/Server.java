@@ -2,6 +2,7 @@ package io.numaproj.numaflow.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.ServerBuilder;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
@@ -55,11 +56,12 @@ public class Server {
                     serverInfoAccessor,
                     grpcConfig.getSocketPath(),
                     grpcConfig.getInfoFilePath(),
+                    ContainerType.MAPPER,
                     Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
         }
 
         if (this.server == null) {
-            ServerBuilder<?> serverBuilder = null;
+            ServerBuilder<?> serverBuilder;
             // create server builder for domain socket server
             serverBuilder = GrpcServerUtils.createServerBuilder(
                     grpcConfig.getSocketPath(),
@@ -79,7 +81,7 @@ public class Server {
         log.info(
                 "Server started, listening on {}",
                 grpcConfig.isLocal() ?
-                        "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
+                        "localhost:" + grpcConfig.getPort():grpcConfig.getSocketPath());
 
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

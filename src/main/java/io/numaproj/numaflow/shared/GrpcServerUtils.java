@@ -18,6 +18,7 @@ import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerDomainSocketChannel;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
 import io.numaproj.numaflow.info.ServerInfo;
@@ -29,6 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.numaproj.numaflow.info.ServerInfo.MINIMUM_NUMAFLOW_VERSION;
 
 /**
  * GrpcServerUtils is the utility class for netty server channel.
@@ -80,14 +83,21 @@ public class GrpcServerUtils {
     public static void writeServerInfo(
             ServerInfoAccessor serverInfoAccessor,
             String socketPath,
-            String infoFilePath) throws Exception {
-        writeServerInfo(serverInfoAccessor, socketPath, infoFilePath, new HashMap<>());
+            String infoFilePath,
+            ContainerType containerType) throws Exception {
+        writeServerInfo(
+                serverInfoAccessor,
+                socketPath,
+                infoFilePath,
+                containerType,
+                new HashMap<>());
     }
 
     public static void writeServerInfo(
             ServerInfoAccessor serverInfoAccessor,
             String socketPath,
             String infoFilePath,
+            ContainerType containerType,
             Map<String, String> metaData) throws Exception {
         // cleanup socket path if it exists (unit test builder doesn't use one)
         if (socketPath != null) {
@@ -111,7 +121,7 @@ public class GrpcServerUtils {
         ServerInfo serverInfo = new ServerInfo(
                 Protocol.UDS_PROTOCOL,
                 Language.JAVA,
-                ServerInfo.MINIMUM_NUMAFLOW_VERSION,
+                MINIMUM_NUMAFLOW_VERSION.get(containerType),
                 serverInfoAccessor.getSDKVersion(),
                 metaData);
         log.info("Writing server info {} to {}", serverInfo, infoFilePath);

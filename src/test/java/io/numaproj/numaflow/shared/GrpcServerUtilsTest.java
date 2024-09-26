@@ -4,6 +4,7 @@ import io.grpc.Context;
 import io.grpc.ServerBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,7 +30,7 @@ public class GrpcServerUtilsTest {
     public void testWriteServerInfo() throws Exception {
         ServerInfoAccessor mockAccessor = Mockito.mock(ServerInfoAccessor.class);
         Mockito.when(mockAccessor.getSDKVersion()).thenReturn("1.0.0");
-        GrpcServerUtils.writeServerInfo(mockAccessor, null, "infoFilePath");
+        GrpcServerUtils.writeServerInfo(mockAccessor, null, "infoFilePath", ContainerType.MAPPER);
         Mockito
                 .verify(mockAccessor, Mockito.times(1))
                 .write(Mockito.any(), Mockito.eq("infoFilePath"));

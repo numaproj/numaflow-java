@@ -26,7 +26,7 @@ public class ServerInfoAccessorImplTest {
         ServerInfo testServerInfo = new ServerInfo(
                 Protocol.TCP_PROTOCOL,
                 Language.JAVA,
-                ServerInfo.MINIMUM_NUMAFLOW_VERSION,
+                "1.3.1-z",
                 "0.4.3",
                 new HashMap<>() {{
                     put("key1", "value1");
