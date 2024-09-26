@@ -60,7 +60,7 @@ public class ServerErrTest {
     }
 
     @Test
-    public void sinkerSuccess() throws InterruptedException {
+    public void sinkerSuccess() {
         //create an output stream observer
         SinkOutputStreamObserver outputStreamObserver = new SinkOutputStreamObserver();
 
@@ -83,6 +83,11 @@ public class ServerErrTest {
                 .sinkFn(outputStreamObserver);
         String actualId = "sink_test_id";
 
+        // send handshake request
+        inputStreamObserver.onNext(SinkOuterClass.SinkRequest.newBuilder()
+                .setHandshake(SinkOuterClass.Handshake.newBuilder().setSot(true).build())
+                .build());
+
         for (int i = 1; i <= 100; i++) {
             String[] keys;
             if (i < 100) {
@@ -90,13 +95,21 @@ public class ServerErrTest {
             } else {
                 keys = new String[]{"invalid-key"};
             }
-            SinkOuterClass.SinkRequest sinkRequest = SinkOuterClass.SinkRequest.newBuilder()
+            SinkOuterClass.SinkRequest.Request request = SinkOuterClass.SinkRequest.Request
+                    .newBuilder()
                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                     .setId(actualId)
                     .addAllKeys(List.of(keys))
                     .build();
-            inputStreamObserver.onNext(sinkRequest);
+            inputStreamObserver.onNext(SinkOuterClass.SinkRequest
+                    .newBuilder()
+                    .setRequest(request)
+                    .build());
         }
+
+        // send eot message
+        inputStreamObserver.onNext(SinkOuterClass.SinkRequest.newBuilder()
+                .setStatus(SinkOuterClass.SinkRequest.Status.newBuilder().setEot(true)).build());
 
         inputStreamObserver.onCompleted();
 
@@ -109,11 +122,9 @@ public class ServerErrTest {
 
     @Slf4j
     private static class TestSinkFnErr extends Sinker {
-
         @Override
         public ResponseList processMessages(DatumIterator datumIterator) {
             throw new RuntimeException("unknown exception");
         }
-
     }
 }

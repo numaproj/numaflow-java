@@ -8,13 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static io.numaproj.numaflow.sink.v1.SinkGrpc.getSinkFnMethod;
 
 @Slf4j
 class Service extends SinkGrpc.SinkImplBase {
@@ -23,12 +22,6 @@ class Service extends SinkGrpc.SinkImplBase {
     // We use 2 times the number of cores because the sinker is a CPU intensive task.
     private final ExecutorService sinkTaskExecutor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-
-    // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
-    // We use 30 seconds as the default value because it provides a balance between giving tasks enough time to complete
-    // and not delaying program termination unduly.
-    private final long SHUTDOWN_TIME = 30;
-
 
     private final Sinker sinker;
 
@@ -41,25 +34,58 @@ class Service extends SinkGrpc.SinkImplBase {
      */
     @Override
     public StreamObserver<SinkOuterClass.SinkRequest> sinkFn(StreamObserver<SinkOuterClass.SinkResponse> responseObserver) {
-        if (this.sinker == null) {
-            return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
-                    getSinkFnMethod(),
-                    responseObserver);
-        }
+        return new StreamObserver<>() {
+            private boolean startOfStream = true;
+            private CompletableFuture<ResponseList> result;
+            private DatumIteratorImpl datumStream;
+            private boolean handshakeDone = false;
 
-        DatumIteratorImpl datumStream = new DatumIteratorImpl();
-
-        Future<ResponseList> result = sinkTaskExecutor.submit(() -> this.sinker.processMessages(
-                datumStream));
-
-        return new StreamObserver<SinkOuterClass.SinkRequest>() {
             @Override
-            public void onNext(SinkOuterClass.SinkRequest d) {
+            public void onNext(SinkOuterClass.SinkRequest request) {
+                // make sure the handshake is done before processing the messages
+                if (!handshakeDone) {
+                    if (!request.getHandshake().getSot()) {
+                        responseObserver.onError(new Exception("Handshake request not received"));
+                        return;
+                    }
+                    responseObserver.onNext(SinkOuterClass.SinkResponse.newBuilder()
+                            .setHandshake(request.getHandshake())
+                            .build());
+                    handshakeDone = true;
+                    return;
+                }
+
+                // Create a DatumIterator to write the messages to the sinker
+                // and start the sinker if it is the start of the stream
+                if (startOfStream) {
+                    datumStream = new DatumIteratorImpl();
+                    result = CompletableFuture.supplyAsync(
+                            () -> sinker.processMessages(datumStream),
+                            sinkTaskExecutor);
+                    startOfStream = false;
+                }
+
                 try {
-                    datumStream.writeMessage(constructHandlerDatum(d));
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                    onError(e);
+                    if (request.getStatus().getEot()) {
+                        // End of transmission, write EOF datum to the stream
+                        // Wait for the result and send the response back to the client
+                        datumStream.writeMessage(HandlerDatum.EOF_DATUM);
+
+                        ResponseList responses = result.join();
+                        responses.getResponses().forEach(response -> {
+                            SinkOuterClass.SinkResponse sinkResponse = buildResponse(response);
+                            responseObserver.onNext(sinkResponse);
+                        });
+
+                        // reset the startOfStream flag, since the stream has ended
+                        // so that the next request will be treated as the start of the stream
+                        startOfStream = true;
+                    } else {
+                        datumStream.writeMessage(constructHandlerDatum(request));
+                    }
+                } catch (Exception e) {
+                    log.error("Encountered error in sinkFn - {}", e.getMessage());
+                    responseObserver.onError(e);
                 }
             }
 
@@ -71,24 +97,21 @@ class Service extends SinkGrpc.SinkImplBase {
 
             @Override
             public void onCompleted() {
-                SinkOuterClass.SinkResponse response = SinkOuterClass.SinkResponse
-                        .newBuilder()
-                        .build();
-                try {
-                    datumStream.writeMessage(HandlerDatum.EOF_DATUM);
-                    // wait until the sink handler returns, result.get() is a blocking call
-                    ResponseList responses = result.get();
-                    // construct responseList from responses
-                    response = buildResponseList(responses);
-
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                    onError(e);
-                }
-                responseObserver.onNext(response);
                 responseObserver.onCompleted();
             }
         };
+    }
+
+    private SinkOuterClass.SinkResponse buildResponse(Response response) {
+        SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK :
+                response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
+        return SinkOuterClass.SinkResponse.newBuilder()
+                .setResult(SinkOuterClass.SinkResponse.Result.newBuilder()
+                        .setId(response.getId() == null ? "" : response.getId())
+                        .setErrMsg(response.getErr() == null ? "" : response.getErr())
+                        .setStatus(status)
+                        .build())
+                .build();
     }
 
     /**
@@ -104,37 +127,28 @@ class Service extends SinkGrpc.SinkImplBase {
 
     private HandlerDatum constructHandlerDatum(SinkOuterClass.SinkRequest d) {
         return new HandlerDatum(
-                d.getKeysList().toArray(new String[0]),
-                d.getValue().toByteArray(),
+                d.getRequest().getKeysList().toArray(new String[0]),
+                d.getRequest().getValue().toByteArray(),
                 Instant.ofEpochSecond(
-                        d.getWatermark().getSeconds(),
-                        d.getWatermark().getNanos()),
+                        d.getRequest().getWatermark().getSeconds(),
+                        d.getRequest().getWatermark().getNanos()),
                 Instant.ofEpochSecond(
-                        d.getEventTime().getSeconds(),
-                        d.getEventTime().getNanos()),
-                d.getId(),
-                d.getHeadersMap()
+                        d.getRequest().getEventTime().getSeconds(),
+                        d.getRequest().getEventTime().getNanos()),
+                d.getRequest().getId(),
+                d.getRequest().getHeadersMap()
         );
-    }
-
-    public SinkOuterClass.SinkResponse buildResponseList(ResponseList responses) {
-        var responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
-        responses.getResponses().forEach(response -> {
-            SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK :
-                    response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
-            responseBuilder.addResults(SinkOuterClass.SinkResponse.Result.newBuilder()
-                    .setId(response.getId() == null ? "" : response.getId())
-                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                    .setStatus(status)
-                    .build());
-        });
-        return responseBuilder.build();
     }
 
     // shuts down the executor service which is used for reduce
     public void shutDown() {
         this.sinkTaskExecutor.shutdown();
         try {
+            // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
+            // We use 30 seconds as the default value because it provides a balance between giving tasks enough time to complete
+            // and not delaying program termination unduly.
+            long SHUTDOWN_TIME = 30;
+
             if (!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
                 log.error("Sink executor did not terminate in the specified time.");
                 List<Runnable> droppedTasks = sinkTaskExecutor.shutdownNow();
