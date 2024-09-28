@@ -112,6 +112,7 @@ class Service extends SourceGrpc.SourceImplBase {
                             .setHandshake(request.getHandshake())
                             .build());
                     handshakeDone = true;
+                    return;
                 }
 
                 SourceOuterClass.Offset offset = request.getRequest().getOffset();
