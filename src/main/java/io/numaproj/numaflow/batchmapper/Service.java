@@ -48,7 +48,7 @@ class Service extends BatchMapGrpc.BatchMapImplBase {
         Future<BatchResponses> result = batchMapTaskExecutor.submit(() -> this.batchMapper.processMessage(
                 datumStream));
 
-        return new StreamObserver<Batchmap.BatchMapRequest>() {
+        return new StreamObserver<>() {
             @Override
             public void onNext(Batchmap.BatchMapRequest mapRequest) {
                 try {

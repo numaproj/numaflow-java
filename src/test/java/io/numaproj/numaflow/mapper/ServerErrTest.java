@@ -22,7 +22,6 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class ServerErrTest {
 
@@ -103,20 +102,33 @@ public class ServerErrTest {
     }
 
     @Test
-    public void TestMapperErr() {
+    public void testMapperFailure() {
+        MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
+                .newBuilder()
+                .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
+                .build();
+
         ByteString inValue = ByteString.copyFromUtf8("invalue");
         MapOuterClass.MapRequest mapRequest = MapOuterClass.MapRequest
                 .newBuilder()
-                .addAllKeys(List.of("test-map-key"))
-                .setValue(inValue)
+                .setRequest(MapOuterClass.MapRequest.Request.newBuilder()
+                        .addAllKeys(List.of("test-map-key")).setValue(inValue).build())
                 .build();
 
-        var stub = MapGrpc.newBlockingStub(inProcessChannel);
+        MapOutputStreamObserver responseObserver = new MapOutputStreamObserver(1);
+
+        var stub = MapGrpc.newStub(inProcessChannel);
+        var requestObserver = stub.mapFn(responseObserver);
+
+        requestObserver.onNext(handshakeRequest);
+        requestObserver.onNext(mapRequest);
+
         try {
-            stub.mapFn(mapRequest);
-            fail("Expected the mapperErr to complete with exception");
+            responseObserver.done.get();
         } catch (Exception e) {
-            assertEquals("UNKNOWN: unknown exception", e.getMessage());
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: UNKNOWN: unknown exception",
+                    e.getMessage());
         }
     }
 

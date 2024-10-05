@@ -16,7 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -76,7 +78,21 @@ public class MapperTestKit {
      */
     public static class Client {
         private final ManagedChannel channel;
-        private final MapGrpc.MapStub mapStub;
+        private final StreamObserver<MapOuterClass.MapRequest> requestStreamObserver;
+        /*
+         * A ConcurrentHashMap that stores CompletableFuture instances for each request sent to the server.
+         * Each CompletableFuture corresponds to a unique request and is used to handle the response from the server.
+         *
+         * Key: A unique identifier (UUID) for each request sent to the server.
+         * Value: A CompletableFuture that will be completed when the server sends a response for the corresponding request.
+         *
+         * We use a concurrent map so that the user can send multiple requests concurrently.
+         *
+         * When a request is sent to the server, a new CompletableFuture is created and stored in the map with its unique identifier.
+         * When a response is received from the server, the corresponding CompletableFuture is retrieved from the map using the unique identifier,
+         * and then completed with the response data. If an error occurs, we complete all remaining futures exceptionally.
+         */
+        private final ConcurrentHashMap<String, CompletableFuture<MapOuterClass.MapResponse>> responseFutures = new ConcurrentHashMap<>();
 
         /**
          * empty constructor for Client.
@@ -94,35 +110,11 @@ public class MapperTestKit {
          */
         public Client(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-            this.mapStub = MapGrpc.newStub(channel);
-        }
-
-        private CompletableFuture<MapOuterClass.MapResponse> sendGrpcRequest(MapOuterClass.MapRequest request) {
-            CompletableFuture<MapOuterClass.MapResponse> future = new CompletableFuture<>();
-            StreamObserver<MapOuterClass.MapResponse> responseObserver = new StreamObserver<>() {
-                @Override
-                public void onNext(MapOuterClass.MapResponse response) {
-                    future.complete(response);
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    future.completeExceptionally(t);
-                }
-
-                @Override
-                public void onCompleted() {
-                    if (!future.isDone()) {
-                        future.completeExceptionally(new RuntimeException(
-                                "Server completed without a response"));
-                    }
-                }
-            };
-
-            mapStub.mapFn(
-                    request, responseObserver);
-
-            return future;
+            MapGrpc.MapStub stub = MapGrpc.newStub(channel);
+            this.requestStreamObserver = stub.mapFn(new ResponseObserver());
+            this.requestStreamObserver.onNext(MapOuterClass.MapRequest.newBuilder()
+                    .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
+                    .build());
         }
 
         /**
@@ -134,35 +126,19 @@ public class MapperTestKit {
          * @return response from the server as a MessageList
          */
         public MessageList sendRequest(String[] keys, Datum data) {
-            MapOuterClass.MapRequest request = MapOuterClass.MapRequest.newBuilder()
-                    .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
-                    .setValue(data.getValue()
-                            == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
-                    .setEventTime(
-                            data.getEventTime() == null ? Timestamp.newBuilder().build() : Timestamp
-                                    .newBuilder()
-                                    .setSeconds(data.getEventTime().getEpochSecond())
-                                    .setNanos(data.getEventTime().getNano())
-                                    .build())
-                    .setWatermark(
-                            data.getWatermark() == null ? Timestamp.newBuilder().build() : Timestamp
-                                    .newBuilder()
-                                    .setSeconds(data.getWatermark().getEpochSecond())
-                                    .setNanos(data.getWatermark().getNano())
-                                    .build())
-                    .putAllHeaders(data.getHeaders() == null ? new HashMap<>() : data.getHeaders())
-                    .build();
+            String requestId = UUID
+                    .randomUUID()
+                    .toString();
+            CompletableFuture<MapOuterClass.MapResponse> responseFuture = new CompletableFuture<>();
+            responseFutures.put(requestId, responseFuture);
 
+            MapOuterClass.MapRequest request = createRequest(keys, data, requestId);
             try {
-                MapOuterClass.MapResponse response = this.sendGrpcRequest(request).get();
-                List<Message> messages = response.getResultsList().stream()
-                        .map(result -> new Message(
-                                result.getValue().toByteArray(),
-                                result.getKeysList().toArray(new String[0]),
-                                result.getTagsList().toArray(new String[0])))
-                        .collect(Collectors.toList());
-
-                return new MessageList(messages);
+                this.requestStreamObserver.onNext(request);
+                MapOuterClass.MapResponse response = responseFuture.get();
+                MessageList messageList = createResponse(response);
+                responseFutures.remove(requestId);
+                return messageList;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -174,7 +150,75 @@ public class MapperTestKit {
          * @throws InterruptedException if the client fails to close
          */
         public void close() throws InterruptedException {
+            this.requestStreamObserver.onCompleted();
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        }
+
+        private MapOuterClass.MapRequest createRequest(
+                String[] keys,
+                Datum data,
+                String requestId) {
+            return MapOuterClass.MapRequest.newBuilder().setRequest(
+                    MapOuterClass.MapRequest.Request.newBuilder()
+                            .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
+                            .setValue(data.getValue()
+                                    == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
+                            .setEventTime(
+                                    data.getEventTime() == null ? Timestamp
+                                            .newBuilder()
+                                            .build() : Timestamp.newBuilder()
+                                            .setSeconds(data.getEventTime().getEpochSecond())
+                                            .setNanos(data.getEventTime().getNano())
+                                            .build())
+                            .setWatermark(
+                                    data.getWatermark() == null ? Timestamp
+                                            .newBuilder()
+                                            .build() : Timestamp.newBuilder()
+                                            .setSeconds(data.getWatermark().getEpochSecond())
+                                            .setNanos(data.getWatermark().getNano())
+                                            .build())
+                            .putAllHeaders(
+                                    data.getHeaders() == null ? new HashMap<>() : data.getHeaders())
+                            .build()
+            ).setId(requestId).build();
+        }
+
+        private MessageList createResponse(MapOuterClass.MapResponse response) {
+            List<Message> messages = response.getResultsList().stream()
+                    .map(result -> new Message(
+                            result.getValue().toByteArray(),
+                            result.getKeysList().toArray(new String[0]),
+                            result.getTagsList().toArray(new String[0])))
+                    .collect(Collectors.toList());
+            return new MessageList(messages);
+        }
+
+        private class ResponseObserver implements StreamObserver<MapOuterClass.MapResponse> {
+            @Override
+            public void onNext(MapOuterClass.MapResponse mapResponse) {
+                if (mapResponse.hasHandshake()) {
+                    return;
+                }
+                CompletableFuture<MapOuterClass.MapResponse> responseFuture = responseFutures.get(
+                        mapResponse.getId());
+                if (responseFuture != null) {
+                    responseFuture.complete(mapResponse);
+                }
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                // complete all remaining futures exceptionally
+                for (CompletableFuture<MapOuterClass.MapResponse> future : responseFutures.values()) {
+                    future.completeExceptionally(throwable);
+                }
+            }
+
+            @Override
+            public void onCompleted() {
+                // remove all completed futures
+                responseFutures.values().removeIf(CompletableFuture::isDone);
+            }
         }
     }
 

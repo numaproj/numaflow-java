@@ -20,7 +20,10 @@ public class BatchMapOutputStreamObserver implements StreamObserver<Batchmap.Bat
         List<Batchmap.BatchMapResponse> receivedResponses = resultDatum.get();
         receivedResponses.add(batchMapResponse);
         resultDatum.set(receivedResponses);
-        log.info("Received BatchMapResponse with id {} and message count {}", batchMapResponse.getId(), batchMapResponse.getResultsCount());
+        log.info(
+                "Received BatchMapResponse with id {} and message count {}",
+                batchMapResponse.getId(),
+                batchMapResponse.getResultsCount());
     }
 
     @Override
