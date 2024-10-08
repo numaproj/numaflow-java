@@ -12,6 +12,7 @@ import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import org.junit.After;
@@ -19,7 +20,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ServerErrTest {
 
@@ -100,19 +104,42 @@ public class ServerErrTest {
     }
 
     @Test
-    public void TestSourceTransformErr() {
-        ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
+    public void testSourceTransformerFailure() {
+        Sourcetransformer.SourceTransformRequest handshakeRequest = Sourcetransformer.SourceTransformRequest
                 .newBuilder()
-                .addKeys("test-sst-key")
-                .setValue(inValue)
+                .setHandshake(Sourcetransformer.Handshake
+                        .newBuilder()
+                        .setSot(true)
+                        .build())
                 .build();
 
-        var stub = SourceTransformGrpc.newBlockingStub(inProcessChannel);
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        Sourcetransformer.SourceTransformRequest.Request inDatum = Sourcetransformer.SourceTransformRequest.Request
+                .newBuilder()
+                .setValue(inValue)
+                .addAllKeys(List.of("test-st-key"))
+                .build();
+
+        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
+                .newBuilder()
+                .setRequest(inDatum)
+                .build();
+
+        TransformerOutputStreamObserver responseObserver = new TransformerOutputStreamObserver(2);
+
+        var stub = SourceTransformGrpc.newStub(inProcessChannel);
+        var requestObserver = stub.sourceTransformFn(responseObserver);
+
+        requestObserver.onNext(handshakeRequest);
+        requestObserver.onNext(request);
+
         try {
-            stub.sourceTransformFn(request);
+            responseObserver.done.get();
+            fail("Expected exception not thrown");
         } catch (Exception e) {
-            assertEquals("UNKNOWN: unknown exception", e.getMessage());
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: UNKNOWN: unknown exception",
+                    e.getMessage());
         }
     }
 
