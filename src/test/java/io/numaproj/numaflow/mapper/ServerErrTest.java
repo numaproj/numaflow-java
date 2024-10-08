@@ -116,7 +116,7 @@ public class ServerErrTest {
                         .addAllKeys(List.of("test-map-key")).setValue(inValue).build())
                 .build();
 
-        MapOutputStreamObserver responseObserver = new MapOutputStreamObserver(1);
+        MapOutputStreamObserver responseObserver = new MapOutputStreamObserver(2);
 
         var stub = MapGrpc.newStub(inProcessChannel);
         var requestObserver = stub.mapFn(responseObserver);
