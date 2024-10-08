@@ -14,8 +14,10 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ServerTest {
     private final static String PROCESSED_KEY_SUFFIX = "-key-processed";
@@ -57,31 +59,87 @@ public class ServerTest {
     }
 
     @Test
-    public void TestMapper() {
+    public void testMapperSuccess() {
+        MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
+                .newBuilder()
+                .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
+                .build();
+
         ByteString inValue = ByteString.copyFromUtf8("invalue");
         MapOuterClass.MapRequest inDatum = MapOuterClass.MapRequest
                 .newBuilder()
-                .addAllKeys(List.of("test-map-key"))
-                .setValue(inValue)
-                .build();
+                .setRequest(MapOuterClass.MapRequest.Request
+                        .newBuilder()
+                        .setValue(inValue)
+                        .addAllKeys(List.of("test-map-key"))
+                        .build()).build();
 
         String[] expectedKeys = new String[]{"test-map-key" + PROCESSED_KEY_SUFFIX};
         String[] expectedTags = new String[]{"test-tag"};
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
+        MapOutputStreamObserver responseObserver = new MapOutputStreamObserver(4);
 
-        var stub = MapGrpc.newBlockingStub(inProcessChannel);
-        var mapResponse = stub
-                .mapFn(inDatum);
+        var stub = MapGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub
+                .mapFn(responseObserver);
 
-        assertEquals(1, mapResponse.getResultsCount());
-        assertEquals(
-                expectedKeys,
-                mapResponse.getResults(0).getKeysList().toArray(new String[0]));
-        assertEquals(expectedValue, mapResponse.getResults(0).getValue());
-        assertEquals(
-                expectedTags,
-                mapResponse.getResults(0).getTagsList().toArray(new String[0]));
+        requestStreamObserver.onNext(handshakeRequest);
+        requestStreamObserver.onNext(inDatum);
+        requestStreamObserver.onNext(inDatum);
+        requestStreamObserver.onNext(inDatum);
+
+        try {
+            responseObserver.done.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Error while waiting for response" + e.getMessage());
+        }
+
+        List<MapOuterClass.MapResponse> responses = responseObserver.getMapResponses();
+        assertEquals(4, responses.size());
+
+        // first response is the handshake response
+        assertEquals(handshakeRequest.getHandshake(), responses.get(0).getHandshake());
+
+        responses = responses.subList(1, responses.size());
+        for (MapOuterClass.MapResponse response : responses) {
+            assertEquals(expectedValue, response.getResults(0).getValue());
+            assertEquals(Arrays.asList(expectedKeys), response.getResults(0).getKeysList());
+            assertEquals(Arrays.asList(expectedTags), response.getResults(0).getTagsList());
+            assertEquals(1, response.getResultsCount());
+        }
+
+        requestStreamObserver.onCompleted();
+    }
+
+    @Test
+    public void testMapperWithoutHandshake() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        MapOuterClass.MapRequest inDatum = MapOuterClass.MapRequest
+                .newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request
+                        .newBuilder()
+                        .setValue(inValue)
+                        .addAllKeys(List.of("test-map-key"))
+                        .build()).build();
+
+        MapOutputStreamObserver responseObserver = new MapOutputStreamObserver(1);
+
+        var stub = MapGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub
+                .mapFn(responseObserver);
+
+        requestStreamObserver.onNext(inDatum);
+
+        try {
+            responseObserver.done.get();
+            fail("Expected an exception to be thrown");
+        } catch (InterruptedException | ExecutionException e) {
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Handshake request not received",
+                    e.getMessage());
+        }
+        requestStreamObserver.onCompleted();
     }
 
     private static class TestMapFn extends Mapper {

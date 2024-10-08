@@ -226,13 +226,13 @@ public class ServerErrTest {
                 if (datum.getId().equals("exception")) {
                     throw new RuntimeException("unknown exception");
                 } else if (!datum.getId().equals("drop")) {
-                String msg = new String(datum.getValue());
-                String[] strs = msg.split(",");
-                BatchResponse batchResponse = new BatchResponse(datum.getId());
-                for (String str : strs) {
-                    batchResponse.append(new Message(str.getBytes()));
-                }
-                batchResponses.append(batchResponse);
+                    String msg = new String(datum.getValue());
+                    String[] strs = msg.split(",");
+                    BatchResponse batchResponse = new BatchResponse(datum.getId());
+                    for (String str : strs) {
+                        batchResponse.append(new Message(str.getBytes()));
+                    }
+                    batchResponses.append(batchResponse);
                 }
             }
             return batchResponses;

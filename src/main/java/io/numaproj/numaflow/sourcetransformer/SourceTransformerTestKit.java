@@ -16,7 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -33,7 +35,7 @@ public class SourceTransformerTestKit {
     /**
      * Create a new SourceTransformerTestKit with the given SourceTransformer.
      *
-     * @param sourceTransformer the source transformer to test
+     * @param sourceTransformer the sourceTransformer to test
      */
     public SourceTransformerTestKit(SourceTransformer sourceTransformer) {
         this(sourceTransformer, GRPCConfig.defaultGrpcConfig());
@@ -72,11 +74,25 @@ public class SourceTransformerTestKit {
     }
 
     /**
-     * SourceTransformerClient is a client for sending requests to the source transformer server.
+     * Client is a client for sending requests to the sourceTransform server.
      */
     public static class Client {
         private final ManagedChannel channel;
-        private final SourceTransformGrpc.SourceTransformStub sourceTransformStub;
+        private final StreamObserver<Sourcetransformer.SourceTransformRequest> requestStreamObserver;
+        /*
+         * A ConcurrentHashMap that stores CompletableFuture instances for each request sent to the server.
+         * Each CompletableFuture corresponds to a unique request and is used to handle the response from the server.
+         *
+         * Key: A unique identifier (UUID) for each request sent to the server.
+         * Value: A CompletableFuture that will be completed when the server sends a response for the corresponding request.
+         *
+         * We use a concurrent map so that the user can send multiple requests concurrently.
+         *
+         * When a request is sent to the server, a new CompletableFuture is created and stored in the map with its unique identifier.
+         * When a response is received from the server, the corresponding CompletableFuture is retrieved from the map using the unique identifier,
+         * and then completed with the response data. If an error occurs, we complete all remaining futures exceptionally.
+         */
+        private final ConcurrentHashMap<String, CompletableFuture<Sourcetransformer.SourceTransformResponse>> responseFutures = new ConcurrentHashMap<>();
 
         /**
          * empty constructor for Client.
@@ -94,43 +110,11 @@ public class SourceTransformerTestKit {
          */
         public Client(String host, int port) {
             this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-            this.sourceTransformStub = SourceTransformGrpc.newStub(channel);
-        }
-
-        /**
-         * Send a gRPC request to the server.
-         *
-         * @param request the request to send
-         *
-         * @return a CompletableFuture that will be completed when the response is received
-         */
-        private CompletableFuture<Sourcetransformer.SourceTransformResponse> sendGrpcRequest(
-                Sourcetransformer.SourceTransformRequest request) {
-            CompletableFuture<Sourcetransformer.SourceTransformResponse> future = new CompletableFuture<>();
-            StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver = new StreamObserver<>() {
-                @Override
-                public void onNext(Sourcetransformer.SourceTransformResponse response) {
-                    future.complete(response);
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    future.completeExceptionally(t);
-                }
-
-                @Override
-                public void onCompleted() {
-                    if (!future.isDone()) {
-                        future.completeExceptionally(new RuntimeException(
-                                "Server completed without a response"));
-                    }
-                }
-            };
-
-            sourceTransformStub.sourceTransformFn(
-                    request, responseObserver);
-
-            return future;
+            SourceTransformGrpc.SourceTransformStub stub = SourceTransformGrpc.newStub(channel);
+            this.requestStreamObserver = stub.sourceTransformFn(new ResponseObserver());
+            this.requestStreamObserver.onNext(Sourcetransformer.SourceTransformRequest.newBuilder()
+                    .setHandshake(Sourcetransformer.Handshake.newBuilder().setSot(true))
+                    .build());
         }
 
         /**
@@ -142,41 +126,17 @@ public class SourceTransformerTestKit {
          * @return response from the server as a MessageList
          */
         public MessageList sendRequest(String[] keys, Datum data) {
-            Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
-                    .newBuilder()
-                    .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
-                    .setValue(data.getValue()
-                            == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
-                    .setEventTime(
-                            data.getEventTime() == null ? Timestamp.newBuilder().build() : Timestamp
-                                    .newBuilder()
-                                    .setSeconds(data.getEventTime().getEpochSecond())
-                                    .setNanos(data.getEventTime().getNano())
-                                    .build())
-                    .setWatermark(
-                            data.getWatermark() == null ? Timestamp.newBuilder().build() : Timestamp
-                                    .newBuilder()
-                                    .setSeconds(data.getWatermark().getEpochSecond())
-                                    .setNanos(data.getWatermark().getNano())
-                                    .build())
-                    .putAllHeaders(data.getHeaders() == null ? new HashMap<>() : data.getHeaders())
-                    .build();
+            String requestId = UUID.randomUUID().toString();
+            CompletableFuture<Sourcetransformer.SourceTransformResponse> responseFuture = new CompletableFuture<>();
+            responseFutures.put(requestId, responseFuture);
 
+            Sourcetransformer.SourceTransformRequest request = createRequest(keys, data, requestId);
             try {
-                Sourcetransformer.SourceTransformResponse response = this
-                        .sendGrpcRequest(request)
-                        .get();
-                List<Message> messages = response.getResultsList().stream()
-                        .map(result -> new Message(
-                                result.getValue().toByteArray(),
-                                Instant.ofEpochSecond(
-                                        result.getEventTime().getSeconds(),
-                                        result.getEventTime().getNanos()),
-                                result.getKeysList().toArray(new String[0]),
-                                result.getTagsList().toArray(new String[0])))
-                        .collect(Collectors.toList());
-
-                return new MessageList(messages);
+                this.requestStreamObserver.onNext(request);
+                Sourcetransformer.SourceTransformResponse response = responseFuture.get();
+                MessageList messageList = createResponse(response);
+                responseFutures.remove(requestId);
+                return messageList;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -188,7 +148,77 @@ public class SourceTransformerTestKit {
          * @throws InterruptedException if the client fails to close
          */
         public void close() throws InterruptedException {
+            this.requestStreamObserver.onCompleted();
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+        }
+
+        private Sourcetransformer.SourceTransformRequest createRequest(
+                String[] keys,
+                Datum data,
+                String requestId) {
+            return Sourcetransformer.SourceTransformRequest.newBuilder().setRequest(
+                    Sourcetransformer.SourceTransformRequest.Request.newBuilder()
+                            .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
+                            .setValue(data.getValue()
+                                    == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
+                            .setEventTime(
+                                    data.getEventTime() == null ? Timestamp
+                                            .newBuilder()
+                                            .build() : Timestamp.newBuilder()
+                                            .setSeconds(data.getEventTime().getEpochSecond())
+                                            .setNanos(data.getEventTime().getNano())
+                                            .build())
+                            .setWatermark(
+                                    data.getWatermark() == null ? Timestamp
+                                            .newBuilder()
+                                            .build() : Timestamp.newBuilder()
+                                            .setSeconds(data.getWatermark().getEpochSecond())
+                                            .setNanos(data.getWatermark().getNano())
+                                            .build())
+                            .putAllHeaders(
+                                    data.getHeaders() == null ? new HashMap<>() : data.getHeaders())
+                            .setId(requestId)
+                            .build()
+            ).build();
+        }
+
+        private MessageList createResponse(Sourcetransformer.SourceTransformResponse response) {
+            List<Message> messages = response.getResultsList().stream()
+                    .map(result -> new Message(
+                            result.getValue().toByteArray(),
+                            Instant.ofEpochSecond(
+                                    result.getEventTime().getSeconds(),
+                                    result.getEventTime().getNanos()),
+                            result.getKeysList().toArray(new String[0]),
+                            result.getTagsList().toArray(new String[0])))
+                    .collect(Collectors.toList());
+            return new MessageList(messages);
+        }
+
+        private class ResponseObserver implements StreamObserver<Sourcetransformer.SourceTransformResponse> {
+            @Override
+            public void onNext(Sourcetransformer.SourceTransformResponse sourceTransformResponse) {
+                if (sourceTransformResponse.hasHandshake()) {
+                    return;
+                }
+                CompletableFuture<Sourcetransformer.SourceTransformResponse> responseFuture = responseFutures.get(
+                        sourceTransformResponse.getId());
+                if (responseFuture != null) {
+                    responseFuture.complete(sourceTransformResponse);
+                }
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                for (CompletableFuture<Sourcetransformer.SourceTransformResponse> future : responseFutures.values()) {
+                    future.completeExceptionally(throwable);
+                }
+            }
+
+            @Override
+            public void onCompleted() {
+                responseFutures.values().removeIf(CompletableFuture::isDone);
+            }
         }
     }
 

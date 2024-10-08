@@ -1,16 +1,16 @@
 package io.numaproj.numaflow.mapper;
 
-import com.google.protobuf.ByteString;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import com.google.protobuf.Empty;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.map.v1.MapGrpc.getMapFnMethod;
 
@@ -18,42 +18,73 @@ import static io.numaproj.numaflow.map.v1.MapGrpc.getMapFnMethod;
 @AllArgsConstructor
 class Service extends MapGrpc.MapImplBase {
 
+    public static final ActorSystem mapperActorSystem = ActorSystem.create("mapper");
+
     private final Mapper mapper;
 
-    /**
-     * Applies a function to each datum element.
-     */
+    // TODO we need to propagate the exception all the way up and shutdown the server.
+    static void handleFailure(
+            CompletableFuture<Void> failureFuture) {
+        new Thread(() -> {
+            try {
+                failureFuture.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
     @Override
-    public void mapFn(
-            MapOuterClass.MapRequest request,
-            StreamObserver<MapOuterClass.MapResponse> responseObserver) {
+    public StreamObserver<MapOuterClass.MapRequest> mapFn(final StreamObserver<MapOuterClass.MapResponse> responseObserver) {
 
         if (this.mapper == null) {
-            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+            return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
                     getMapFnMethod(),
                     responseObserver);
-            return;
         }
 
-        Datum handlerDatum = new HandlerDatum(
-                request.getValue().toByteArray(),
-                Instant.ofEpochSecond(
-                        request.getWatermark().getSeconds(),
-                        request.getWatermark().getNanos()),
-                Instant.ofEpochSecond(
-                        request.getEventTime().getSeconds(),
-                        request.getEventTime().getNanos()),
-                request.getHeadersMap()
-        );
+        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
 
-        // process request
-        MessageList messageList = mapper.processMessage(request
-                .getKeysList()
-                .toArray(new String[0]), handlerDatum);
+        handleFailure(failureFuture);
 
-        // set response
-        responseObserver.onNext(buildResponse(messageList));
-        responseObserver.onCompleted();
+        // create a MapSupervisorActor that processes the map requests.
+        ActorRef mapSupervisorActor = mapperActorSystem
+                .actorOf(MapSupervisorActor.props(mapper, responseObserver, failureFuture));
+
+        return new StreamObserver<>() {
+            private boolean handshakeDone = false;
+
+            @Override
+            public void onNext(MapOuterClass.MapRequest request) {
+                // make sure the handshake is done before processing the messages
+                if (!handshakeDone) {
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
+                        return;
+                    }
+                    responseObserver.onNext(MapOuterClass.MapResponse.newBuilder()
+                            .setHandshake(request.getHandshake())
+                            .build());
+                    handshakeDone = true;
+                    return;
+                }
+                // send the message to the MapSupervisorActor.
+                mapSupervisorActor.tell(request, ActorRef.noSender());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                mapSupervisorActor.tell(new Exception(throwable), ActorRef.noSender());
+            }
+
+            @Override
+            public void onCompleted() {
+                // indicate the end of input to the MapSupervisorActor.
+                mapSupervisorActor.tell(Constants.EOF, ActorRef.noSender());
+            }
+        };
     }
 
     /**
@@ -66,23 +97,4 @@ class Service extends MapGrpc.MapImplBase {
         responseObserver.onNext(MapOuterClass.ReadyResponse.newBuilder().setReady(true).build());
         responseObserver.onCompleted();
     }
-
-    private MapOuterClass.MapResponse buildResponse(MessageList messageList) {
-        MapOuterClass.MapResponse.Builder responseBuilder = MapOuterClass
-                .MapResponse
-                .newBuilder();
-
-        messageList.getMessages().forEach(message -> {
-            responseBuilder.addResults(MapOuterClass.MapResponse.Result.newBuilder()
-                    .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                            message.getValue()))
-                    .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>() : List.of(message.getKeys()))
-                    .addAllTags(message.getTags()
-                            == null ? new ArrayList<>() : List.of(message.getTags()))
-                    .build());
-        });
-        return responseBuilder.build();
-    }
-
 }

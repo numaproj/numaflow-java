@@ -14,9 +14,11 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
-
+import static org.junit.Assert.fail;
 
 public class ServerTest {
     private final static String PROCESSED_KEY_SUFFIX = "-key-processed";
@@ -59,40 +61,100 @@ public class ServerTest {
     }
 
     @Test
-    public void TestSourceTransform() {
-        ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
+    public void testSourceTransformerSuccess() {
+        Sourcetransformer.SourceTransformRequest handshakeRequest = Sourcetransformer.SourceTransformRequest
                 .newBuilder()
-                .addKeys("test-st-key")
-                .setValue(inValue)
+                .setHandshake(Sourcetransformer.Handshake
+                        .newBuilder()
+                        .setSot(true)
+                        .build())
                 .build();
 
-        String[] expectedKey = new String[]{"test-st-key" + PROCESSED_KEY_SUFFIX};
-        String[] expectedTags = new String[]{"test-tag"};
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        Sourcetransformer.SourceTransformRequest.Request inDatum = Sourcetransformer.SourceTransformRequest.Request
+                .newBuilder()
+                .setValue(inValue)
+                .addAllKeys(List.of("test-st-key"))
+                .build();
+
+        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
+                .newBuilder()
+                .setRequest(inDatum)
+                .build();
+
+        String[] expectedKeys = new String[]{"test-st-key" + PROCESSED_KEY_SUFFIX};
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
-        var stub = SourceTransformGrpc.newBlockingStub(inProcessChannel);
-        var actualDatumList = stub
-                .sourceTransformFn(request);
+        TransformerOutputStreamObserver responseObserver = new TransformerOutputStreamObserver(4);
 
-        assertEquals(1, actualDatumList.getResultsCount());
-        assertEquals(
-                com.google.protobuf.Timestamp.newBuilder()
-                        .setSeconds(TEST_EVENT_TIME.getEpochSecond())
-                        .setNanos(TEST_EVENT_TIME.getNano()).build(),
-                actualDatumList.getResults(0).getEventTime());
-        assertEquals(
-                expectedKey,
-                actualDatumList.getResults(0).getKeysList().toArray(new String[0]));
-        assertEquals(expectedValue, actualDatumList.getResults(0).getValue());
-        assertEquals(
-                expectedTags,
-                actualDatumList.getResults(0).getTagsList().toArray(new String[0]));
+        var stub = SourceTransformGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub
+                .sourceTransformFn(responseObserver);
+
+        requestStreamObserver.onNext(handshakeRequest);
+        requestStreamObserver.onNext(request);
+        requestStreamObserver.onNext(request);
+        requestStreamObserver.onNext(request);
+
+        try {
+            responseObserver.done.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Error while waiting for response" + e.getMessage());
+        }
+
+        List<Sourcetransformer.SourceTransformResponse> responses = responseObserver.getResponses();
+        assertEquals(4, responses.size());
+
+        // first response is the handshake response
+        assertEquals(handshakeRequest.getHandshake(), responses.get(0).getHandshake());
+
+        responses = responses.subList(1, responses.size());
+        for (Sourcetransformer.SourceTransformResponse response : responses) {
+            assertEquals(expectedValue, response.getResults(0).getValue());
+            assertEquals(Arrays.asList(expectedKeys), response.getResults(0).getKeysList());
+            assertEquals(1, response.getResultsCount());
+        }
+
+        requestStreamObserver.onCompleted();
+    }
+
+    @Test
+    public void testSourceTransformerWithoutHandshake() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        Sourcetransformer.SourceTransformRequest.Request inDatum = Sourcetransformer.SourceTransformRequest.Request
+                .newBuilder()
+                .setValue(inValue)
+                .addAllKeys(List.of("test-st-key"))
+                .build();
+
+        Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
+                .newBuilder()
+                .setRequest(inDatum)
+                .build();
+
+        TransformerOutputStreamObserver responseObserver = new TransformerOutputStreamObserver(1);
+
+        var stub = SourceTransformGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub
+                .sourceTransformFn(responseObserver);
+
+        requestStreamObserver.onNext(request);
+
+        try {
+            responseObserver.done.get();
+            fail("Expected an exception to be thrown");
+        } catch (InterruptedException | ExecutionException e) {
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Handshake request not received",
+                    e.getMessage());
+        }
+        requestStreamObserver.onCompleted();
     }
 
     private static class TestSourceTransformer extends SourceTransformer {
         @Override
         public MessageList processMessage(String[] keys, Datum datum) {
+            System.out.println("Processing message");
             String[] updatedKeys = Arrays
                     .stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
