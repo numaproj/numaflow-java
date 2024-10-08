@@ -133,6 +133,7 @@ public class ServerTest {
 
         try {
             responseObserver.done.get();
+            fail("Expected an exception to be thrown");
         } catch (InterruptedException | ExecutionException e) {
             assertEquals(
                     "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Handshake request not received",

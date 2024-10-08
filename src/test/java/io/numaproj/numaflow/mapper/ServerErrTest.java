@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ServerErrTest {
 
@@ -125,6 +126,7 @@ public class ServerErrTest {
 
         try {
             responseObserver.done.get();
+            fail("Expected exception not thrown");
         } catch (Exception e) {
             assertEquals(
                     "io.grpc.StatusRuntimeException: UNKNOWN: unknown exception",
