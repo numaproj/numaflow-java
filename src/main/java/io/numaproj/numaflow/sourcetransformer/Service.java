@@ -1,61 +1,93 @@
 package io.numaproj.numaflow.sourcetransformer;
 
-import com.google.protobuf.ByteString;
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import com.google.protobuf.Empty;
-import com.google.protobuf.Timestamp;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static io.numaproj.numaflow.map.v1.MapGrpc.getMapFnMethod;
-
+import static io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc.getSourceTransformFnMethod;
 
 @Slf4j
 @AllArgsConstructor
 class Service extends SourceTransformGrpc.SourceTransformImplBase {
 
+    public static final ActorSystem transformerActorSystem = ActorSystem.create("transformer");
+
     private final SourceTransformer transformer;
 
-    /**
-     * Applies a function to each datum element.
-     */
+    // TODO we need to propagate the exception all the way up and shutdown the server.
+    static void handleFailure(
+            CompletableFuture<Void> failureFuture) {
+        new Thread(() -> {
+            try {
+                failureFuture.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
     @Override
-    public void sourceTransformFn(
-            Sourcetransformer.SourceTransformRequest request,
-            StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver) {
+    public StreamObserver<Sourcetransformer.SourceTransformRequest> sourceTransformFn(final StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver) {
 
         if (this.transformer == null) {
-            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
-                    getMapFnMethod(),
+            return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(
+                    getSourceTransformFnMethod(),
                     responseObserver);
-            return;
         }
 
-        HandlerDatum handlerDatum = new HandlerDatum(
-                request.getValue().toByteArray(),
-                Instant.ofEpochSecond(
-                        request.getWatermark().getSeconds(),
-                        request.getWatermark().getNanos()),
-                Instant.ofEpochSecond(
-                        request.getEventTime().getSeconds(),
-                        request.getEventTime().getNanos()),
-                request.getHeadersMap()
-        );
+        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
 
-        // process request
-        MessageList messageList = this.transformer.processMessage(request
-                .getKeysList()
-                .toArray(new String[0]), handlerDatum);
+        handleFailure(failureFuture);
 
-        // set response
-        responseObserver.onNext(buildResponse(messageList));
-        responseObserver.onCompleted();
+        // create a TransformSupervisorActor that processes the transform requests.
+        ActorRef transformSupervisorActor = transformerActorSystem
+                .actorOf(TransformSupervisorActor.props(
+                        transformer,
+                        responseObserver,
+                        failureFuture));
+
+        return new StreamObserver<>() {
+            private boolean handshakeDone = false;
+
+            @Override
+            public void onNext(Sourcetransformer.SourceTransformRequest request) {
+                // make sure the handshake is done before processing the messages
+                if (!handshakeDone) {
+                    if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        responseObserver.onError(Status.INVALID_ARGUMENT
+                                .withDescription("Handshake request not received")
+                                .asException());
+                        return;
+                    }
+                    responseObserver.onNext(Sourcetransformer.SourceTransformResponse.newBuilder()
+                            .setHandshake(request.getHandshake())
+                            .build());
+                    handshakeDone = true;
+                    return;
+                }
+                // send the message to the TransformSupervisorActor.
+                transformSupervisorActor.tell(request, ActorRef.noSender());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                transformSupervisorActor.tell(new Exception(throwable), ActorRef.noSender());
+            }
+
+            @Override
+            public void onCompleted() {
+                // indicate the end of input to the TransformSupervisorActor.
+                transformSupervisorActor.tell(Constants.EOF, ActorRef.noSender());
+            }
+        };
     }
 
     /**
@@ -71,28 +103,4 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
                 .build());
         responseObserver.onCompleted();
     }
-
-    private Sourcetransformer.SourceTransformResponse buildResponse(MessageList messageList) {
-        Sourcetransformer.SourceTransformResponse.Builder responseBuilder = Sourcetransformer
-                .SourceTransformResponse
-                .newBuilder();
-
-        messageList.getMessages().forEach(message -> {
-            responseBuilder.addResults(Sourcetransformer.SourceTransformResponse.Result.newBuilder()
-                    .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                            message.getValue()))
-                    .setEventTime(Timestamp.newBuilder()
-                            .setSeconds(message
-                                    .getEventTime()
-                                    .getEpochSecond())
-                            .setNanos(message.getEventTime().getNano()))
-                    .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>() : List.of(message.getKeys()))
-                    .addAllTags(message.getTags()
-                            == null ? new ArrayList<>() : List.of(message.getTags()))
-                    .build());
-        });
-        return responseBuilder.build();
-    }
-
 }

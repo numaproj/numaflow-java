@@ -14,4 +14,6 @@ class Constants {
     public static final String MAP_MODE_KEY = "MAP_MODE";
 
     public static final String MAP_MODE = "unary-map";
+
+    public static final String EOF = "EOF";
 }
