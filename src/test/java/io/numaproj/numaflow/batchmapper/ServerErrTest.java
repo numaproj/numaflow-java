@@ -13,14 +13,15 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.batchmap.v1.BatchMapGrpc;
-import io.numaproj.numaflow.batchmap.v1.Batchmap;
+import io.numaproj.numaflow.map.v1.MapGrpc;
+import io.numaproj.numaflow.map.v1.MapOuterClass;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -106,105 +107,67 @@ public class ServerErrTest {
     @Test
     public void testErrorFromUDF() {
 
-        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver();
-        StreamObserver<Batchmap.BatchMapRequest> inputStreamObserver = BatchMapGrpc
+        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver(2);
+        StreamObserver<MapOuterClass.MapRequest> inputStreamObserver = MapGrpc
                 .newStub(inProcessChannel)
-                .batchMapFn(outputStreamObserver);
-
-        // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
-        // the test can still succeed.
-        AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
-
-        Thread t = new Thread(() -> {
-            while (outputStreamObserver.t == null) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    exceptionInThread.set(e);
-                }
-            }
-            try {
-                assertEquals(
-                        "UNKNOWN: java.lang.RuntimeException: unknown exception",
-                        outputStreamObserver.t.getMessage());
-            } catch (Throwable e) {
-                exceptionInThread.set(e);
-            }
-        });
-        t.start();
+                .mapFn(outputStreamObserver);
         String message = "message";
-        Batchmap.BatchMapRequest request = Batchmap.BatchMapRequest.newBuilder()
-                .setValue(ByteString.copyFromUtf8(message))
-                .addKeys("exception")
+        MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
+                .newBuilder()
+                .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
+                .build();
+        inputStreamObserver.onNext(handshakeRequest);
+        MapOuterClass.MapRequest request = MapOuterClass.MapRequest.newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request
+                        .newBuilder()
+                        .setValue(ByteString.copyFromUtf8(message))
+                        .addKeys("exception"))
                 .setId("exception")
                 .build();
         inputStreamObserver.onNext(request);
+        inputStreamObserver.onNext(MapOuterClass.MapRequest
+                .newBuilder()
+                .setStatus(MapOuterClass.MapRequest.Status.newBuilder().setEot(true))
+                .build());
         inputStreamObserver.onCompleted();
-
         try {
-            t.join();
-        } catch (InterruptedException e) {
-            fail("Thread got interrupted before test assertion.");
-        }
-        // Fail the test if any exception caught in the thread
-        if (exceptionInThread.get() != null) {
-            fail("Assertion failed in the thread: " + exceptionInThread.get().getMessage());
+            outputStreamObserver.done.get();
+            fail("Expected exception not thrown");
+        } catch (InterruptedException | ExecutionException e) {
+            assertEquals(
+                    "UNKNOWN: java.lang.RuntimeException: unknown exception",
+                    e.getCause().getMessage());
         }
     }
 
     @Test
-    public void testMismatchSizeError() {
+    public void testMapperWithoutHandshake() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        MapOuterClass.MapRequest inDatum = MapOuterClass.MapRequest
+                .newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request
+                        .newBuilder()
+                        .setValue(inValue)
+                        .addAllKeys(List.of("test-map-key"))
+                        .build()).build();
 
-        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver();
-        StreamObserver<Batchmap.BatchMapRequest> inputStreamObserver = BatchMapGrpc
-                .newStub(inProcessChannel)
-                .batchMapFn(outputStreamObserver);
+        BatchMapOutputStreamObserver responseObserver = new BatchMapOutputStreamObserver(1);
 
-        // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
-        // the test can still succeed.
-        AtomicReference<Throwable> exceptionInThread = new AtomicReference<>();
+        var stub = MapGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub
+                .mapFn(responseObserver);
 
-        Thread t = new Thread(() -> {
-            while (outputStreamObserver.t == null) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    exceptionInThread.set(e);
-                }
-            }
-            try {
-                assertEquals(
-                        "UNKNOWN: Number of results did not match expected 2 but got 1",
-                        outputStreamObserver.t.getMessage());
-            } catch (Throwable e) {
-                exceptionInThread.set(e);
-            }
-        });
-        t.start();
-        String message = "message";
-        Batchmap.BatchMapRequest request = Batchmap.BatchMapRequest.newBuilder()
-                .setValue(ByteString.copyFromUtf8(message))
-                .addKeys("drop")
-                .setId("drop")
-                .build();
-        inputStreamObserver.onNext(request);
-        Batchmap.BatchMapRequest request1 = Batchmap.BatchMapRequest.newBuilder()
-                .setValue(ByteString.copyFromUtf8(message))
-                .addKeys("test")
-                .setId("test")
-                .build();
-        inputStreamObserver.onNext(request1);
-        inputStreamObserver.onCompleted();
+        requestStreamObserver.onNext(inDatum);
 
         try {
-            t.join();
-        } catch (InterruptedException e) {
-            fail("Thread got interrupted before test assertion.");
+            responseObserver.done.get();
+            fail("Expected an exception to be thrown");
+        } catch (InterruptedException | ExecutionException e) {
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Handshake request not received",
+                    e.getMessage());
         }
-        // Fail the test if any exception caught in the thread
-        if (exceptionInThread.get() != null) {
-            fail("Assertion failed in the thread: " + exceptionInThread.get().getMessage());
-        }
+        requestStreamObserver.onCompleted();
     }
 
     private static class TestMapFn extends BatchMapper {
@@ -213,7 +176,7 @@ public class ServerErrTest {
         public BatchResponses processMessage(DatumIterator datumStream) {
             BatchResponses batchResponses = new BatchResponses();
             while (true) {
-                Datum datum = null;
+                Datum datum;
                 try {
                     datum = datumStream.next();
                 } catch (InterruptedException e) {
