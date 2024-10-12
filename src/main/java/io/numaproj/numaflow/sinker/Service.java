@@ -67,7 +67,7 @@ class Service extends SinkGrpc.SinkImplBase {
                 }
 
                 try {
-                    if (request.getStatus().getEot()) {
+                    if (request.hasStatus() && request.getStatus().getEot()) {
                         // End of transmission, write EOF datum to the stream
                         // Wait for the result and send the response back to the client
                         datumStream.writeMessage(HandlerDatum.EOF_DATUM);

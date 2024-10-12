@@ -1,38 +1,40 @@
 package io.numaproj.numaflow.batchmapper;
 
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.batchmap.v1.Batchmap;
-import lombok.extern.slf4j.Slf4j;
+import io.numaproj.numaflow.map.v1.MapOuterClass;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CompletableFuture;
 
-@Slf4j
-public class BatchMapOutputStreamObserver implements StreamObserver<Batchmap.BatchMapResponse> {
-    public AtomicReference<Boolean> completed = new AtomicReference<>(false);
-    public AtomicReference<List<Batchmap.BatchMapResponse>> resultDatum = new AtomicReference<>(
-            new ArrayList<>());
-    public Throwable t;
+public class BatchMapOutputStreamObserver implements StreamObserver<MapOuterClass.MapResponse> {
+    List<MapOuterClass.MapResponse> mapResponses = new ArrayList<>();
+    CompletableFuture<Void> done = new CompletableFuture<>();
+    Integer responseCount;
+
+    public BatchMapOutputStreamObserver(Integer responseCount) {
+        this.responseCount = responseCount;
+    }
 
     @Override
-    public void onNext(Batchmap.BatchMapResponse batchMapResponse) {
-        List<Batchmap.BatchMapResponse> receivedResponses = resultDatum.get();
-        receivedResponses.add(batchMapResponse);
-        resultDatum.set(receivedResponses);
-        log.info(
-                "Received BatchMapResponse with id {} and message count {}",
-                batchMapResponse.getId(),
-                batchMapResponse.getResultsCount());
+    public void onNext(MapOuterClass.MapResponse mapResponse) {
+        mapResponses.add(mapResponse);
+        if (mapResponses.size() == responseCount) {
+            done.complete(null);
+        }
     }
 
     @Override
     public void onError(Throwable throwable) {
-        t = throwable;
+        done.completeExceptionally(throwable);
     }
 
     @Override
     public void onCompleted() {
-        this.completed.set(true);
+        done.complete(null);
+    }
+
+    public List<MapOuterClass.MapResponse> getMapResponses() {
+        return mapResponses;
     }
 }

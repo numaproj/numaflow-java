@@ -6,8 +6,8 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.batchmap.v1.BatchMapGrpc;
-import io.numaproj.numaflow.batchmap.v1.Batchmap;
+import io.numaproj.numaflow.map.v1.MapGrpc;
+import io.numaproj.numaflow.map.v1.MapOuterClass;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
@@ -15,13 +15,14 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @Slf4j
 public class ServerTest {
-    private final static String PROCESSED_KEY_SUFFIX = "-key-processed";
-    private final static String PROCESSED_VALUE_SUFFIX = "-value-processed";
     private final static String key = "key";
 
     @Rule
@@ -62,27 +63,49 @@ public class ServerTest {
 
     @Test
     public void testBatchMapHappyPath() {
-        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver();
-        StreamObserver<Batchmap.BatchMapRequest> inputStreamObserver = BatchMapGrpc
+        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver(11);
+        StreamObserver<MapOuterClass.MapRequest> inputStreamObserver = MapGrpc
                 .newStub(inProcessChannel)
-                .batchMapFn(outputStreamObserver);
+                .mapFn(outputStreamObserver);
 
+        MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
+                .newBuilder()
+                .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
+                .build();
+
+        inputStreamObserver.onNext(handshakeRequest);
         for (int i = 1; i <= 10; i++) {
             String uuid = Integer.toString(i);
             String message = i + "," + (i + 10);
-            Batchmap.BatchMapRequest request = Batchmap.BatchMapRequest.newBuilder()
-                    .setValue(ByteString.copyFromUtf8(message))
-                    .addKeys(key)
+            MapOuterClass.MapRequest request = MapOuterClass.MapRequest.newBuilder()
+                    .setRequest(MapOuterClass.MapRequest.Request
+                            .newBuilder()
+                            .setValue(ByteString.copyFromUtf8(message))
+                            .addKeys(key)
+                            .build())
                     .setId(uuid)
                     .build();
-            log.info("Sending request with ID : {} and msg: {}", uuid, message);
             inputStreamObserver.onNext(request);
         }
 
+        inputStreamObserver.onNext(MapOuterClass.MapRequest
+                .newBuilder()
+                .setStatus(MapOuterClass.MapRequest.Status.newBuilder().setEot(true))
+                .build());
         inputStreamObserver.onCompleted();
-        while (outputStreamObserver.resultDatum.get().size() != 10) ;
-        List<Batchmap.BatchMapResponse> result = outputStreamObserver.resultDatum.get();
-        assertEquals(10, result.size());
+
+        try {
+            outputStreamObserver.done.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Error in getting done signal from the observer " + e.getMessage());
+        }
+        List<MapOuterClass.MapResponse> result = outputStreamObserver.getMapResponses();
+        assertEquals(11, result.size());
+
+        // first response is handshake
+        assertTrue(result.get(0).hasHandshake());
+
+        result = result.subList(1, result.size());
         for (int i = 0; i < 10; i++) {
             assertEquals(result.get(i).getId(), String.valueOf(i + 1));
         }
@@ -93,7 +116,7 @@ public class ServerTest {
         public BatchResponses processMessage(DatumIterator datumStream) {
             BatchResponses batchResponses = new BatchResponses();
             while (true) {
-                Datum datum = null;
+                Datum datum;
                 try {
                     datum = datumStream.next();
                 } catch (InterruptedException e) {
@@ -106,13 +129,11 @@ public class ServerTest {
                 String msg = new String(datum.getValue());
                 String[] strs = msg.split(",");
                 BatchResponse batchResponse = new BatchResponse(datum.getId());
-                log.info("Processing message with id: {}", datum.getId());
                 for (String str : strs) {
                     batchResponse.append(new Message(str.getBytes()));
                 }
                 batchResponses.append(batchResponse);
             }
-            log.info("Returning respose list with size {}", batchResponses.getItems().size());
             return batchResponses;
         }
     }
