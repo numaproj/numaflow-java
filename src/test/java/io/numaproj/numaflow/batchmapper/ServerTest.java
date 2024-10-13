@@ -63,7 +63,7 @@ public class ServerTest {
 
     @Test
     public void testBatchMapHappyPath() {
-        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver(11);
+        BatchMapOutputStreamObserver outputStreamObserver = new BatchMapOutputStreamObserver(12);
         StreamObserver<MapOuterClass.MapRequest> inputStreamObserver = MapGrpc
                 .newStub(inProcessChannel)
                 .mapFn(outputStreamObserver);
@@ -90,7 +90,7 @@ public class ServerTest {
 
         inputStreamObserver.onNext(MapOuterClass.MapRequest
                 .newBuilder()
-                .setStatus(MapOuterClass.MapRequest.Status.newBuilder().setEot(true))
+                .setStatus(MapOuterClass.Status.newBuilder().setEot(true))
                 .build());
         inputStreamObserver.onCompleted();
 
@@ -100,7 +100,7 @@ public class ServerTest {
             fail("Error in getting done signal from the observer " + e.getMessage());
         }
         List<MapOuterClass.MapResponse> result = outputStreamObserver.getMapResponses();
-        assertEquals(11, result.size());
+        assertEquals(12, result.size());
 
         // first response is handshake
         assertTrue(result.get(0).hasHandshake());
