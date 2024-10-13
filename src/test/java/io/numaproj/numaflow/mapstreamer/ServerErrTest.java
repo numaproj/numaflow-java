@@ -12,16 +12,15 @@ import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
-import io.numaproj.numaflow.mapstream.v1.MapStreamGrpc;
-import io.numaproj.numaflow.mapstream.v1.Mapstream;
+import io.numaproj.numaflow.map.v1.MapGrpc;
+import io.numaproj.numaflow.map.v1.MapOuterClass;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class ServerErrTest {
 
@@ -103,18 +102,34 @@ public class ServerErrTest {
 
     @Test
     public void TestMapStreamerErr() {
-        ByteString inValue = ByteString.copyFromUtf8("invalue");
-        Mapstream.MapStreamRequest request = Mapstream.MapStreamRequest
+        MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
                 .newBuilder()
-                .addAllKeys(List.of("test-map-stream-key"))
-                .setValue(inValue)
+                .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
                 .build();
 
-        var stub = MapStreamGrpc.newBlockingStub(inProcessChannel);
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        MapOuterClass.MapRequest request = MapOuterClass.MapRequest
+                .newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request.newBuilder()
+                        .setValue(inValue)
+                        .addKeys("test-map-stream-key")).build();
+
+        MapStreamOutputStreamObserver mapStreamOutputStreamObserver = new MapStreamOutputStreamObserver(
+                2);
+        var stub = MapGrpc.newStub(inProcessChannel);
+
+        var requestStreamObserver = stub
+                .mapFn(mapStreamOutputStreamObserver);
+        requestStreamObserver.onNext(handshakeRequest);
+        requestStreamObserver.onNext(request);
+
         try {
-            stub.mapStreamFn(request);
+            mapStreamOutputStreamObserver.done.get();
+            fail("Should have thrown an exception");
         } catch (Exception e) {
-            assertEquals("UNKNOWN: unknown exception", e.getMessage());
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: UNKNOWN: unknown exception",
+                    e.getMessage());
         }
     }
 

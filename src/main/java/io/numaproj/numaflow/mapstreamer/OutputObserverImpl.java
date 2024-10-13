@@ -2,7 +2,7 @@ package io.numaproj.numaflow.mapstreamer;
 
 import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
-import io.numaproj.numaflow.mapstream.v1.Mapstream;
+import io.numaproj.numaflow.map.v1.MapOuterClass;
 import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
@@ -14,17 +14,17 @@ import java.util.List;
  */
 @AllArgsConstructor
 class OutputObserverImpl implements OutputObserver {
-    StreamObserver<Mapstream.MapStreamResponse> responseObserver;
+    StreamObserver<MapOuterClass.MapResponse> responseObserver;
 
     @Override
     public void send(Message message) {
-        Mapstream.MapStreamResponse response = buildResponse(message);
+        MapOuterClass.MapResponse response = buildResponse(message);
         responseObserver.onNext(response);
     }
 
-    private Mapstream.MapStreamResponse buildResponse(Message message) {
-        return Mapstream.MapStreamResponse.newBuilder()
-                .setResult(Mapstream.MapStreamResponse.Result.newBuilder()
+    private MapOuterClass.MapResponse buildResponse(Message message) {
+        return MapOuterClass.MapResponse.newBuilder()
+                .addResults(MapOuterClass.MapResponse.Result.newBuilder()
                         .setValue(
                                 message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                                         message.getValue()))
@@ -33,6 +33,5 @@ class OutputObserverImpl implements OutputObserver {
                         .addAllTags(message.getTags()
                                 == null ? new ArrayList<>() : List.of(message.getTags()))
                         .build()).build();
-
     }
 }
