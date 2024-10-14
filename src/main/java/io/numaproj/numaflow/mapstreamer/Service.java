@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.mapstreamer;
 
+import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapGrpc;
@@ -87,6 +88,17 @@ class Service extends MapGrpc.MapImplBase {
                 responseObserver.onCompleted();
             }
         };
+    }
+
+    /**
+     * IsReady is the heartbeat endpoint for gRPC.
+     */
+    @Override
+    public void isReady(
+            Empty request,
+            StreamObserver<MapOuterClass.ReadyResponse> responseObserver) {
+        responseObserver.onNext(MapOuterClass.ReadyResponse.newBuilder().setReady(true).build());
+        responseObserver.onCompleted();
     }
 
     // Construct a HandlerDatum from a MapRequest
