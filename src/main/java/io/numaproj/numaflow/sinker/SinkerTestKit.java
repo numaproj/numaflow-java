@@ -181,7 +181,7 @@ public class SinkerTestKit {
             }
             // send end of transmission message
             requestObserver.onNext(SinkOuterClass.SinkRequest.newBuilder().setStatus(
-                    SinkOuterClass.SinkRequest.Status.newBuilder().setEot(true)).build());
+                    SinkOuterClass.TransmissionStatus.newBuilder().setEot(true)).build());
 
             requestObserver.onCompleted();
 
@@ -195,6 +195,9 @@ public class SinkerTestKit {
             ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
             for (SinkOuterClass.SinkResponse result : outputResponses) {
                 if (result.getHandshake().getSot()) {
+                    continue;
+                }
+                if (result.hasStatus() && result.getStatus().getEot()) {
                     continue;
                 }
                 if (result.getResult().getStatus() == SinkOuterClass.Status.SUCCESS) {

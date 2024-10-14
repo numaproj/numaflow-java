@@ -127,7 +127,7 @@ public class ServerErrTest {
         inputStreamObserver.onNext(request);
         inputStreamObserver.onNext(MapOuterClass.MapRequest
                 .newBuilder()
-                .setStatus(MapOuterClass.Status.newBuilder().setEot(true))
+                .setStatus(MapOuterClass.TransmissionStatus.newBuilder().setEot(true))
                 .build());
         inputStreamObserver.onCompleted();
         try {
