@@ -78,6 +78,16 @@ class Service extends SinkGrpc.SinkImplBase {
                             responseObserver.onNext(sinkResponse);
                         });
 
+                        // send eot response to indicate end of transmission for the batch
+                        SinkOuterClass.SinkResponse eotResponse = SinkOuterClass.SinkResponse
+                                .newBuilder()
+                                .setStatus(SinkOuterClass.TransmissionStatus
+                                        .newBuilder()
+                                        .setEot(true)
+                                        .build())
+                                .build();
+                        responseObserver.onNext(eotResponse);
+
                         // reset the startOfStream flag, since the stream has ended
                         // so that the next request will be treated as the start of the stream
                         startOfStream = true;
