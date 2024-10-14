@@ -66,7 +66,10 @@ class Service extends MapGrpc.MapImplBase {
                 // Send an EOT message to indicate the end of the transmission for the batch.
                 MapOuterClass.MapResponse eotResponse = MapOuterClass.MapResponse
                         .newBuilder()
-                        .setStatus(MapOuterClass.Status.newBuilder().setEot(true).build()).build();
+                        .setStatus(MapOuterClass.TransmissionStatus
+                                .newBuilder()
+                                .setEot(true)
+                                .build()).build();
                 responseObserver.onNext(eotResponse);
             }
 

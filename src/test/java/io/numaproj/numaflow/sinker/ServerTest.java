@@ -101,7 +101,7 @@ public class ServerTest {
             // If it's the end of the batch, send an EOT message
             if (i % 10 == 0) {
                 SinkOuterClass.SinkRequest eotRequest = SinkOuterClass.SinkRequest.newBuilder()
-                        .setStatus(SinkOuterClass.SinkRequest.Status
+                        .setStatus(SinkOuterClass.TransmissionStatus
                                 .newBuilder()
                                 .setEot(true)
                                 .build())
@@ -114,12 +114,15 @@ public class ServerTest {
 
         while (!outputStreamObserver.completed.get()) ;
         List<SinkOuterClass.SinkResponse> responseList = outputStreamObserver.getSinkResponse();
-        assertEquals(101, responseList.size());
+        assertEquals(111, responseList.size());
         // first response is the handshake response
         assertTrue(responseList.get(0).getHandshake().getSot());
 
         responseList = responseList.subList(1, responseList.size());
         responseList.forEach(response -> {
+            if (response.hasStatus() && response.getStatus().getEot()) {
+                return;
+            }
             assertEquals(response.getResult().getId(), expectedId);
             if (response.getResult().getStatus() == SinkOuterClass.Status.FAILURE) {
                 assertEquals(response.getResult().getErrMsg(), "error message");

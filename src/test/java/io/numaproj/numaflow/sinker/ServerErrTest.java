@@ -110,7 +110,7 @@ public class ServerErrTest {
 
         // send eot message
         inputStreamObserver.onNext(SinkOuterClass.SinkRequest.newBuilder()
-                .setStatus(SinkOuterClass.SinkRequest.Status.newBuilder().setEot(true)).build());
+                .setStatus(SinkOuterClass.TransmissionStatus.newBuilder().setEot(true)).build());
 
         inputStreamObserver.onCompleted();
 
