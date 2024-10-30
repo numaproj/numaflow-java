@@ -197,19 +197,22 @@ public class SinkerTestKit {
                 if (result.getHandshake().getSot()) {
                     continue;
                 }
+
                 if (result.hasStatus() && result.getStatus().getEot()) {
                     continue;
                 }
-                if (result.getResult().getStatus() == SinkOuterClass.Status.SUCCESS) {
-                    responseListBuilder.addResponse(Response.responseOK(result
-                            .getResult()
-                            .getId()));
-                } else if (result.getResult().getStatus() == SinkOuterClass.Status.FALLBACK) {
-                    responseListBuilder.addResponse(Response.responseFallback(
-                            result.getResult().getId()));
-                } else {
-                    responseListBuilder.addResponse(Response.responseFailure(
-                            result.getResult().getId(), result.getResult().getErrMsg()));
+
+                for (SinkOuterClass.SinkResponse.Result response : result.getResultsList()) {
+                    if (response.getStatus() == SinkOuterClass.Status.SUCCESS) {
+                        responseListBuilder.addResponse(Response.responseOK(response
+                                .getId()));
+                    } else if (response.getStatus() == SinkOuterClass.Status.FALLBACK) {
+                        responseListBuilder.addResponse(Response.responseFallback(
+                                response.getId()));
+                    } else {
+                        responseListBuilder.addResponse(Response.responseFailure(
+                                response.getId(), response.getErrMsg()));
+                    }
                 }
             }
 

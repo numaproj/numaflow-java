@@ -72,9 +72,11 @@ public class SimpleSource extends Sourcer {
 
     @Override
     public void ack(AckRequest request) {
-        Long offset = Longs.fromByteArray(request.getOffset().getValue());
-        // remove the acknowledged messages from the map
-        messages.remove(offset);
+        for (Offset offset : request.getOffsets()) {
+            Long decoded_offset = Longs.fromByteArray(offset.getValue());
+            // remove the acknowledged messages from the map
+            messages.remove(decoded_offset);
+        }
     }
 
     @Override

@@ -73,10 +73,11 @@ class Service extends SinkGrpc.SinkImplBase {
                         datumStream.writeMessage(HandlerDatum.EOF_DATUM);
 
                         ResponseList responses = result.join();
-                        responses.getResponses().forEach(response -> {
-                            SinkOuterClass.SinkResponse sinkResponse = buildResponse(response);
-                            responseObserver.onNext(sinkResponse);
-                        });
+                        SinkOuterClass.SinkResponse.Builder responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
+                        for (Response response : responses.getResponses()) {
+                            responseBuilder.addResults(buildResult(response));
+                        }
+                        responseObserver.onNext(responseBuilder.build());
 
                         // send eot response to indicate end of transmission for the batch
                         SinkOuterClass.SinkResponse eotResponse = SinkOuterClass.SinkResponse
@@ -113,15 +114,13 @@ class Service extends SinkGrpc.SinkImplBase {
         };
     }
 
-    private SinkOuterClass.SinkResponse buildResponse(Response response) {
+    private SinkOuterClass.SinkResponse.Result buildResult(Response response) {
         SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK :
                 response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
-        return SinkOuterClass.SinkResponse.newBuilder()
-                .setResult(SinkOuterClass.SinkResponse.Result.newBuilder()
-                        .setId(response.getId() == null ? "" : response.getId())
-                        .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                        .setStatus(status)
-                        .build())
+        return SinkOuterClass.SinkResponse.Result.newBuilder()
+                .setId(response.getId() == null ? "" : response.getId())
+                .setErrMsg(response.getErr() == null ? "" : response.getErr())
+                .setStatus(status)
                 .build();
     }
 
