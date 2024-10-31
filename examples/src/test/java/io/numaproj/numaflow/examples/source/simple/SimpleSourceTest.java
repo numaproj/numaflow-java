@@ -39,11 +39,9 @@ public class SimpleSourceTest {
             offsets.add(message.getOffset());
         }
 
-        for (Offset offset : offsets) {
-            SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
-                    .offset(offset).build();
-            simpleSource.ack(ackRequest);
-        }
+        SourcerTestKit.TestAckRequest ackRequest = SourcerTestKit.TestAckRequest.builder()
+                .offsets(offsets).build();
+        simpleSource.ack(ackRequest);
 
         // Try reading 6 more messages
         // Since the previous batch got acked, the data source should allow us to read more messages

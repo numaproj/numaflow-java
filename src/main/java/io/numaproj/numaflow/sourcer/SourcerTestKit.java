@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * SourcerTestKit is a test kit for testing Sourcer implementations.
@@ -165,14 +166,15 @@ public class SourcerTestKit {
          */
         public void sendAckRequest(AckRequest request) throws Exception {
             CompletableFuture<SourceOuterClass.AckResponse> future = new CompletableFuture<>();
+
             SourceOuterClass.AckRequest.Request.Builder builder = SourceOuterClass.AckRequest.Request
                     .newBuilder()
-                    .setOffset(SourceOuterClass.Offset.newBuilder()
-                            .setOffset(com.google.protobuf.ByteString.copyFrom(request
-                                    .getOffset()
-                                    .getValue()))
-                            .setPartitionId(request.getOffset().getPartitionId())
-                            .build());
+                    .addAllOffsets(request.getOffsets().stream().map(
+                            offset -> SourceOuterClass.Offset.newBuilder()
+                                    .setOffset(com.google.protobuf.ByteString.copyFrom(offset.getValue()))
+                                    .setPartitionId(offset.getPartitionId())
+                                    .build()
+                    ).collect(Collectors.toList()));
 
             SourceOuterClass.AckRequest grpcRequest = SourceOuterClass.AckRequest.newBuilder()
                     .setRequest(builder.build())
@@ -288,7 +290,7 @@ public class SourcerTestKit {
     @Setter
     @Builder
     public static class TestAckRequest implements AckRequest {
-        Offset offset;
+        List<Offset> offsets;
     }
 
     /**

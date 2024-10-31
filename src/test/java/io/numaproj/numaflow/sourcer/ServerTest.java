@@ -104,7 +104,7 @@ public class ServerTest {
                         .newBuilder()
                         .getRequest()
                         .toBuilder()
-                        .setOffset(offset)
+                        .addOffsets(offset)
                         .build();
                 ackRequests.add(SourceOuterClass.AckRequest
                         .newBuilder()
@@ -243,8 +243,10 @@ public class ServerTest {
 
         @Override
         public void ack(AckRequest request) {
-            Integer offset = ByteBuffer.wrap(request.getOffset().getValue()).getInt();
-            yetToBeAcked.remove(offset);
+            for (Offset offset : request.getOffsets()) {
+                Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
+                yetToBeAcked.remove(decoded_offset);
+            }
         }
 
         @Override

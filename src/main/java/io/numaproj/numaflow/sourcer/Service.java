@@ -7,6 +7,7 @@ import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.numaproj.numaflow.source.v1.SourceGrpc.getPendingFnMethod;
@@ -115,14 +116,16 @@ class Service extends SourceGrpc.SourceImplBase {
                     return;
                 }
 
-                SourceOuterClass.Offset offset = request.getRequest().getOffset();
+                List<Offset> offsets = new ArrayList<>(request.getRequest().getOffsetsCount());
+                for (SourceOuterClass.Offset offset : request.getRequest().getOffsetsList()) {
+                    offsets.add(new Offset(
+                            offset.getOffset().toByteArray(),
+                            offset.getPartitionId()));
+                }
 
-                AckRequestImpl ackRequest = new AckRequestImpl(new Offset(
-                        offset.getOffset().toByteArray(),
-                        offset.getPartitionId()));
+                AckRequestImpl ackRequest = new AckRequestImpl(offsets);
 
                 // invoke the sourcer's ack method
-
                 sourcer.ack(ackRequest);
 
                 // send an ack response to the client after acking the message
