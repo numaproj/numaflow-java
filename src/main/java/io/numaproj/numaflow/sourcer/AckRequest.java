@@ -1,12 +1,14 @@
 package io.numaproj.numaflow.sourcer;
 
 
+import java.util.List;
+
 /**
  * AckRequest request for acknowledging messages.
  */
 public interface AckRequest {
     /**
-     * @return the offset to be acknowledged
+     * @return the list of offsets to be acknowledged
      */
-    Offset getOffset();
+    List<Offset> getOffsets();
 }

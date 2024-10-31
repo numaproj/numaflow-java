@@ -114,19 +114,19 @@ public class ServerTest {
 
         while (!outputStreamObserver.completed.get()) ;
         List<SinkOuterClass.SinkResponse> responseList = outputStreamObserver.getSinkResponse();
-        assertEquals(111, responseList.size());
+        assertEquals(21, responseList.size());
         // first response is the handshake response
         assertTrue(responseList.get(0).getHandshake().getSot());
 
         responseList = responseList.subList(1, responseList.size());
-        responseList.forEach(response -> {
-            if (response.hasStatus() && response.getStatus().getEot()) {
+        var response = responseList.get(0);
+        response.getResultsList().forEach(result -> {
+            if (result.getStatus() == SinkOuterClass.Status.FAILURE) {
+                assertEquals(result.getErrMsg(), "error message");
                 return;
             }
-            assertEquals(response.getResult().getId(), expectedId);
-            if (response.getResult().getStatus() == SinkOuterClass.Status.FAILURE) {
-                assertEquals(response.getResult().getErrMsg(), "error message");
-            }
+            assertEquals(result.getId(), expectedId);
+            assertEquals(result.getStatus(), SinkOuterClass.Status.SUCCESS);
         });
     }
 
