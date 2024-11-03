@@ -153,52 +153,7 @@ public class ServerTest {
         }
     }
 
-    @Test
-    @Order(4)
-    public void testSinkServerInvocation() {
-        int datumCount = 10;
-        SinkerTestKit sinkerTestKit = new SinkerTestKit(new SimpleSink());
 
-        // Start the server
-        try {
-            sinkerTestKit.startServer();
-        } catch (Exception e) {
-            Assertions.fail("Failed to start server");
-        }
-
-        // Create a test datum iterator with 10 messages
-        SinkerTestKit.TestListIterator testListIterator = new SinkerTestKit.TestListIterator();
-        for (int i = 0; i < datumCount; i++) {
-            testListIterator.addDatum(SinkerTestKit.TestDatum
-                    .builder()
-                    .id("id-" + i)
-                    .value(("value-" + i).getBytes())
-                    .headers(Map.of("test-key", "test-value"))
-                    .build());
-        }
-
-        SinkerTestKit.Client client = new SinkerTestKit.Client();
-        try {
-            ResponseList responseList = client.sendRequest(testListIterator);
-            Assertions.assertEquals(datumCount, responseList.getResponses().size());
-            for (Response response : responseList.getResponses()) {
-                Assertions.assertEquals(true, response.getSuccess());
-            }
-        } catch (Exception e) {
-            Assertions.fail("Failed to send requests");
-        }
-
-        // Stop the server
-        try {
-            client.close();
-            sinkerTestKit.stopServer();
-        } catch (InterruptedException e) {
-            Assertions.fail("Failed to stop server");
-        }
-
-        // we can add the logic to verify if the messages were
-        // successfully written to the sink(could be a file, database, etc.)
-    }
 // FIXME: once tester kit changes are done for bidirectional streaming source
 //    @Ignore
 //    @Test

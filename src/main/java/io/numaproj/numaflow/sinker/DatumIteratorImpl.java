@@ -29,8 +29,7 @@ class DatumIteratorImpl implements DatumIterator {
         return datum;
     }
 
-    // blocking call, waits until the write operation is successful
-    public void writeMessage(Datum datum) throws InterruptedException {
+    public void write(Datum datum) throws InterruptedException {
         blockingQueue.put(datum);
     }
 }

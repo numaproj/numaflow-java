@@ -36,19 +36,22 @@ class Service extends SinkGrpc.SinkImplBase {
         return new StreamObserver<>() {
             private boolean startOfStream = true;
             private CompletableFuture<ResponseList> result;
-            private DatumIteratorImpl datumStream;
+            private DatumIterator datumStream;
             private boolean handshakeDone = false;
 
             @Override
             public void onNext(SinkOuterClass.SinkRequest request) {
                 // make sure the handshake is done before processing the messages
                 if (!handshakeDone) {
+                    log.info("Handshake hasn't been done yet");
                     if (!request.hasHandshake() || !request.getHandshake().getSot()) {
+                        log.error("Handshake request not received, triggering onError on the responseObserver");
                         responseObserver.onError(Status.INVALID_ARGUMENT
                                 .withDescription("Handshake request not received")
                                 .asException());
                         return;
                     }
+                    log.info("Handshake request received, sending handshake response");
                     responseObserver.onNext(SinkOuterClass.SinkResponse.newBuilder()
                             .setHandshake(request.getHandshake())
                             .build());
@@ -60,6 +63,7 @@ class Service extends SinkGrpc.SinkImplBase {
                 // and start the sinker if it is the start of the stream
                 if (startOfStream) {
                     datumStream = new DatumIteratorImpl();
+                    // FIXME - null check before new.
                     result = CompletableFuture.supplyAsync(
                             () -> sinker.processMessages(datumStream),
                             sinkTaskExecutor);
@@ -68,9 +72,10 @@ class Service extends SinkGrpc.SinkImplBase {
 
                 try {
                     if (request.hasStatus() && request.getStatus().getEot()) {
+                        log.info("End of transmission received, collecting responses and sending back to the client");
                         // End of transmission, write EOF datum to the stream
                         // Wait for the result and send the response back to the client
-                        datumStream.writeMessage(HandlerDatum.EOF_DATUM);
+                        datumStream.write(HandlerDatum.EOF_DATUM);
 
                         ResponseList responses = result.join();
                         responses.getResponses().forEach(response -> {
@@ -87,15 +92,17 @@ class Service extends SinkGrpc.SinkImplBase {
                                         .build())
                                 .build();
                         responseObserver.onNext(eotResponse);
+                        log.info("All responses sent back to the client, including the EOT response");
 
                         // reset the startOfStream flag, since the stream has ended
                         // so that the next request will be treated as the start of the stream
                         startOfStream = true;
+                        log.info("startOfStream flag reset to true");
                     } else {
-                        datumStream.writeMessage(constructHandlerDatum(request));
+                        datumStream.write(constructHandlerDatum(request));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered error in sinkFn - {}", e.getMessage());
+                    log.error("Encountered error in sink onNext - {}", e.getMessage());
                     responseObserver.onError(e);
                 }
             }
@@ -151,8 +158,10 @@ class Service extends SinkGrpc.SinkImplBase {
         );
     }
 
-    // shuts down the executor service which is used for reduce
+    // shuts down the executor service. it's a blocking call until all the tasks are shut down .
     public void shutDown() {
+        log.info("Shutting down sink executors.");
+        // TODO - do we need call this one if we call awaitTermination below?
         this.sinkTaskExecutor.shutdown();
         try {
             // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
@@ -163,14 +172,23 @@ class Service extends SinkGrpc.SinkImplBase {
             if (!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
                 log.error("Sink executor did not terminate in the specified time.");
                 List<Runnable> droppedTasks = sinkTaskExecutor.shutdownNow();
-                log.error("Sink executor was abruptly shut down. " + droppedTasks.size()
-                        + " tasks will not be executed.");
-            } else {
-                log.info("Sink executor was terminated.");
+                log.error(
+                        "Sink executor was abruptly shut down. {} tasks will not be executed.",
+                        droppedTasks.size());
             }
+
+            while(!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
+                log.error("Sink executor did not terminate in the specified time. Keep retrying.");
+            }
+            log.info("Sink executor was terminated.");
         } catch (InterruptedException e) {
-            Thread.interrupted();
-            e.printStackTrace();
+            // this one clears the interrupted status - I don't think it's not good.
+            if (Thread.interrupted()) {
+                System.err.println("Thread was interrupted when trying to stop the sink service task executor.\n"
+                        + "Thread interrupted status cleared");
+            }
+            System.err.println("Sink service printing stack trace for the exception to stderr");
+            e.printStackTrace(System.err);
         }
     }
 }

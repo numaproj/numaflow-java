@@ -16,4 +16,12 @@ public interface DatumIterator {
      * @throws InterruptedException if the thread is interrupted while waiting for the next element
      */
     Datum next() throws InterruptedException;
+
+    /**
+     * Write a datum to the iterator
+     * This method blocks until the write operation is successful.
+     * @param datum the datum to write
+     * @throws InterruptedException if the thread is interrupted while waiting for the write operation
+     */
+    void write(Datum datum) throws InterruptedException;
 }

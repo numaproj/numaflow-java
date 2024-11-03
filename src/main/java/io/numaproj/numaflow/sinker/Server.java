@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
@@ -84,10 +85,16 @@ public class Server {
             try {
                 Server.this.stop();
             } catch (InterruptedException e) {
-                Thread.interrupted();
+                // this one clears the interrupted status - I don't think it's not good.
+                if (Thread.interrupted()) {
+                    System.err.println("Thread was interrupted when trying to stop the sink gRPC server.\n"
+                            + "Thread interrupted status cleared");
+                }
+                System.err.println("Sink server printing stack trace for the exception to stderr");
                 e.printStackTrace(System.err);
             }
         }));
+        log.info("Sink server shutdown hook registered");
     }
 
     /**
@@ -97,8 +104,11 @@ public class Server {
      *
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
+    // TODO - should we use stop instead of awaitTermination in main?
     public void awaitTermination() throws InterruptedException {
+        log.info("Sink server is waiting for termination");
         server.awaitTermination();
+        log.info("Sink server has terminated");
     }
 
     /**
@@ -107,15 +117,22 @@ public class Server {
      *
      * @throws InterruptedException if shutdown is interrupted
      */
+    // TODO - can udsink call this method?
+    // what the difference between this method and awaitTermination?
     public void stop() throws InterruptedException {
+        log.info("Server.stop started. Shutting down sink service");
         this.service.shutDown();
+        log.info("sink service is successfully shut down");
         if (server != null) {
+            log.info("Shutting down gRPC server");
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             // force shutdown if not terminated
             if (!server.isTerminated()) {
+                log.info("Server did not terminate in {} seconds. Shutting down forcefully", 30);
                 server.shutdownNow();
             }
         }
+        log.info("Server.stop successfully completed");
     }
 
     /**
@@ -124,7 +141,8 @@ public class Server {
      *
      * @param serverBuilder the server builder to be used
      */
-    public void setServerBuilder(ServerBuilder<?> serverBuilder) {
+    @VisibleForTesting
+    void setServerBuilder(ServerBuilder<?> serverBuilder) {
         this.server = serverBuilder
                 .addService(this.service)
                 .build();

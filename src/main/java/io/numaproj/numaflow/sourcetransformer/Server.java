@@ -124,7 +124,7 @@ public class Server {
      * @param serverBuilder in process server builder can be used for testing
      */
     @VisibleForTesting
-    public void setServerBuilder(ServerBuilder<?> serverBuilder) {
+    void setServerBuilder(ServerBuilder<?> serverBuilder) {
         this.server = serverBuilder
                 .addService(this.service)
                 .build();
