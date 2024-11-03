@@ -18,9 +18,9 @@ public class DatumStreamImplTest {
 
         DatumIteratorImpl datumIterator = new DatumIteratorImpl();
 
-        datumIterator.writeMessage(datum1);
-        datumIterator.writeMessage(datum2);
-        datumIterator.writeMessage(eofDatum);
+        datumIterator.write(datum1);
+        datumIterator.write(datum2);
+        datumIterator.write(eofDatum);
 
         assertEquals(datum1, datumIterator.next());
 

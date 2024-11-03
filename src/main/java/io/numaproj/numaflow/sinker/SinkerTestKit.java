@@ -251,7 +251,7 @@ public class SinkerTestKit {
             return null;
         }
 
-        public void addDatum(Datum datum) {
+        public void write(Datum datum) {
             data.add(datum);
         }
     }
@@ -278,7 +278,7 @@ public class SinkerTestKit {
             return null;
         }
 
-        public void addDatum(Datum datum) throws InterruptedException {
+        public void write(Datum datum) throws InterruptedException {
             if (!closed) {
                 queue.put(datum);
             }

@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
@@ -129,7 +130,8 @@ public class Server {
      *
      * @param serverBuilder the server builder to be used
      */
-    public void setServerBuilder(ServerBuilder<?> serverBuilder) {
+    @VisibleForTesting
+    void setServerBuilder(ServerBuilder<?> serverBuilder) {
         this.server = serverBuilder
                 .addService(this.service)
                 .build();
