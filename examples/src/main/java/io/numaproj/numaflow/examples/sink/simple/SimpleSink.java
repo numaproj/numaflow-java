@@ -26,6 +26,7 @@ public class SimpleSink extends Sinker {
         server.awaitTermination();
 
         log.info("Server stopped.");
+        System.exit(0);
     }
 
     @Override
