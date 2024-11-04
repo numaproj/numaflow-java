@@ -24,6 +24,8 @@ public class SimpleSink extends Sinker {
 
         // wait for the server to shut down
         server.awaitTermination();
+
+        log.info("Server stopped.");
     }
 
     @Override
