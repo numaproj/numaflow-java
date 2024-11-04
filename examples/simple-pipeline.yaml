@@ -1,0 +1,33 @@
+apiVersion: numaflow.numaproj.io/v1alpha1
+kind: Pipeline
+metadata:
+  name: simple-pipeline
+spec:
+  vertices:
+    - name: in
+      scale:
+        min: 1
+      source:
+        generator:
+          rpu: 5
+          duration: 1s
+    - name: cat
+      scale:
+        min: 1
+      udf:
+        builtin:
+          name: cat
+    - name: java-sink
+      scale:
+        min: 1
+      sink:
+        udsink:
+          container:
+            image: quay.io/numaio/numaflow-java/simple-sink:keran-3
+            imagePullPolicy: Always
+  edges:
+    - from: in
+      to: cat
+    - from: cat
+      to: java-sink
+

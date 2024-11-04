@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -23,9 +24,11 @@ class Service extends SinkGrpc.SinkImplBase {
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
     private final Sinker sinker;
+    private final Server server;
 
-    public Service(Sinker sinker) {
+    public Service(Sinker sinker, Server server) {
         this.sinker = sinker;
+        this.server = server;
     }
 
     /**
@@ -49,6 +52,12 @@ class Service extends SinkGrpc.SinkImplBase {
                         responseObserver.onError(Status.INVALID_ARGUMENT
                                 .withDescription("Handshake request not received")
                                 .asException());
+                        try {
+                            server.stop();
+                        } catch (InterruptedException e) {
+                            log.error("Error while stopping the server - {}", e.getMessage());
+                            throw new RuntimeException(e);
+                        }
                         return;
                     }
                     log.info("Handshake request received, sending handshake response");
@@ -76,10 +85,13 @@ class Service extends SinkGrpc.SinkImplBase {
                         // End of transmission, write EOF datum to the stream
                         // Wait for the result and send the response back to the client
                         datumStream.write(HandlerDatum.EOF_DATUM);
-
-                        ResponseList responses = result.join();
+                        // This one seems blocking...
+                        log.info("Collecting responses from the CompletableFuture - result");
+                        ResponseList responses = result.join(); // here, when joining, the exception thrown from one of the tasks will be thrown here.
+                        log.info("Responses collected from the CompletableFuture - result");
                         responses.getResponses().forEach(response -> {
                             SinkOuterClass.SinkResponse sinkResponse = buildResponse(response);
+                            log.info("Sending response back to the client - {}", sinkResponse);
                             responseObserver.onNext(sinkResponse);
                         });
 
@@ -91,6 +103,7 @@ class Service extends SinkGrpc.SinkImplBase {
                                         .setEot(true)
                                         .build())
                                 .build();
+                        log.info("Sending EOT response back to the client {}", eotResponse);
                         responseObserver.onNext(eotResponse);
                         log.info("All responses sent back to the client, including the EOT response");
 
@@ -101,9 +114,27 @@ class Service extends SinkGrpc.SinkImplBase {
                     } else {
                         datumStream.write(constructHandlerDatum(request));
                     }
+                } catch (CompletionException ce) {
+                    Throwable cause = ce.getCause(); // Get the original RuntimeException, if any.
+                    log.error("Error occurred while processing messages: {}", cause.getMessage());
+                    responseObserver.onError(cause); // Pass the error back to the client.
+
+                    // Initiate server shutdown.
+                    try {
+                        server.stop();
+                    } catch (InterruptedException ex) {
+                        log.error("Error while stopping the server: {}", ex.getMessage());
+                    }
                 } catch (Exception e) {
                     log.error("Encountered error in sink onNext - {}", e.getMessage());
                     responseObserver.onError(e);
+                    // Initiate server shutdown.
+                    try {
+                        server.stop();
+                    } catch (InterruptedException ex) {
+                        log.error("Error while stopping the server - {}", ex.getMessage());
+                        throw new RuntimeException(ex);
+                    }
                 }
             }
 
@@ -111,6 +142,12 @@ class Service extends SinkGrpc.SinkImplBase {
             public void onError(Throwable throwable) {
                 log.error("Encountered error in sinkFn - {}", throwable.getMessage());
                 responseObserver.onError(throwable);
+                try {
+                    server.stop();
+                } catch (InterruptedException e) {
+                    log.info("Error while stopping the server - {}", e.getMessage());
+                    throw new RuntimeException(e);
+                }
             }
 
             @Override

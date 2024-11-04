@@ -38,7 +38,7 @@ public class Server {
      * @param sinker sink to process the message
      */
     public Server(Sinker sinker, GRPCConfig grpcConfig) {
-        this.service = new Service(sinker);
+        this.service = new Service(sinker, this);
         this.grpcConfig = grpcConfig;
     }
 
@@ -121,6 +121,7 @@ public class Server {
     // what the difference between this method and awaitTermination?
     public void stop() throws InterruptedException {
         log.info("Server.stop started. Shutting down sink service");
+        // TODO - should server shutdown take care of service shutdown?
         this.service.shutDown();
         log.info("sink service is successfully shut down");
         if (server != null) {
