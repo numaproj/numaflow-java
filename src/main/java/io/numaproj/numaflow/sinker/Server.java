@@ -111,7 +111,7 @@ public class Server {
                     ex.printStackTrace(System.err);
                 }
             }
-            System.exit(0);
+            // System.exit(0);
         });
     }
 
