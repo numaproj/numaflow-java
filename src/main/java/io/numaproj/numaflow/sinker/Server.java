@@ -85,7 +85,6 @@ public class Server {
             try {
                 Server.this.stop();
             } catch (InterruptedException e) {
-                // this one clears the interrupted status - I don't think it's not good.
                 if (Thread.interrupted()) {
                     System.err.println("Thread was interrupted when trying to stop the sink gRPC server.\n"
                             + "Thread interrupted status cleared");

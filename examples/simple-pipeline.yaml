@@ -23,11 +23,10 @@ spec:
       sink:
         udsink:
           container:
-            image: quay.io/numaio/numaflow-java/simple-sink:keran-3
+            image: quay.io/numaio/numaflow-java/simple-sink:keran-11
             imagePullPolicy: Always
   edges:
     - from: in
       to: cat
     - from: cat
       to: java-sink
-

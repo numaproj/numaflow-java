@@ -218,7 +218,7 @@ class Service extends SinkGrpc.SinkImplBase {
             }
             log.info("Sink executor was terminated.");
         } catch (InterruptedException e) {
-            // this one clears the interrupted status - I don't think it's not good.
+            // this one clears the interrupted status
             if (Thread.interrupted()) {
                 System.err.println("Thread was interrupted when trying to stop the sink service task executor.\n"
                         + "Thread interrupted status cleared");
