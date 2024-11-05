@@ -25,6 +25,10 @@ public class SimpleSink extends Sinker {
         // wait for the server to shut down
         server.awaitTermination();
 
+        // take a thread dump using jstack
+
+        // user wants to do cleanup after awaitTermiantion
+
         log.info("Server stopped.");
     }
 
