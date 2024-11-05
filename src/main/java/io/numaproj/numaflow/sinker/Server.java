@@ -8,6 +8,7 @@ import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,6 +19,7 @@ public class Server {
 
     private final GRPCConfig grpcConfig;
     private final Service service;
+    public final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
 
@@ -37,7 +39,8 @@ public class Server {
      * @param sinker sink to process the message
      */
     public Server(Sinker sinker, GRPCConfig grpcConfig) {
-        this.service = new Service(sinker);
+        this.shutdownSignal = new CompletableFuture<>();
+        this.service = new Service(sinker, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
     }
 
@@ -80,7 +83,11 @@ public class Server {
         // register shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-            System.err.println("*** shutting down gRPC server since JVM is shutting down");
+            System.err.println("*** shutting down sink gRPC server since JVM is shutting down");
+            if (server.isTerminated()) {
+                log.info("Server already terminated");
+                return;
+            }
             try {
                 Server.this.stop();
             } catch (InterruptedException e) {
@@ -88,6 +95,24 @@ public class Server {
                 e.printStackTrace(System.err);
             }
         }));
+
+        // if there are any exceptions, shutdown the server gracefully.
+        shutdownSignal.whenCompleteAsync((v, e) -> {
+            if (server.isTerminated()) {
+                return;
+            }
+
+            if (e != null) {
+                System.err.println("*** shutting down sink gRPC server because of an exception - " + e.getMessage());
+                try {
+                    Server.this.stop();
+                } catch (InterruptedException ex) {
+                    Thread.interrupted();
+                    ex.printStackTrace(System.err);
+                }
+            }
+            System.exit(0);
+        });
     }
 
     /**

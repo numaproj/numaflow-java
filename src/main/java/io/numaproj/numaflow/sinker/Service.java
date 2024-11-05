@@ -23,9 +23,11 @@ class Service extends SinkGrpc.SinkImplBase {
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
     private final Sinker sinker;
+    private final CompletableFuture<Void> shutdownSignal;
 
-    public Service(Sinker sinker) {
+    public Service(Sinker sinker, CompletableFuture<Void> shutdownSignal) {
         this.sinker = sinker;
+        this.shutdownSignal = shutdownSignal;
     }
 
     /**
@@ -97,7 +99,9 @@ class Service extends SinkGrpc.SinkImplBase {
                     }
                 } catch (Exception e) {
                     log.error("Encountered error in sinkFn - {}", e.getMessage());
-                    responseObserver.onError(e);
+                    shutdownSignal.completeExceptionally(e);
+                    responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
+                    // responseObserver.onError(e);
                 }
             }
 
