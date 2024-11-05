@@ -26,15 +26,16 @@ public class SimpleSink extends Sinker {
         server.awaitTermination();
 
         log.info("Server stopped.");
-        System.exit(0);
     }
 
     @Override
     public ResponseList processMessages(DatumIterator datumIterator) {
         ResponseList.ResponseListBuilder responseListBuilder = ResponseList.newBuilder();
+
         if (1 == 1){
             throw new RuntimeException("keran's test runtime exception.");
         }
+
         while (true) {
             Datum datum;
             try {

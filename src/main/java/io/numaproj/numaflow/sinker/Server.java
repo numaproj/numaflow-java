@@ -109,6 +109,7 @@ public class Server {
         log.info("Sink server is waiting for termination");
         server.awaitTermination();
         log.info("Sink server has terminated");
+        System.exit(0);
     }
 
     /**
