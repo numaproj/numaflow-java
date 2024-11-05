@@ -22,6 +22,7 @@ public class Server {
     public final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
+    private GrpcServerHelper grpcServerHelper;
 
     /**
      * constructor to create sink gRPC server.
@@ -42,6 +43,7 @@ public class Server {
         this.shutdownSignal = new CompletableFuture<>();
         this.service = new Service(sinker, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
+        this.grpcServerHelper = new GrpcServerHelper();
     }
 
     /**
@@ -60,7 +62,7 @@ public class Server {
 
         if (this.server == null) {
             // create server builder
-            ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
+            ServerBuilder<?> serverBuilder = this.grpcServerHelper.createServerBuilder(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
@@ -89,12 +91,17 @@ public class Server {
                 return;
             }
             try {
+                log.info("stopping server");
                 Server.this.stop();
+                log.info("gracefully shutdown event loop groups");
+                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                log.info("event loop groups are gracefully shutdown");
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
             }
         }));
+        log.info("Sink server shutdown hook registered");
 
         // if there are any exceptions, shutdown the server gracefully.
         shutdownSignal.whenCompleteAsync((v, e) -> {
@@ -105,7 +112,11 @@ public class Server {
             if (e != null) {
                 System.err.println("*** shutting down sink gRPC server because of an exception - " + e.getMessage());
                 try {
+                    log.info("stopping server");
                     Server.this.stop();
+                    log.info("gracefully shutdown event loop groups");
+                    this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                    log.info("event loop groups are gracefully shutdown");
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);
@@ -123,7 +134,9 @@ public class Server {
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public void awaitTermination() throws InterruptedException {
+        log.info("Server is waiting for termination");
         server.awaitTermination();
+        log.info("Server is terminated");
     }
 
     /**
@@ -133,14 +146,21 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
+        log.info("Server.stop started. Shutting down sink service");
         this.service.shutDown();
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             // force shutdown if not terminated
             if (!server.isTerminated()) {
+                log.info("Server did not terminate in {} seconds. Shutting down forcefully", 30);
+                server.shutdownNow();
+            }
+            if (!server.isTerminated()) {
+                log.info("Server did not terminate in {} seconds. Shutting down forcefully", 30);
                 server.shutdownNow();
             }
         }
+        log.info("Server.stop successfully completed");
     }
 
     /**
