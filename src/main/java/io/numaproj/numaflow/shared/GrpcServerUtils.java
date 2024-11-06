@@ -128,6 +128,7 @@ public class GrpcServerUtils {
         serverInfoAccessor.write(serverInfo, infoFilePath);
     }
 
+    // TODO - remove this one
     public static ServerBuilder<?> createServerBuilder(
             String socketPath,
             int maxMessageSize,
