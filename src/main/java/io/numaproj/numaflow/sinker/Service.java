@@ -5,6 +5,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@AllArgsConstructor
 class Service extends SinkGrpc.SinkImplBase {
     // sinkTaskExecutor is the executor for the sinker. It is a fixed size thread pool
     // with the number of threads equal to the number of cores on the machine times 2.
@@ -24,11 +26,6 @@ class Service extends SinkGrpc.SinkImplBase {
 
     private final Sinker sinker;
     private final CompletableFuture<Void> shutdownSignal;
-
-    public Service(Sinker sinker, CompletableFuture<Void> shutdownSignal) {
-        this.sinker = sinker;
-        this.shutdownSignal = shutdownSignal;
-    }
 
     /**
      * Applies a function to each datum element in the stream.
@@ -108,7 +105,10 @@ class Service extends SinkGrpc.SinkImplBase {
             public void onError(Throwable throwable) {
                 log.error("Encountered error in sinkFn - {}", throwable.getMessage());
                 shutdownSignal.completeExceptionally(throwable);
-                responseObserver.onError(Status.INTERNAL.withDescription(throwable.getMessage()).asException());
+                responseObserver.onError(Status.INTERNAL
+                        .withDescription(throwable.getMessage())
+                        .withCause(throwable)
+                        .asException());
             }
 
             @Override

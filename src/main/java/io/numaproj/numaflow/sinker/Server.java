@@ -135,17 +135,14 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
-        log.info("server.stop started. Shutting down sink service");
         this.service.shutDown();
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             // force shutdown if not terminated
             if (!server.isTerminated()) {
-                log.info("server did not terminate in {} seconds. Shutting down forcefully", 30);
                 server.shutdownNow();
             }
         }
-        log.info("server.stop successfully completed");
     }
 
     /**
