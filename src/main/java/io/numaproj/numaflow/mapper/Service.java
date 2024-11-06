@@ -21,18 +21,7 @@ class Service extends MapGrpc.MapImplBase {
     public static final ActorSystem mapperActorSystem = ActorSystem.create("mapper");
 
     private final Mapper mapper;
-
-    // TODO we need to propagate the exception all the way up and shutdown the server.
-    static void handleFailure(
-            CompletableFuture<Void> failureFuture) {
-        new Thread(() -> {
-            try {
-                failureFuture.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
+    private final CompletableFuture<Void> shutdownSignal;
 
     @Override
     public StreamObserver<MapOuterClass.MapRequest> mapFn(final StreamObserver<MapOuterClass.MapResponse> responseObserver) {
@@ -43,13 +32,9 @@ class Service extends MapGrpc.MapImplBase {
                     responseObserver);
         }
 
-        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
-
-        handleFailure(failureFuture);
-
         // create a MapSupervisorActor that processes the map requests.
         ActorRef mapSupervisorActor = mapperActorSystem
-                .actorOf(MapSupervisorActor.props(mapper, responseObserver, failureFuture));
+                .actorOf(MapSupervisorActor.props(mapper, responseObserver, shutdownSignal));
 
         return new StreamObserver<>() {
             private boolean handshakeDone = false;

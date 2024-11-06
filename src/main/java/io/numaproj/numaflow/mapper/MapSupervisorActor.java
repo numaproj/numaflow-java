@@ -46,7 +46,7 @@ import java.util.concurrent.CompletableFuture;
 class MapSupervisorActor extends AbstractActor {
     private final Mapper mapper;
     private final StreamObserver<MapOuterClass.MapResponse> responseObserver;
-    private final CompletableFuture<Void> failureFuture;
+    private final CompletableFuture<Void> shutdownSignal;
 
     public MapSupervisorActor(
             Mapper mapper,
@@ -54,21 +54,21 @@ class MapSupervisorActor extends AbstractActor {
             CompletableFuture<Void> failureFuture) {
         this.mapper = mapper;
         this.responseObserver = responseObserver;
-        this.failureFuture = failureFuture;
+        this.shutdownSignal = failureFuture;
     }
 
     public static Props props(
             Mapper mapper,
             StreamObserver<MapOuterClass.MapResponse> responseObserver,
-            CompletableFuture<Void> failureFuture) {
-        return Props.create(MapSupervisorActor.class, mapper, responseObserver, failureFuture);
+            CompletableFuture<Void> shutdownSignal) {
+        return Props.create(MapSupervisorActor.class, mapper, responseObserver, shutdownSignal);
     }
 
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
         log.debug("supervisor pre restart was executed");
-        failureFuture.completeExceptionally(reason);
-        responseObserver.onError(Status.UNKNOWN
+        shutdownSignal.completeExceptionally(reason);
+        responseObserver.onError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
@@ -93,11 +93,11 @@ class MapSupervisorActor extends AbstractActor {
     }
 
     private void handleFailure(Exception e) {
-        responseObserver.onError(Status.UNKNOWN
+        shutdownSignal.completeExceptionally(e);
+        responseObserver.onError(Status.INTERNAL
                 .withDescription(e.getMessage())
                 .withCause(e)
                 .asException());
-        failureFuture.completeExceptionally(e);
     }
 
     private void sendResponse(MapOuterClass.MapResponse mapResponse) {
@@ -118,8 +118,8 @@ class MapSupervisorActor extends AbstractActor {
     // to make sure no messages are lost
     private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.debug("got a dead letter, stopping the execution");
-        responseObserver.onError(Status.UNKNOWN.withDescription("dead letters").asException());
-        failureFuture.completeExceptionally(new Throwable("dead letters"));
+        shutdownSignal.completeExceptionally(new Throwable("dead letters"));
+        responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
     }
 
@@ -129,8 +129,8 @@ class MapSupervisorActor extends AbstractActor {
         return new AllForOneStrategy(
                 DeciderBuilder
                         .match(Exception.class, e -> {
-                            failureFuture.completeExceptionally(e);
-                            responseObserver.onError(Status.UNKNOWN
+                            shutdownSignal.completeExceptionally(e);
+                            responseObserver.onError(Status.INTERNAL
                                     .withDescription(e.getMessage())
                                     .withCause(e)
                                     .asException());
