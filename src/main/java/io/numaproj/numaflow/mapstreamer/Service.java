@@ -82,7 +82,7 @@ class Service extends MapGrpc.MapImplBase {
             public void onError(Throwable throwable) {
                 log.error("Encountered error in mapStream Stream - {}", throwable.getMessage());
                 shutdownSignal.completeExceptionally(throwable);
-                responseObserver.onError(Status.UNKNOWN
+                responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())
                         .withCause(throwable)
                         .asException());
