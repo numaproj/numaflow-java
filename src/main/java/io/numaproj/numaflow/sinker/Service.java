@@ -5,6 +5,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@AllArgsConstructor
 class Service extends SinkGrpc.SinkImplBase {
     // sinkTaskExecutor is the executor for the sinker. It is a fixed size thread pool
     // with the number of threads equal to the number of cores on the machine times 2.
@@ -23,10 +25,7 @@ class Service extends SinkGrpc.SinkImplBase {
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
     private final Sinker sinker;
-
-    public Service(Sinker sinker) {
-        this.sinker = sinker;
-    }
+    private final CompletableFuture<Void> shutdownSignal;
 
     /**
      * Applies a function to each datum element in the stream.
@@ -96,15 +95,20 @@ class Service extends SinkGrpc.SinkImplBase {
                         datumStream.writeMessage(constructHandlerDatum(request));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered error in sinkFn - {}", e.getMessage());
-                    responseObserver.onError(e);
+                    log.error("Encountered error in sinkFn onNext - {}", e.getMessage());
+                    shutdownSignal.completeExceptionally(e);
+                    responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
                 }
             }
 
             @Override
             public void onError(Throwable throwable) {
                 log.error("Encountered error in sinkFn - {}", throwable.getMessage());
-                responseObserver.onError(throwable);
+                shutdownSignal.completeExceptionally(throwable);
+                responseObserver.onError(Status.INTERNAL
+                        .withDescription(throwable.getMessage())
+                        .withCause(throwable)
+                        .asException());
             }
 
             @Override

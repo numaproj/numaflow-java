@@ -114,6 +114,4 @@ class TransformerActor extends AbstractActor {
         });
         return responseBuilder.setId(ID).build();
     }
-
-
 }
