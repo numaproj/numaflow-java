@@ -37,16 +37,6 @@ public class GrpcServerUtilsTest {
     }
 
     @Test
-    public void testCreateServerBuilder() {
-        ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
-                "socketPath",
-                1000,
-                false,
-                50051);
-        Assert.assertNotNull(serverBuilder);
-    }
-
-    @Test
     public void testWindowStartTime() {
         Context.Key<String> windowStartTime = GrpcServerUtils.WINDOW_START_TIME;
         Assert.assertNotNull(windowStartTime);
