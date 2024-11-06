@@ -20,7 +20,7 @@ public class Server {
 
     private final GRPCConfig grpcConfig;
     private final Service service;
-    public final CompletableFuture<Void> shutdownSignal;
+    private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
     private final GrpcServerHelper grpcServerHelper;
