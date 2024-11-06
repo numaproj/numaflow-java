@@ -191,7 +191,7 @@ class TransformSupervisorActor extends AbstractActor {
      * @param deadLetter The dead letter to be handled.
      */
     private void handleDeadLetters(AllDeadLetters deadLetter) {
-        log.info("got a dead letter, stopping the execution");
+        log.debug("got a dead letter, stopping the execution");
         responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
         shutdownSignal.completeExceptionally(new Throwable("dead letters"));

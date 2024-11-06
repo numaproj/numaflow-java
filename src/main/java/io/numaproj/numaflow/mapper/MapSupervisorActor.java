@@ -47,6 +47,8 @@ class MapSupervisorActor extends AbstractActor {
     private final Mapper mapper;
     private final StreamObserver<MapOuterClass.MapResponse> responseObserver;
     private final CompletableFuture<Void> shutdownSignal;
+    private int activeMapperCount;
+    private Exception userException;
 
     public MapSupervisorActor(
             Mapper mapper,
@@ -55,6 +57,8 @@ class MapSupervisorActor extends AbstractActor {
         this.mapper = mapper;
         this.responseObserver = responseObserver;
         this.shutdownSignal = failureFuture;
+        this.userException = null;
+        this.activeMapperCount = 0;
     }
 
     public static Props props(
@@ -66,13 +70,14 @@ class MapSupervisorActor extends AbstractActor {
 
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
-        log.debug("supervisor pre restart was executed");
+        getContext().getSystem().log().warning("supervisor pre restart was executed due to: {}", reason.getMessage());
         shutdownSignal.completeExceptionally(reason);
         responseObserver.onError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
         Service.mapperActorSystem.stop(getSelf());
+        shutdownSignal.completeExceptionally(reason);
     }
 
     @Override
@@ -94,18 +99,35 @@ class MapSupervisorActor extends AbstractActor {
 
     private void handleFailure(Exception e) {
         log.error("Encountered error in mapFn - {}", e.getMessage());
-        shutdownSignal.completeExceptionally(e);
-        responseObserver.onError(Status.INTERNAL
-                .withDescription(e.getMessage())
-                .withCause(e)
-                .asException());
+        if (userException == null) {
+            userException = e;
+            // only send the very first exception to the client
+            // one exception should trigger a container restart
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .withCause(e)
+                    .asException());
+        }
+        activeMapperCount--;
     }
 
     private void sendResponse(MapOuterClass.MapResponse mapResponse) {
         responseObserver.onNext(mapResponse);
+        activeMapperCount--;
     }
 
     private void processRequest(MapOuterClass.MapRequest mapRequest) {
+        if (userException != null) {
+            log.info("a previous mapper actor failed, not processing any more requests");
+            if (activeMapperCount == 0) {
+                log.info("there is no more active mapper AKKA actors - stopping the system");
+                getContext().getSystem().stop(getSelf());
+                log.info("AKKA system stopped");
+                shutdownSignal.completeExceptionally(userException);
+            }
+            return;
+        }
+
         // Create a MapperActor for each incoming request.
         ActorRef mapperActor = getContext()
                 .actorOf(MapperActor.props(
@@ -113,15 +135,16 @@ class MapSupervisorActor extends AbstractActor {
 
         // Send the message to the MapperActor.
         mapperActor.tell(mapRequest, getSelf());
+        activeMapperCount++;
     }
 
     // if we see dead letters, we need to stop the execution and exit
     // to make sure no messages are lost
     private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.debug("got a dead letter, stopping the execution");
-        shutdownSignal.completeExceptionally(new Throwable("dead letters"));
         responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(new Throwable("dead letters"));
     }
 
     @Override
