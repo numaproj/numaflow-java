@@ -47,6 +47,8 @@ class TransformSupervisorActor extends AbstractActor {
     private final SourceTransformer transformer;
     private final StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver;
     private final CompletableFuture<Void> shutdownSignal;
+    private int activeTransformersCount;
+    private Exception userException;
 
     /**
      * Constructor for TransformSupervisorActor.
@@ -62,6 +64,8 @@ class TransformSupervisorActor extends AbstractActor {
         this.transformer = transformer;
         this.responseObserver = responseObserver;
         this.shutdownSignal = shutdownSignal;
+        this.userException = null;
+        this.activeTransformersCount = 0;
     }
 
     /**
@@ -92,13 +96,13 @@ class TransformSupervisorActor extends AbstractActor {
      */
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
-        log.debug("supervisor pre restart was executed");
-        shutdownSignal.completeExceptionally(reason);
+        getContext().getSystem().log().warning("supervisor pre restart was executed due to: {}", reason.getMessage());
         responseObserver.onError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
         Service.transformerActorSystem.stop(getSelf());
+        shutdownSignal.completeExceptionally(reason);
     }
 
     /**
@@ -133,11 +137,16 @@ class TransformSupervisorActor extends AbstractActor {
      */
     private void handleFailure(Exception e) {
         log.error("Encountered error in sourceTransformFn - {}", e.getMessage());
-        shutdownSignal.completeExceptionally(e);
-        responseObserver.onError(Status.INTERNAL
-                .withDescription(e.getMessage())
-                .withCause(e)
-                .asException());
+        if (userException == null) {
+            userException = e;
+            // only send the very first exception to the client
+            // one exception should trigger a container restart
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .withCause(e)
+                    .asException());
+        }
+        activeTransformersCount--;
     }
 
     /**
@@ -147,6 +156,7 @@ class TransformSupervisorActor extends AbstractActor {
      */
     private void sendResponse(Sourcetransformer.SourceTransformResponse transformResponse) {
         responseObserver.onNext(transformResponse);
+        activeTransformersCount--;
     }
 
     /**
@@ -155,6 +165,16 @@ class TransformSupervisorActor extends AbstractActor {
      * @param transformRequest The SourceTransformRequest to be processed.
      */
     private void processRequest(Sourcetransformer.SourceTransformRequest transformRequest) {
+        if (userException != null) {
+            log.info("a previous transformer actor failed, not processing any more requests");
+            if (activeTransformersCount == 0) {
+                log.info("there is no more active transformer AKKA actors - stopping the system");
+                getContext().getSystem().stop(getSelf());
+                log.info("AKKA system stopped");
+                shutdownSignal.completeExceptionally(userException);
+            }
+            return;
+        }
         // Create a TransformerActor for each incoming request.
         ActorRef transformerActor = getContext()
                 .actorOf(TransformerActor.props(
@@ -162,6 +182,7 @@ class TransformSupervisorActor extends AbstractActor {
 
         // Send the message to the TransformerActor.
         transformerActor.tell(transformRequest, getSelf());
+        activeTransformersCount++;
     }
 
     /**
@@ -170,10 +191,10 @@ class TransformSupervisorActor extends AbstractActor {
      * @param deadLetter The dead letter to be handled.
      */
     private void handleDeadLetters(AllDeadLetters deadLetter) {
-        log.debug("got a dead letter, stopping the execution");
-        shutdownSignal.completeExceptionally(new Throwable("dead letters"));
-        responseObserver.onError(Status.UNKNOWN.withDescription("dead letters").asException());
+        log.info("got a dead letter, stopping the execution");
+        responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(new Throwable("dead letters"));
     }
 
     /**
@@ -187,8 +208,7 @@ class TransformSupervisorActor extends AbstractActor {
         return new AllForOneStrategy(
                 DeciderBuilder
                         .match(Exception.class, e -> {
-                            shutdownSignal.completeExceptionally(e);
-                            responseObserver.onError(Status.UNKNOWN
+                            responseObserver.onError(Status.INTERNAL
                                     .withDescription(e.getMessage())
                                     .withCause(e)
                                     .asException());

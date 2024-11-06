@@ -89,6 +89,9 @@ public class Server {
                 Server.this.stop();
                 log.info("gracefully shutting down event loop groups");
                 this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                // FIXME - this is a workaround to immediately terminate the JVM process
+                // The correct way to do this is to stop all the actors and wait for them to terminate
+                System.exit(0);
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
@@ -108,6 +111,9 @@ public class Server {
                     Server.this.stop();
                     log.info("gracefully shutting down event loop groups");
                     this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                    // FIXME - this is a workaround to immediately terminate the JVM process
+                    // The correct way to do this is to stop all the actors and wait for them to terminate
+                    System.exit(0);
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);

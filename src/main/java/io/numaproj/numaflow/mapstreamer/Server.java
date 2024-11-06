@@ -122,9 +122,9 @@ public class Server {
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public void awaitTermination() throws InterruptedException {
-        log.info("sink server is waiting for termination");
+        log.info("map stream server is waiting for termination");
         server.awaitTermination();
-        log.info("sink server has terminated");
+        log.info("map stream server has terminated");
     }
 
     /**
