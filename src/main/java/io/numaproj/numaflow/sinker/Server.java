@@ -81,7 +81,7 @@ public class Server {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
             System.err.println("*** shutting down sink gRPC server since JVM is shutting down");
-            if (server.isTerminated()) {
+            if (server != null && server.isTerminated()) {
                 return;
             }
             try {
