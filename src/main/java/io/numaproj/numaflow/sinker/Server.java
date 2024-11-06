@@ -62,20 +62,14 @@ public class Server {
         }
 
         if (this.server == null) {
-            // create server builder
-            ServerBuilder<?> serverBuilder = this.grpcServerHelper.createServerBuilder(
+            this.server = this.grpcServerHelper.createServer(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
-                    grpcConfig.getPort());
-
-            // build server
-            this.server = serverBuilder
-                    .addService(this.service)
-                    .build();
+                    grpcConfig.getPort(),
+                    this.service);
         }
 
-        // start server
         server.start();
 
         log.info(
@@ -111,7 +105,7 @@ public class Server {
                 try {
                     log.info("stopping server");
                     Server.this.stop();
-                    log.info("gracefully shutdown event loop groups");
+                    log.info("gracefully shutting down event loop groups");
                     this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
                 } catch (InterruptedException ex) {
                     Thread.interrupted();

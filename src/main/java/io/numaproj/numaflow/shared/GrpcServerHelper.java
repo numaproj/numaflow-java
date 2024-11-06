@@ -1,8 +1,10 @@
 package io.numaproj.numaflow.shared;
 
+import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ForwardingServerCallListener;
+import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -30,11 +32,12 @@ public class GrpcServerHelper {
         }
     }
 
-    public ServerBuilder<?> createServerBuilder(
+    public Server createServer(
             String socketPath,
             int maxMessageSize,
             boolean isLocal,
-            int port) {
+            int port,
+            BindableService service) {
         ServerInterceptor interceptor = new ServerInterceptor() {
             @Override
             public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
@@ -84,7 +87,9 @@ public class GrpcServerHelper {
         if (isLocal) {
             return ServerBuilder.forPort(port)
                     .maxInboundMessageSize(maxMessageSize)
-                    .intercept(interceptor);
+                    .intercept(interceptor)
+                    .addService(service)
+                    .build();
         }
 
         this.bossEventLoopGroup = GrpcServerUtils.createEventLoopGroup(1, "netty-boss");
@@ -98,6 +103,8 @@ public class GrpcServerHelper {
                 .maxInboundMessageSize(maxMessageSize)
                 .bossEventLoopGroup(this.bossEventLoopGroup)
                 .workerEventLoopGroup(this.workerEventLoopGroup)
-                .intercept(interceptor);
+                .intercept(interceptor)
+                .addService(service)
+                .build();
     }
 }
