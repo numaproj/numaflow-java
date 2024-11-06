@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.sinker;
+package io.numaproj.numaflow.shared;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -11,8 +11,6 @@ import io.grpc.Status;
 import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.unix.DomainSocketAddress;
-import io.numaproj.numaflow.shared.GrpcServerUtils;
-import io.numaproj.numaflow.shared.ThreadUtils;
 
 import static io.numaproj.numaflow.shared.GrpcServerUtils.DATUM_METADATA_WIN_END;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.DATUM_METADATA_WIN_START;

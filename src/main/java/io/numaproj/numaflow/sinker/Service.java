@@ -98,17 +98,17 @@ class Service extends SinkGrpc.SinkImplBase {
                         datumStream.writeMessage(constructHandlerDatum(request));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered error in sinkFn - {}", e.getMessage());
+                    log.error("Encountered error in sinkFn onNext - {}", e.getMessage());
                     shutdownSignal.completeExceptionally(e);
                     responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
-                    // responseObserver.onError(e);
                 }
             }
 
             @Override
             public void onError(Throwable throwable) {
                 log.error("Encountered error in sinkFn - {}", throwable.getMessage());
-                responseObserver.onError(throwable);
+                shutdownSignal.completeExceptionally(throwable);
+                responseObserver.onError(Status.INTERNAL.withDescription(throwable.getMessage()).asException());
             }
 
             @Override

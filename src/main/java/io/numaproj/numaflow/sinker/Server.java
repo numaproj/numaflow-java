@@ -5,6 +5,7 @@ import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
+import io.numaproj.numaflow.shared.GrpcServerHelper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,7 +23,7 @@ public class Server {
     public final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
-    private GrpcServerHelper grpcServerHelper;
+    private final GrpcServerHelper grpcServerHelper;
 
     /**
      * constructor to create sink gRPC server.
@@ -78,30 +79,26 @@ public class Server {
         server.start();
 
         log.info(
-                "Server started, listening on {}",
+                "server started, listening on {}",
                 grpcConfig.isLocal() ?
                         "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
 
-        // register shutdown hook
+        // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
             System.err.println("*** shutting down sink gRPC server since JVM is shutting down");
             if (server.isTerminated()) {
-                log.info("Server already terminated");
                 return;
             }
             try {
-                log.info("stopping server");
                 Server.this.stop();
-                log.info("gracefully shutdown event loop groups");
+                log.info("gracefully shutting down event loop groups");
                 this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
-                log.info("event loop groups are gracefully shutdown");
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
             }
         }));
-        log.info("Sink server shutdown hook registered");
 
         // if there are any exceptions, shutdown the server gracefully.
         shutdownSignal.whenCompleteAsync((v, e) -> {
@@ -116,13 +113,11 @@ public class Server {
                     Server.this.stop();
                     log.info("gracefully shutdown event loop groups");
                     this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
-                    log.info("event loop groups are gracefully shutdown");
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);
                 }
             }
-            // System.exit(0);
         });
     }
 
@@ -134,9 +129,9 @@ public class Server {
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public void awaitTermination() throws InterruptedException {
-        log.info("Server is waiting for termination");
+        log.info("sink server is waiting for termination");
         server.awaitTermination();
-        log.info("Server is terminated");
+        log.info("sink server is terminated");
     }
 
     /**
@@ -146,21 +141,17 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
-        log.info("Server.stop started. Shutting down sink service");
+        log.info("server.stop started. Shutting down sink service");
         this.service.shutDown();
         if (server != null) {
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
             // force shutdown if not terminated
             if (!server.isTerminated()) {
-                log.info("Server did not terminate in {} seconds. Shutting down forcefully", 30);
-                server.shutdownNow();
-            }
-            if (!server.isTerminated()) {
-                log.info("Server did not terminate in {} seconds. Shutting down forcefully", 30);
+                log.info("server did not terminate in {} seconds. Shutting down forcefully", 30);
                 server.shutdownNow();
             }
         }
-        log.info("Server.stop successfully completed");
+        log.info("server.stop successfully completed");
     }
 
     /**
