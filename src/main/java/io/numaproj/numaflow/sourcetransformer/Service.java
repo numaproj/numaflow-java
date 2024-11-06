@@ -21,18 +21,7 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
     public static final ActorSystem transformerActorSystem = ActorSystem.create("transformer");
 
     private final SourceTransformer transformer;
-
-    // TODO we need to propagate the exception all the way up and shutdown the server.
-    static void handleFailure(
-            CompletableFuture<Void> failureFuture) {
-        new Thread(() -> {
-            try {
-                failureFuture.get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
+    private final CompletableFuture<Void> shutdownSignal;
 
     @Override
     public StreamObserver<Sourcetransformer.SourceTransformRequest> sourceTransformFn(final StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver) {
@@ -43,16 +32,12 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
                     responseObserver);
         }
 
-        CompletableFuture<Void> failureFuture = new CompletableFuture<>();
-
-        handleFailure(failureFuture);
-
         // create a TransformSupervisorActor that processes the transform requests.
         ActorRef transformSupervisorActor = transformerActorSystem
                 .actorOf(TransformSupervisorActor.props(
                         transformer,
                         responseObserver,
-                        failureFuture));
+                        shutdownSignal));
 
         return new StreamObserver<>() {
             private boolean handshakeDone = false;

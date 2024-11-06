@@ -93,6 +93,7 @@ class MapSupervisorActor extends AbstractActor {
     }
 
     private void handleFailure(Exception e) {
+        log.error("Encountered error in mapFn - {}", e.getMessage());
         shutdownSignal.completeExceptionally(e);
         responseObserver.onError(Status.INTERNAL
                 .withDescription(e.getMessage())

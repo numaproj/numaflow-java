@@ -46,22 +46,22 @@ import java.util.concurrent.CompletableFuture;
 class TransformSupervisorActor extends AbstractActor {
     private final SourceTransformer transformer;
     private final StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver;
-    private final CompletableFuture<Void> failureFuture;
+    private final CompletableFuture<Void> shutdownSignal;
 
     /**
      * Constructor for TransformSupervisorActor.
      *
      * @param transformer The transformer to be used for processing the request.
      * @param responseObserver The StreamObserver to be used for sending the responses.
-     * @param failureFuture The CompletableFuture to be completed exceptionally in case of any failure.
+     * @param shutdownSignal The CompletableFuture to be completed exceptionally in case of any failure.
      */
     public TransformSupervisorActor(
             SourceTransformer transformer,
             StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver,
-            CompletableFuture<Void> failureFuture) {
+            CompletableFuture<Void> shutdownSignal) {
         this.transformer = transformer;
         this.responseObserver = responseObserver;
-        this.failureFuture = failureFuture;
+        this.shutdownSignal = shutdownSignal;
     }
 
     /**
@@ -69,19 +69,19 @@ class TransformSupervisorActor extends AbstractActor {
      *
      * @param transformer The transformer to be used for processing the request.
      * @param responseObserver The StreamObserver to be used for sending the responses.
-     * @param failureFuture The CompletableFuture to be completed exceptionally in case of any failure.
+     * @param shutdownSignal The CompletableFuture to be completed exceptionally in case of any failure.
      *
      * @return a Props for creating a TransformSupervisorActor.
      */
     public static Props props(
             SourceTransformer transformer,
             StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver,
-            CompletableFuture<Void> failureFuture) {
+            CompletableFuture<Void> shutdownSignal) {
         return Props.create(
                 TransformSupervisorActor.class,
                 transformer,
                 responseObserver,
-                failureFuture);
+                shutdownSignal);
     }
 
     /**
@@ -93,8 +93,8 @@ class TransformSupervisorActor extends AbstractActor {
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
         log.debug("supervisor pre restart was executed");
-        failureFuture.completeExceptionally(reason);
-        responseObserver.onError(Status.UNKNOWN
+        shutdownSignal.completeExceptionally(reason);
+        responseObserver.onError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
@@ -132,11 +132,12 @@ class TransformSupervisorActor extends AbstractActor {
      * @param e The exception to be handled.
      */
     private void handleFailure(Exception e) {
-        responseObserver.onError(Status.UNKNOWN
+        log.error("Encountered error in sourceTransformFn - {}", e.getMessage());
+        shutdownSignal.completeExceptionally(e);
+        responseObserver.onError(Status.INTERNAL
                 .withDescription(e.getMessage())
                 .withCause(e)
                 .asException());
-        failureFuture.completeExceptionally(e);
     }
 
     /**
@@ -170,8 +171,8 @@ class TransformSupervisorActor extends AbstractActor {
      */
     private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.debug("got a dead letter, stopping the execution");
+        shutdownSignal.completeExceptionally(new Throwable("dead letters"));
         responseObserver.onError(Status.UNKNOWN.withDescription("dead letters").asException());
-        failureFuture.completeExceptionally(new Throwable("dead letters"));
         getContext().getSystem().stop(getSelf());
     }
 
@@ -186,7 +187,7 @@ class TransformSupervisorActor extends AbstractActor {
         return new AllForOneStrategy(
                 DeciderBuilder
                         .match(Exception.class, e -> {
-                            failureFuture.completeExceptionally(e);
+                            shutdownSignal.completeExceptionally(e);
                             responseObserver.onError(Status.UNKNOWN
                                     .withDescription(e.getMessage())
                                     .withCause(e)
