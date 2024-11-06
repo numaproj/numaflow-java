@@ -35,6 +35,9 @@ class Service extends MapGrpc.MapImplBase {
     // BatchMapper instance to process the messages
     private final BatchMapper batchMapper;
 
+    // Signal to shut down the gRPC server
+    private final CompletableFuture<Void> shutdownSignal;
+
     // Applies a map function to each datum element in the stream.
     @Override
     public StreamObserver<MapOuterClass.MapRequest> mapFn(StreamObserver<MapOuterClass.MapResponse> responseObserver) {
@@ -93,8 +96,9 @@ class Service extends MapGrpc.MapImplBase {
                         datumStream.writeMessage(constructHandlerDatum(mapRequest));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered an error in batch map", e);
-                    responseObserver.onError(Status.UNKNOWN
+                    log.error("Encountered an error in batch map onNext - {}", e.getMessage());
+                    shutdownSignal.completeExceptionally(e);
+                    responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
                             .withCause(e)
                             .asException());
@@ -104,11 +108,12 @@ class Service extends MapGrpc.MapImplBase {
             // Called when an error occurs
             @Override
             public void onError(Throwable throwable) {
-                log.error("Error Encountered in batchMap Stream", throwable);
-                var status = Status.UNKNOWN
+                log.error("Error Encountered in batchMap Stream - {}", throwable.getMessage());
+                shutdownSignal.completeExceptionally(throwable);
+                responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())
-                        .withCause(throwable);
-                responseObserver.onError(status.asException());
+                        .withCause(throwable)
+                        .asException());
             }
 
             // Called when the client has finished sending requests

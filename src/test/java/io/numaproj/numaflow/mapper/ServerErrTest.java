@@ -129,7 +129,7 @@ public class ServerErrTest {
             fail("Expected exception not thrown");
         } catch (Exception e) {
             assertEquals(
-                    "io.grpc.StatusRuntimeException: UNKNOWN: unknown exception",
+                    "io.grpc.StatusRuntimeException: INTERNAL: unknown exception",
                     e.getMessage());
         }
     }

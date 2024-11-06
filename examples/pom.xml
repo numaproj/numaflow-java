@@ -55,6 +55,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.batchmap.flatmap.BatchFlatMap
@@ -74,6 +77,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.sourcetransformer.eventtimefilter.EventTimeFilterFunction
@@ -93,6 +99,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.mapstream.flatmapstream.FlatMapStreamFunction
@@ -110,6 +119,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.map.flatmap.FlatMapFunction
@@ -195,6 +207,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.map.forward.ForwardFunction
@@ -266,6 +281,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.source.simple.SimpleSource

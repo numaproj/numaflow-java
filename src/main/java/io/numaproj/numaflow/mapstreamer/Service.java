@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.map.v1.MapGrpc.getMapFnMethod;
 
@@ -17,6 +18,7 @@ import static io.numaproj.numaflow.map.v1.MapGrpc.getMapFnMethod;
 class Service extends MapGrpc.MapImplBase {
 
     private final MapStreamer mapStreamer;
+    private final CompletableFuture<Void> shutdownSignal;
 
     @Override
     public StreamObserver<MapOuterClass.MapRequest> mapFn(StreamObserver<MapOuterClass.MapResponse> responseObserver) {
@@ -57,9 +59,11 @@ class Service extends MapGrpc.MapImplBase {
                             constructHandlerDatum(request),
                             new OutputObserverImpl(responseObserver));
                 } catch (Exception e) {
-                    log.error("Error processing message", e);
-                    responseObserver.onError(Status.UNKNOWN
+                    log.error("Encountered error in mapFn onNext - {}", e.getMessage());
+                    shutdownSignal.completeExceptionally(e);
+                    responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
+                            .withCause(e)
                             .asException());
                     return;
                 }
@@ -76,11 +80,12 @@ class Service extends MapGrpc.MapImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("Error Encountered in mapStream Stream", throwable);
-                var status = Status.UNKNOWN
+                log.error("Encountered error in mapStream Stream - {}", throwable.getMessage());
+                shutdownSignal.completeExceptionally(throwable);
+                responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())
-                        .withCause(throwable);
-                responseObserver.onError(status.asException());
+                        .withCause(throwable)
+                        .asException());
             }
 
             @Override

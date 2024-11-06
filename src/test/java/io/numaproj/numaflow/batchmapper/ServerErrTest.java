@@ -135,7 +135,7 @@ public class ServerErrTest {
             fail("Expected exception not thrown");
         } catch (InterruptedException | ExecutionException e) {
             assertEquals(
-                    "UNKNOWN: java.lang.RuntimeException: unknown exception",
+                    "INTERNAL: java.lang.RuntimeException: unknown exception",
                     e.getCause().getMessage());
         }
     }

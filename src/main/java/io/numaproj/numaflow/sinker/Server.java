@@ -5,9 +5,11 @@ import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
+import io.numaproj.numaflow.shared.GrpcServerHelper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -18,8 +20,10 @@ public class Server {
 
     private final GRPCConfig grpcConfig;
     private final Service service;
+    private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
+    private final GrpcServerHelper grpcServerHelper;
 
     /**
      * constructor to create sink gRPC server.
@@ -37,8 +41,10 @@ public class Server {
      * @param sinker sink to process the message
      */
     public Server(Sinker sinker, GRPCConfig grpcConfig) {
-        this.service = new Service(sinker);
+        this.shutdownSignal = new CompletableFuture<>();
+        this.service = new Service(sinker, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
+        this.grpcServerHelper = new GrpcServerHelper();
     }
 
     /**
@@ -56,38 +62,57 @@ public class Server {
         }
 
         if (this.server == null) {
-            // create server builder
-            ServerBuilder<?> serverBuilder = GrpcServerUtils.createServerBuilder(
+            this.server = this.grpcServerHelper.createServer(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
-                    grpcConfig.getPort());
-
-            // build server
-            this.server = serverBuilder
-                    .addService(this.service)
-                    .build();
+                    grpcConfig.getPort(),
+                    this.service);
         }
 
-        // start server
         server.start();
 
         log.info(
-                "Server started, listening on {}",
+                "server started, listening on {}",
                 grpcConfig.isLocal() ?
                         "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
 
-        // register shutdown hook
+        // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-            System.err.println("*** shutting down gRPC server since JVM is shutting down");
+            System.err.println("*** shutting down sink gRPC server since JVM is shutting down");
+            if (server != null && server.isTerminated()) {
+                return;
+            }
             try {
                 Server.this.stop();
+                log.info("gracefully shutting down event loop groups");
+                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
             }
         }));
+
+        // if there are any exceptions, shutdown the server gracefully.
+        shutdownSignal.whenCompleteAsync((v, e) -> {
+            if (server.isTerminated()) {
+                return;
+            }
+
+            if (e != null) {
+                System.err.println("*** shutting down sink gRPC server because of an exception - " + e.getMessage());
+                try {
+                    log.info("stopping server");
+                    Server.this.stop();
+                    log.info("gracefully shutting down event loop groups");
+                    this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                } catch (InterruptedException ex) {
+                    Thread.interrupted();
+                    ex.printStackTrace(System.err);
+                }
+            }
+        });
     }
 
     /**
@@ -98,7 +123,9 @@ public class Server {
      * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public void awaitTermination() throws InterruptedException {
+        log.info("sink server is waiting for termination");
         server.awaitTermination();
+        log.info("sink server is terminated");
     }
 
     /**
