@@ -6,7 +6,7 @@ import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.GrpcServerHelper;
+import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,7 +25,7 @@ public class Server {
     private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
-    private final GrpcServerHelper grpcServerHelper;
+    private final GrpcServerWrapper grpcServerWrapper;
 
     /**
      * constructor to create sink gRPC server.
@@ -46,7 +46,7 @@ public class Server {
         this.shutdownSignal = new CompletableFuture<>();
         this.service = new Service(mapStreamer, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
-        this.grpcServerHelper = new GrpcServerHelper();
+        this.grpcServerWrapper = new GrpcServerWrapper(this.grpcConfig, this.service);
     }
 
     /**
@@ -63,7 +63,7 @@ public class Server {
                 Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
 
         if (this.server == null) {
-            this.server = this.grpcServerHelper.createServer(
+            this.server = this.grpcServerWrapper.createServer(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
@@ -86,7 +86,7 @@ public class Server {
             try {
                 Server.this.stop();
                 log.info("gracefully shutting down event loop groups");
-                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                this.grpcServerWrapper.gracefullyShutdownEventLoopGroups();
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
@@ -105,7 +105,7 @@ public class Server {
                     log.info("stopping server");
                     Server.this.stop();
                     log.info("gracefully shutting down event loop groups");
-                    this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                    this.grpcServerWrapper.gracefullyShutdownEventLoopGroups();
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);

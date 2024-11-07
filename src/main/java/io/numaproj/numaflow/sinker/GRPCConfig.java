@@ -3,12 +3,14 @@ package io.numaproj.numaflow.sinker;
 import lombok.Builder;
 import lombok.Getter;
 
+import io.numaproj.numaflow.shared.GrpcConfigRetriever;
+
 /**
  * GRPCConfig is used to provide configurations for gRPC server.
  */
 @Getter
 @Builder(builderMethodName = "newBuilder")
-public class GRPCConfig {
+public class GRPCConfig implements GrpcConfigRetriever {
     @Builder.Default
     private String socketPath = Constants.DEFAULT_SOCKET_PATH;
 

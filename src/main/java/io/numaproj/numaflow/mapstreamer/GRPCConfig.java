@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.mapstreamer;
 
+import io.numaproj.numaflow.shared.GrpcConfigRetriever;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -8,7 +9,7 @@ import lombok.Getter;
  */
 @Getter
 @Builder(builderMethodName = "newBuilder")
-public class GRPCConfig {
+public class GRPCConfig implements GrpcConfigRetriever {
     @Builder.Default
     private String socketPath = Constants.DEFAULT_SOCKET_PATH;
 

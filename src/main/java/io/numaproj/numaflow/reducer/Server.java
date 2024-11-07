@@ -6,7 +6,7 @@ import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.GrpcServerHelper;
+import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,7 +22,7 @@ public class Server {
     private final Service service;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
-    private final GrpcServerHelper grpcServerHelper;
+    private final GrpcServerWrapper grpcServerWrapper;
 
     /**
      * constructor to create gRPC server.
@@ -42,7 +42,7 @@ public class Server {
     public Server(ReducerFactory<? extends Reducer> reducerFactory, GRPCConfig grpcConfig) {
         this.service = new Service(reducerFactory);
         this.grpcConfig = grpcConfig;
-        this.grpcServerHelper = new GrpcServerHelper();
+        this.grpcServerWrapper = new GrpcServerWrapper(this.grpcConfig, this.service);
     }
 
     /**
@@ -60,7 +60,7 @@ public class Server {
         }
 
         if (this.server == null) {
-            this.server = this.grpcServerHelper.createServer(
+            this.server = this.grpcServerWrapper.createServer(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
@@ -85,7 +85,7 @@ public class Server {
             try {
                 Server.this.stop();
                 log.info("gracefully shutting down event loop groups");
-                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                this.grpcServerWrapper.gracefullyShutdownEventLoopGroups();
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);

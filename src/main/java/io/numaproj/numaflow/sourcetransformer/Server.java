@@ -6,7 +6,7 @@ import io.grpc.ServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.GrpcServerHelper;
+import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ public class Server {
     private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private io.grpc.Server server;
-    private final GrpcServerHelper grpcServerHelper;
+    private final GrpcServerWrapper grpcServerWrapper;
 
     /**
      * constructor to create gRPC server.
@@ -45,7 +45,7 @@ public class Server {
         this.shutdownSignal = new CompletableFuture<>();
         this.service = new Service(sourceTransformer, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
-        this.grpcServerHelper = new GrpcServerHelper();
+        this.grpcServerWrapper = new GrpcServerWrapper(this.grpcConfig, this.service);
     }
 
     /**
@@ -63,7 +63,7 @@ public class Server {
         }
 
         if (this.server == null) {
-            this.server = this.grpcServerHelper.createServer(
+            this.server = this.grpcServerWrapper.createServer(
                     grpcConfig.getSocketPath(),
                     grpcConfig.getMaxMessageSize(),
                     grpcConfig.isLocal(),
@@ -88,7 +88,7 @@ public class Server {
             try {
                 Server.this.stop();
                 log.info("gracefully shutting down event loop groups");
-                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                this.grpcServerWrapper.gracefullyShutdownEventLoopGroups();
                 // FIXME - this is a workaround to immediately terminate the JVM process
                 // The correct way to do this is to stop all the actors and wait for them to terminate
                 System.exit(0);
@@ -110,7 +110,7 @@ public class Server {
                     log.info("stopping server");
                     Server.this.stop();
                     log.info("gracefully shutting down event loop groups");
-                    this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                    this.grpcServerWrapper.gracefullyShutdownEventLoopGroups();
                     // FIXME - this is a workaround to immediately terminate the JVM process
                     // The correct way to do this is to stop all the actors and wait for them to terminate
                     System.exit(0);
