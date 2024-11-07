@@ -17,7 +17,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.unix.DomainSocketAddress;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static io.numaproj.numaflow.shared.GrpcServerUtils.DATUM_METADATA_WIN_END;
@@ -25,6 +24,10 @@ import static io.numaproj.numaflow.shared.GrpcServerUtils.DATUM_METADATA_WIN_STA
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WINDOW_END_TIME;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WINDOW_START_TIME;
 
+/**
+ * GrpcServerWrapper is a wrapper class for gRPC server.
+ * It takes care of creating, starting and gracefully shutting down the server.
+ */
 @Slf4j
 public class GrpcServerWrapper {
     private final Server server;
@@ -70,8 +73,12 @@ public class GrpcServerWrapper {
 
     public void awaitTermination() throws InterruptedException {
         this.server.awaitTermination();
-        this.workerEventLoopGroup.awaitTermination(30, TimeUnit.SECONDS);
-        this.bossEventLoopGroup.awaitTermination(30, TimeUnit.SECONDS);
+        // if the server has been terminated, we should expect the event loop groups to be terminated as well.
+        if (!(this.workerEventLoopGroup.awaitTermination(30, TimeUnit.SECONDS) &&
+                this.bossEventLoopGroup.awaitTermination(30, TimeUnit.SECONDS))) {
+            log.error("Timed out to gracefully shutdown event loop groups");
+            throw new InterruptedException("Timed out to gracefully shutdown event loop groups");
+        }
     }
 
     public void gracefullyShutdown() throws InterruptedException{
@@ -87,17 +94,9 @@ public class GrpcServerWrapper {
         this.gracefullyShutdownEventLoopGroups();
     }
 
-    public void gracefullyShutdownEventLoopGroups() {
+    private void gracefullyShutdownEventLoopGroups() {
         if (this.bossEventLoopGroup != null) {
-            Future<?> bossFuture = this.bossEventLoopGroup.shutdownGracefully();
-            while (!bossFuture.isDone()) {
-                try {
-                    log.info("waiting for boss event loop group to shutdown...");
-                    TimeUnit.MILLISECONDS.sleep(100);
-                } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting for boss event loop group to shutdown", e);
-                }
-            }
+            this.bossEventLoopGroup.shutdownGracefully();
         }
         if (this.workerEventLoopGroup != null) {
             this.workerEventLoopGroup.shutdownGracefully();

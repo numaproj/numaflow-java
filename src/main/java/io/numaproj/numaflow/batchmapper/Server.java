@@ -62,15 +62,15 @@ public class Server {
      */
     public void start() throws Exception {
         GrpcServerUtils.writeServerInfo(
-                serverInfoAccessor,
-                grpcConfig.getSocketPath(),
-                grpcConfig.getInfoFilePath(),
+                this.serverInfoAccessor,
+                this.grpcConfig.getSocketPath(),
+                this.grpcConfig.getInfoFilePath(),
                 ContainerType.MAPPER,
                 Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
 
         this.server.start();
 
-        log.info("server started, listening on socket path: {}", grpcConfig.getSocketPath());
+        log.info("server started, listening on socket path: {}", this.grpcConfig.getSocketPath());
 
         // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -85,7 +85,7 @@ public class Server {
         }));
 
         // if there are any exceptions, shutdown the server gracefully.
-        shutdownSignal.whenCompleteAsync((v, e) -> {
+        this.shutdownSignal.whenCompleteAsync((v, e) -> {
             if (e != null) {
                 System.err.println("*** shutting down batch map gRPC server because of an exception - " + e.getMessage());
                 try {
