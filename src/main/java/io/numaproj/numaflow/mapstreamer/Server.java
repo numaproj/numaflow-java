@@ -46,7 +46,7 @@ public class Server {
     }
 
     @VisibleForTesting
-    public Server(GRPCConfig grpcConfig, MapStreamer service, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, MapStreamer service, ServerInterceptor interceptor, String serverName) {
         this.grpcConfig = grpcConfig;
         this.shutdownSignal = new CompletableFuture<>();
         this.server = new GrpcServerWrapper(

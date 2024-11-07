@@ -104,8 +104,7 @@ public class GrpcServerWrapper {
         }
     }
 
-    // TODO - private
-    public Server createServer(
+    private Server createServer(
             String socketPath,
             int maxMessageSize,
             boolean isLocal,

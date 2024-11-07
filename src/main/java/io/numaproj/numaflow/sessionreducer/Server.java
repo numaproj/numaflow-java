@@ -44,7 +44,7 @@ public class Server {
     }
 
     @VisibleForTesting
-    public Server(GRPCConfig grpcConfig, SessionReducerFactory<? extends SessionReducer> service, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, SessionReducerFactory<? extends SessionReducer> service, ServerInterceptor interceptor, String serverName) {
         this.grpcConfig = grpcConfig;
         this.server = new GrpcServerWrapper(
                 interceptor,

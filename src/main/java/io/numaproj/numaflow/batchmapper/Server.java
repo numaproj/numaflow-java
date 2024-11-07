@@ -35,7 +35,7 @@ public class Server {
     }
 
     @VisibleForTesting
-    public Server(GRPCConfig grpcConfig, BatchMapper service, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, BatchMapper service, ServerInterceptor interceptor, String serverName) {
         this.grpcConfig = grpcConfig;
         this.shutdownSignal = new CompletableFuture<>();
         this.service = new Service(service, this.shutdownSignal);

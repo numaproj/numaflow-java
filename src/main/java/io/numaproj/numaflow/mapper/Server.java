@@ -45,9 +45,8 @@ public class Server {
         this.server = new GrpcServerWrapper(this.grpcConfig, new Service(mapper, this.shutdownSignal));
     }
 
-    // TODO - which accessor to use for visibility?
     @VisibleForTesting
-    public Server(GRPCConfig grpcConfig, Mapper service, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, Mapper service, ServerInterceptor interceptor, String serverName) {
         this.grpcConfig = grpcConfig;
         this.shutdownSignal = new CompletableFuture<>();
         this.server = new GrpcServerWrapper(

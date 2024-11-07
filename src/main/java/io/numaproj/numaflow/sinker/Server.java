@@ -121,7 +121,7 @@ public class Server {
     }
 
     @VisibleForTesting
-    public Server(GRPCConfig grpcConfig, Sinker sinker, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, Sinker sinker, ServerInterceptor interceptor, String serverName) {
         this.grpcConfig = grpcConfig;
         this.shutdownSignal = new CompletableFuture<>();
         this.service = new Service(sinker, this.shutdownSignal);
