@@ -139,6 +139,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.map.evenodd.EvenOddFunction
@@ -175,6 +178,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.reduce.sum.SumFactory
@@ -192,6 +198,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.reducestreamer.sum.SumFactory
@@ -231,6 +240,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.reduce.count.CounterFactory
@@ -248,6 +260,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.sideinput.simple.SimpleSideInput
@@ -266,6 +281,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.sideinput.udf.SimpleMapWithSideInput
@@ -305,6 +323,9 @@
                             <goal>dockerBuild</goal>
                         </goals>
                         <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
                             <container>
                                 <mainClass>
                                     io.numaproj.numaflow.examples.reducesession.counter.CountFactory
