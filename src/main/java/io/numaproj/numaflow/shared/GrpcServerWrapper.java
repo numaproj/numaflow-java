@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.shared;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.BindableService;
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -18,6 +17,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.unix.DomainSocketAddress;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static io.numaproj.numaflow.shared.GrpcServerUtils.DATUM_METADATA_WIN_END;
@@ -89,7 +89,15 @@ public class GrpcServerWrapper {
 
     public void gracefullyShutdownEventLoopGroups() {
         if (this.bossEventLoopGroup != null) {
-            this.bossEventLoopGroup.shutdownGracefully();
+            Future<?> bossFuture = this.bossEventLoopGroup.shutdownGracefully();
+            while (!bossFuture.isDone()) {
+                try {
+                    log.info("waiting for boss event loop group to shutdown...");
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    log.error("Interrupted while waiting for boss event loop group to shutdown", e);
+                }
+            }
         }
         if (this.workerEventLoopGroup != null) {
             this.workerEventLoopGroup.shutdownGracefully();
