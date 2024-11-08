@@ -74,6 +74,8 @@ WARNING: Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x6e9c19c7]'
 This is due to grpc-netty trying to set SO_KEEPALIVE when it
 shouldn't (https://github.com/grpc/grpc-java/blob/47ddfa4f205d4672e035c37349dfd3036c74efb6/netty/src/main/java/io/grpc/netty/NettyClientTransport.java#L237)
 
+It is suggested to use `amazoncorretto:11` as base for your docker image. We observed that without a base image, the java user-defined container can fail the Numaflow health check.
+
 ### API Documentation
 
 Please, refer to
