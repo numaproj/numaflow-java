@@ -31,10 +31,10 @@ public class ServerInfo {
             entry(ContainerType.SOURCE_TRANSFORMER, "1.4.0-z"),
             entry(ContainerType.SINKER, "1.4.0-z"),
             entry(ContainerType.MAPPER, "1.4.0-z"),
-            entry(ContainerType.REDUCER, "1.3.1-z"),
-            entry(ContainerType.REDUCE_STREAMER, "1.3.1-z"),
-            entry(ContainerType.SESSION_REDUCER, "1.3.1-z"),
-            entry(ContainerType.SIDEINPUT, "1.3.1-z"),
+            entry(ContainerType.REDUCER, "1.4.0-z"),
+            entry(ContainerType.REDUCE_STREAMER, "1.4.0-z"),
+            entry(ContainerType.SESSION_REDUCER, "1.4.0-z"),
+            entry(ContainerType.SIDEINPUT, "1.4.0-z"),
             entry(ContainerType.FBSINKER, "1.4.0-z")
     );
     @JsonProperty("protocol")
