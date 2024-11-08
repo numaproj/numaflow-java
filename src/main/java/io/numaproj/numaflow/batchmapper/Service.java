@@ -185,15 +185,16 @@ class Service extends MapGrpc.MapImplBase {
         );
     }
 
-    // Shuts down the executor service which is used for batch map
+    // Shuts down the executor service
     public void shutDown() {
         this.mapTaskExecutor.shutdown();
         try {
             if (!mapTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
                 log.error("BatchMap executor did not terminate in the specified time.");
                 List<Runnable> droppedTasks = mapTaskExecutor.shutdownNow();
-                log.error("BatchMap executor was abruptly shut down. " + droppedTasks.size()
-                        + " tasks will not be executed.");
+                log.error(
+                        "BatchMap executor was abruptly shut down. {} tasks will not be executed.",
+                        droppedTasks.size());
             } else {
                 log.info("BatchMap executor was terminated.");
             }

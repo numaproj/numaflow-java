@@ -40,11 +40,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new TestMapStreamFn(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .directExecutor());
+                null,
+                serverName);
 
         server.start();
 

@@ -69,12 +69,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new ReduceTestFactory(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .intercept(interceptor)
-                .directExecutor());
+                interceptor,
+                serverName);
 
         server.start();
 

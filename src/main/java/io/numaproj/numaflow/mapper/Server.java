@@ -1,17 +1,17 @@
 package io.numaproj.numaflow.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.grpc.ServerBuilder;
+import com.google.common.annotations.VisibleForTesting;
+import io.grpc.ServerInterceptor;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.GrpcServerHelper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
+import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Server is the gRPC server for executing map operation.
@@ -20,11 +20,9 @@ import java.util.concurrent.TimeUnit;
 public class Server {
 
     private final GRPCConfig grpcConfig;
-    private final Service service;
     private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
-    private io.grpc.Server server;
-    private final GrpcServerHelper grpcServerHelper;
+    private final GrpcServerWrapper server;
 
     /**
      * constructor to create gRPC server.
@@ -43,9 +41,18 @@ public class Server {
      */
     public Server(Mapper mapper, GRPCConfig grpcConfig) {
         this.shutdownSignal = new CompletableFuture<>();
-        this.service = new Service(mapper, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
-        this.grpcServerHelper = new GrpcServerHelper();
+        this.server = new GrpcServerWrapper(this.grpcConfig, new Service(mapper, this.shutdownSignal));
+    }
+
+    @VisibleForTesting
+    protected Server(GRPCConfig grpcConfig, Mapper service, ServerInterceptor interceptor, String serverName) {
+        this.grpcConfig = grpcConfig;
+        this.shutdownSignal = new CompletableFuture<>();
+        this.server = new GrpcServerWrapper(
+                interceptor,
+                serverName,
+                new Service(service, this.shutdownSignal));
     }
 
     /**
@@ -56,43 +63,28 @@ public class Server {
      * @throws Exception if the server fails to start
      */
     public void start() throws Exception {
-
-        if (!grpcConfig.isLocal()) {
+        if (!this.grpcConfig.isLocal()) {
             GrpcServerUtils.writeServerInfo(
-                    serverInfoAccessor,
-                    grpcConfig.getSocketPath(),
-                    grpcConfig.getInfoFilePath(),
+                    this.serverInfoAccessor,
+                    this.grpcConfig.getSocketPath(),
+                    this.grpcConfig.getInfoFilePath(),
                     ContainerType.MAPPER,
                     Collections.singletonMap(Constants.MAP_MODE_KEY, Constants.MAP_MODE));
         }
 
-        if (this.server == null) {
-            this.server = this.grpcServerHelper.createServer(
-                    grpcConfig.getSocketPath(),
-                    grpcConfig.getMaxMessageSize(),
-                    grpcConfig.isLocal(),
-                    grpcConfig.getPort(),
-                    this.service);
-        }
-
-        server.start();
+        this.server.start();
 
         log.info(
                 "server started, listening on {}",
-                grpcConfig.isLocal() ?
-                        "localhost:" + grpcConfig.getPort() : grpcConfig.getSocketPath());
+                this.grpcConfig.isLocal() ?
+                        "localhost:" + this.grpcConfig.getPort() : this.grpcConfig.getSocketPath());
 
         // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
-            if (server != null && server.isTerminated()) {
-                return;
-            }
             try {
-                Server.this.stop();
-                log.info("gracefully shutting down event loop groups");
-                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                this.stop();
                 // FIXME - this is a workaround to immediately terminate the JVM process
                 // The correct way to do this is to stop all the actors and wait for them to terminate
                 System.exit(0);
@@ -103,18 +95,11 @@ public class Server {
         }));
 
         // if there are any exceptions, shutdown the server gracefully.
-        shutdownSignal.whenCompleteAsync((v, e) -> {
-            if (server.isTerminated()) {
-                return;
-            }
-
+        this.shutdownSignal.whenCompleteAsync((v, e) -> {
             if (e != null) {
                 System.err.println("*** shutting down mapper gRPC server because of an exception - " + e.getMessage());
                 try {
-                    log.info("stopping server");
-                    Server.this.stop();
-                    log.info("gracefully shutting down event loop groups");
-                    this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                    this.stop();
                     // FIXME - this is a workaround to immediately terminate the JVM process
                     // The correct way to do this is to stop all the actors and wait for them to terminate
                     System.exit(0);
@@ -135,7 +120,7 @@ public class Server {
      */
     public void awaitTermination() throws InterruptedException {
         log.info("mapper server is waiting for termination");
-        server.awaitTermination();
+        this.server.awaitTermination();
         log.info("mapper server has terminated");
     }
 
@@ -146,24 +131,6 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
-        if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
-            // force shutdown if not terminated
-            if (!server.isTerminated()) {
-                server.shutdownNow();
-            }
-        }
-    }
-
-    /**
-     * Sets the server builder. This method can be used for testing purposes to provide a different
-     * grpc server builder.
-     *
-     * @param serverBuilder the server builder to be used
-     */
-    public void setServerBuilder(ServerBuilder<?> serverBuilder) {
-        this.server = serverBuilder
-                .addService(this.service)
-                .build();
+        this.server.gracefullyShutdown();
     }
 }

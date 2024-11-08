@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sideinput;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -32,11 +31,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new TestSideInput(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .directExecutor());
+                null,
+                serverName);
 
         server.start();
 
@@ -53,7 +51,6 @@ public class ServerTest {
 
     @Test
     public void TestSideInputRetriever() {
-        ByteString inValue = ByteString.copyFromUtf8("invalue");
         var stub = SideInputGrpc.newBlockingStub(inProcessChannel);
 
         // First call should return the broadcast message

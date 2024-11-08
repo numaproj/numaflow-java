@@ -75,12 +75,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new ReduceStreamerTestFactory(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .intercept(interceptor)
-                .directExecutor());
+                interceptor,
+                serverName);
 
         server.start();
 

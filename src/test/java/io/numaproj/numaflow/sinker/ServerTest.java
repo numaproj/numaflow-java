@@ -42,11 +42,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new TestSinkFn(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .directExecutor());
+                null,
+                serverName);
 
         server.start();
 

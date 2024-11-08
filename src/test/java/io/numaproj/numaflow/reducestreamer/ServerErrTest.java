@@ -71,12 +71,10 @@ public class ServerErrTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new ReduceStreamerErrTestFactory(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .intercept(interceptor)
-                .directExecutor());
+                interceptor,
+                serverName);
 
         server.start();
 

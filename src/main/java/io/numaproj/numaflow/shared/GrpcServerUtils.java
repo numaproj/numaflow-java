@@ -1,15 +1,7 @@
 package io.numaproj.numaflow.shared;
 
 import io.grpc.Context;
-import io.grpc.Contexts;
-import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
-import io.grpc.ServerBuilder;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
-import io.grpc.Status;
-import io.grpc.netty.NettyServerBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -17,7 +9,6 @@ import io.netty.channel.epoll.EpollServerDomainSocketChannel;
 import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerDomainSocketChannel;
-import io.netty.channel.unix.DomainSocketAddress;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.Language;
 import io.numaproj.numaflow.info.Protocol;
