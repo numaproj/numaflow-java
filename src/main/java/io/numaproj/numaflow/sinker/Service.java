@@ -154,7 +154,7 @@ class Service extends SinkGrpc.SinkImplBase {
         );
     }
 
-    // shuts down the executor service which is used for reduce
+    // shuts down the executor service
     public void shutDown() {
         this.sinkTaskExecutor.shutdown();
         try {
@@ -166,8 +166,9 @@ class Service extends SinkGrpc.SinkImplBase {
             if (!sinkTaskExecutor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
                 log.error("Sink executor did not terminate in the specified time.");
                 List<Runnable> droppedTasks = sinkTaskExecutor.shutdownNow();
-                log.error("Sink executor was abruptly shut down. " + droppedTasks.size()
-                        + " tasks will not be executed.");
+                log.error(
+                        "Sink executor was abruptly shut down. {} tasks will not be executed.",
+                        droppedTasks.size());
             } else {
                 log.info("Sink executor was terminated.");
             }

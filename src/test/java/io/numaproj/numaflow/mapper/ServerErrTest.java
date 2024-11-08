@@ -82,12 +82,10 @@ public class ServerErrTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new TestMapFnErr(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .intercept(interceptor)
-                .directExecutor());
+                interceptor,
+                serverName);
 
         server.start();
 

@@ -39,11 +39,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new TestMapFn(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .directExecutor());
+                null,
+                serverName);
 
         server.start();
 

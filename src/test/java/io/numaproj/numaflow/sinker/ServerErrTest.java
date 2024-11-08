@@ -41,11 +41,10 @@ public class ServerErrTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new TestSinkFnErr(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .directExecutor());
+                null,
+                serverName);
 
         server.start();
 
