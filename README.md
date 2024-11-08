@@ -26,7 +26,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>io.numaproj.numaflow</groupId>
   <artifactId>numaflow-java</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ Add this dependency to your project's POM:
 Add this dependency to your project's build file:
 
 ```groovy
-compile "io.numaproj.numaflow:numaflow-java:0.8.0"
+compile "io.numaproj.numaflow:numaflow-java:0.9.0"
 ```
 
 ### Build
@@ -73,6 +73,8 @@ WARNING: Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x6e9c19c7]'
 
 This is due to grpc-netty trying to set SO_KEEPALIVE when it
 shouldn't (https://github.com/grpc/grpc-java/blob/47ddfa4f205d4672e035c37349dfd3036c74efb6/netty/src/main/java/io/grpc/netty/NettyClientTransport.java#L237)
+
+It is suggested to use `amazoncorretto:11` as base for your docker image. We observed that without a base image, the java user-defined container can fail the Numaflow health check.
 
 ### API Documentation
 
