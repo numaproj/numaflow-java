@@ -1,16 +1,19 @@
 package io.numaproj.numaflow.sinker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
+import io.grpc.BindableService;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptor;
+import io.grpc.inprocess.InProcessServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.GrpcServerHelper;
+import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Server is the gRPC server for executing user defined sinks.
@@ -19,11 +22,10 @@ import java.util.concurrent.TimeUnit;
 public class Server {
 
     private final GRPCConfig grpcConfig;
-    private final Service service;
     private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
-    private io.grpc.Server server;
-    private final GrpcServerHelper grpcServerHelper;
+    private final Service service;
+    private final GrpcServerWrapper server;
 
     /**
      * constructor to create sink gRPC server.
@@ -42,9 +44,9 @@ public class Server {
      */
     public Server(Sinker sinker, GRPCConfig grpcConfig) {
         this.shutdownSignal = new CompletableFuture<>();
-        this.service = new Service(sinker, this.shutdownSignal);
         this.grpcConfig = grpcConfig;
-        this.grpcServerHelper = new GrpcServerHelper();
+        this.service = new Service(sinker, this.shutdownSignal);
+        this.server = new GrpcServerWrapper(grpcConfig, this.service);
     }
 
     /**
@@ -61,15 +63,6 @@ public class Server {
                     ContainerType.SINKER);
         }
 
-        if (this.server == null) {
-            this.server = this.grpcServerHelper.createServer(
-                    grpcConfig.getSocketPath(),
-                    grpcConfig.getMaxMessageSize(),
-                    grpcConfig.isLocal(),
-                    grpcConfig.getPort(),
-                    this.service);
-        }
-
         server.start();
 
         log.info(
@@ -81,13 +74,8 @@ public class Server {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
             System.err.println("*** shutting down sink gRPC server since JVM is shutting down");
-            if (server != null && server.isTerminated()) {
-                return;
-            }
             try {
-                Server.this.stop();
-                log.info("gracefully shutting down event loop groups");
-                this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                this.stop();
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
@@ -96,17 +84,10 @@ public class Server {
 
         // if there are any exceptions, shutdown the server gracefully.
         shutdownSignal.whenCompleteAsync((v, e) -> {
-            if (server.isTerminated()) {
-                return;
-            }
-
             if (e != null) {
                 System.err.println("*** shutting down sink gRPC server because of an exception - " + e.getMessage());
                 try {
-                    log.info("stopping server");
-                    Server.this.stop();
-                    log.info("gracefully shutting down event loop groups");
-                    this.grpcServerHelper.gracefullyShutdownEventLoopGroups();
+                    this.stop();
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);
@@ -135,25 +116,15 @@ public class Server {
      * @throws InterruptedException if shutdown is interrupted
      */
     public void stop() throws InterruptedException {
+        server.gracefullyShutdown();
         this.service.shutDown();
-        if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
-            // force shutdown if not terminated
-            if (!server.isTerminated()) {
-                server.shutdownNow();
-            }
-        }
     }
 
-    /**
-     * Sets the server builder. This method can be used for testing purposes to provide a different
-     * grpc server builder.
-     *
-     * @param serverBuilder the server builder to be used
-     */
-    public void setServerBuilder(ServerBuilder<?> serverBuilder) {
-        this.server = serverBuilder
-                .addService(this.service)
-                .build();
+    @VisibleForTesting
+    protected Server(GRPCConfig grpcConfig, Sinker sinker, ServerInterceptor interceptor, String serverName) {
+        this.grpcConfig = grpcConfig;
+        this.shutdownSignal = new CompletableFuture<>();
+        this.service = new Service(sinker, this.shutdownSignal);
+        this.server = new GrpcServerWrapper(interceptor, serverName, this.service);
     }
 }

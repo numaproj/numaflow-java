@@ -2,13 +2,7 @@ package io.numaproj.numaflow.sessionreducer;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
-import io.grpc.Context;
-import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
-import io.grpc.Metadata;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -40,17 +34,6 @@ public class ServerTest {
 
     @Before
     public void setUp() throws Exception {
-        ServerInterceptor interceptor = new ServerInterceptor() {
-            @Override
-            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
-                    ServerCall<ReqT, RespT> call,
-                    Metadata headers,
-                    ServerCallHandler<ReqT, RespT> next) {
-                final var context = Context.current();
-                return Contexts.interceptCall(context, call, headers, next);
-            }
-        };
-
         String serverName = InProcessServerBuilder.generateName();
 
         GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
@@ -60,12 +43,10 @@ public class ServerTest {
                 .build();
 
         server = new Server(
+                grpcServerConfig,
                 new SessionReducerTestFactory(),
-                grpcServerConfig);
-
-        server.setServerBuilder(InProcessServerBuilder.forName(serverName)
-                .intercept(interceptor)
-                .directExecutor());
+                null,
+                serverName);
 
         server.start();
 
