@@ -70,7 +70,10 @@ class MapSupervisorActor extends AbstractActor {
 
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
-        getContext().getSystem().log().warning("supervisor pre restart was executed due to: {}", reason.getMessage());
+        getContext()
+                .getSystem()
+                .log()
+                .warning("supervisor pre restart was executed due to: {}", reason.getMessage());
         shutdownSignal.completeExceptionally(reason);
         responseObserver.onError(Status.INTERNAL
                 .withDescription(reason.getMessage())
@@ -141,7 +144,7 @@ class MapSupervisorActor extends AbstractActor {
     // if we see dead letters, we need to stop the execution and exit
     // to make sure no messages are lost
     private void handleDeadLetters(AllDeadLetters deadLetter) {
-        log.debug("got a dead letter, stopping the execution");
+        log.error("got a dead letter, stopping the execution");
         responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
         shutdownSignal.completeExceptionally(new Throwable("dead letters"));

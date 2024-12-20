@@ -1,9 +1,8 @@
 package io.numaproj.numaflow.sinker;
 
+import io.numaproj.numaflow.shared.GrpcConfigRetriever;
 import lombok.Builder;
 import lombok.Getter;
-
-import io.numaproj.numaflow.shared.GrpcConfigRetriever;
 
 /**
  * GRPCConfig is used to provide configurations for gRPC server.
