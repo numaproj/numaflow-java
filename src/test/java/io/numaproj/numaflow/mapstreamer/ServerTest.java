@@ -14,38 +14,35 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ServerTest {
-    private final static String PROCESSED_KEY_SUFFIX = "-key-processed";
-    private final static String PROCESSED_VALUE_SUFFIX = "-value-processed";
+    private static final String PROCESSED_KEY_SUFFIX = "-key-processed";
+    private static final String PROCESSED_VALUE_SUFFIX = "-value-processed";
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private Server server;
+    private Service server;
     private ManagedChannel inProcessChannel;
 
     @Before
     public void setUp() throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
-        GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
-                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
-                .socketPath(Constants.DEFAULT_SOCKET_PATH)
-                .infoFilePath("/tmp/numaflow-test-server-info)")
-                .build();
+        CompletableFuture<Void> shutdownSignal = new CompletableFuture<>();
 
-        server = new Server(
-                grpcServerConfig,
-                new TestMapStreamFn(),
-                null,
-                serverName);
+        server = new Service(new TestMapStreamer(), shutdownSignal);
 
-        server.start();
+        grpcCleanup.register(InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(server)
+                .build()
+                .start());
 
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
                 .forName(serverName)
@@ -54,78 +51,106 @@ public class ServerTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        server.stop();
+    public void tearDown() {
+        inProcessChannel.shutdownNow();
     }
 
     @Test
-    public void TestMapStreamer() {
+    public void testMapStreamerSuccess() {
         MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
                 .newBuilder()
                 .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
                 .build();
 
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-        MapOuterClass.MapRequest request = MapOuterClass.MapRequest
+        MapOuterClass.MapRequest inDatum = MapOuterClass.MapRequest
                 .newBuilder()
-                .setRequest(MapOuterClass.MapRequest.Request.newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request
+                        .newBuilder()
                         .setValue(inValue)
-                        .addKeys("test-map-stream-key")).build();
+                        .addAllKeys(List.of("test-map-key"))
+                        .build()).build();
 
-        String[] expectedKeys = new String[]{"test-map-stream-key" + PROCESSED_KEY_SUFFIX};
+        String[] expectedKeys = new String[]{"test-map-key" + PROCESSED_KEY_SUFFIX};
         String[] expectedTags = new String[]{"test-tag"};
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
-        MapStreamOutputStreamObserver mapStreamOutputStreamObserver = new MapStreamOutputStreamObserver(
-                12);
-        var stub = MapGrpc.newStub(inProcessChannel);
+        MapStreamOutputStreamObserver responseObserver = new MapStreamOutputStreamObserver(4);
 
-        var requestStreamObserver = stub
-                .mapFn(mapStreamOutputStreamObserver);
+        var stub = MapGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub.mapFn(responseObserver);
 
         requestStreamObserver.onNext(handshakeRequest);
-        requestStreamObserver.onNext(request);
-        requestStreamObserver.onCompleted();
+        requestStreamObserver.onNext(inDatum);
+        requestStreamObserver.onNext(inDatum);
+        requestStreamObserver.onNext(inDatum);
 
         try {
-            mapStreamOutputStreamObserver.done.get();
+            responseObserver.done.get();
         } catch (InterruptedException | ExecutionException e) {
-            fail("exception thrown");
+            fail("Error while waiting for response" + e.getMessage());
         }
-        System.out.println("got responses");
-        List<MapOuterClass.MapResponse> messages = mapStreamOutputStreamObserver.getMapResponses();
-        // 10 responses + 1 handshake response + 1 eot response
-        assertEquals(12, messages.size());
 
-        // first is handshake
-        assertTrue(messages.get(0).hasHandshake());
+        List<MapOuterClass.MapResponse> responses = responseObserver.getMapResponses();
+        assertEquals(4, responses.size());
 
-        messages = messages.subList(1, messages.size());
-        for (MapOuterClass.MapResponse response : messages) {
-            if (response.hasStatus()) {
-                assertTrue(response.getStatus().getEot());
-                continue;
-            }
+        // first response is the handshake response
+        assertEquals(handshakeRequest.getHandshake(), responses.get(0).getHandshake());
+
+        responses = responses.subList(1, responses.size());
+        for (MapOuterClass.MapResponse response : responses) {
             assertEquals(expectedValue, response.getResults(0).getValue());
-            assertEquals(expectedKeys[0], response.getResults(0).getKeys(0));
+            assertEquals(Arrays.asList(expectedKeys), response.getResults(0).getKeysList());
+            assertEquals(Arrays.asList(expectedTags), response.getResults(0).getTagsList());
+            assertEquals(1, response.getResultsCount());
         }
+
+        requestStreamObserver.onCompleted();
     }
 
-    private static class TestMapStreamFn extends MapStreamer {
+    @Test
+    public void testMapStreamerWithoutHandshake() {
+        ByteString inValue = ByteString.copyFromUtf8("invalue");
+        MapOuterClass.MapRequest inDatum = MapOuterClass.MapRequest
+                .newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request
+                        .newBuilder()
+                        .setValue(inValue)
+                        .addAllKeys(List.of("test-map-key"))
+                        .build()).build();
+
+        MapStreamOutputStreamObserver responseObserver = new MapStreamOutputStreamObserver(1);
+
+        var stub = MapGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub.mapFn(responseObserver);
+
+        requestStreamObserver.onNext(inDatum);
+
+        try {
+            responseObserver.done.get();
+            fail("Expected an exception to be thrown");
+        } catch (InterruptedException | ExecutionException e) {
+            assertEquals(
+                    "io.grpc.StatusRuntimeException: INVALID_ARGUMENT: Handshake request not received",
+                    e.getMessage());
+        }
+        requestStreamObserver.onCompleted();
+    }
+
+    private static class TestMapStreamer extends MapStreamer {
         @Override
         public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {
-            String[] updatedKeys = Arrays
-                    .stream(keys)
+            String[] updatedKeys = Arrays.stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
-            for (int i = 0; i < 10; i++) {
-                Message msg = new Message(
-                        (new String(datum.getValue())
-                                + PROCESSED_VALUE_SUFFIX).getBytes(),
-                        updatedKeys,
-                        new String[]{"test-tag"});
-                outputObserver.send(msg);
-            }
+
+            Message message = new Message(
+                    (new String(datum.getValue()) + PROCESSED_VALUE_SUFFIX).getBytes(),
+                    updatedKeys,
+                    new String[]{"test-tag"}
+            );
+
+            outputObserver.send(message);
         }
     }
 }

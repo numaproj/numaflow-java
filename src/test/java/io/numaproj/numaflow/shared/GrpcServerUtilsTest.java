@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.shared;
 
 import io.grpc.Context;
-import io.grpc.ServerBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
 import io.numaproj.numaflow.info.ContainerType;
