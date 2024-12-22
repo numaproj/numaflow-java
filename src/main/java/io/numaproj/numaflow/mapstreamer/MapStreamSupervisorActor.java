@@ -106,7 +106,6 @@ class MapStreamSupervisorActor extends AbstractActor {
         return receiveBuilder()
                 .match(MapOuterClass.MapRequest.class, this::processRequest)
                 .match(MapOuterClass.MapResponse.class, this::sendResponse)
-                .match(Message.class, this::sendMessage)
                 .match(Exception.class, this::handleFailure)
                 .match(AllDeadLetters.class, this::handleDeadLetters)
                 .build();
@@ -131,20 +130,6 @@ class MapStreamSupervisorActor extends AbstractActor {
             responseObserver.onNext(mapResponse);
         }
         activeMapperCount--;
-    }
-
-    private void sendMessage(Message message) {
-        MapOuterClass.MapResponse response = MapOuterClass.MapResponse.newBuilder()
-                .addResults(MapOuterClass.MapResponse.Result.newBuilder()
-                        .setValue(
-                                message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                                        message.getValue()))
-                        .addAllKeys(message.getKeys()
-                                == null ? new ArrayList<>() : List.of(message.getKeys()))
-                        .addAllTags(message.getTags()
-                                == null ? new ArrayList<>() : List.of(message.getTags()))
-                        .build()).build();
-        sendResponse(response);
     }
 
     private void processRequest(MapOuterClass.MapRequest mapRequest) {
