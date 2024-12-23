@@ -18,7 +18,6 @@ public class MapStreamOutputStreamObserver implements StreamObserver<MapOuterCla
 
     @Override
     public void onNext(MapOuterClass.MapResponse mapResponse) {
-        System.out.println("Received response: " + mapResponse);
         mapResponses.add(mapResponse);
         if (mapResponses.size() == responseCount) {
             done.complete(null);

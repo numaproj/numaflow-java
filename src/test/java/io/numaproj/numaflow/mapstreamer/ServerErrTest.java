@@ -1,7 +1,14 @@
 package io.numaproj.numaflow.mapstreamer;
 
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
+import io.grpc.Contexts;
+import io.grpc.ForwardingServerCallListener;
 import io.grpc.ManagedChannel;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
@@ -12,6 +19,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -19,26 +29,61 @@ public class ServerErrTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private Server server;
+    private Service server;
     private ManagedChannel inProcessChannel;
 
     @Before
     public void setUp() throws Exception {
+        ServerInterceptor interceptor = new ServerInterceptor() {
+            @Override
+            public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                    ServerCall<ReqT, RespT> call,
+                    io.grpc.Metadata headers,
+                    ServerCallHandler<ReqT, RespT> next) {
+                final var context = Context.current();
+                ServerCall.Listener<ReqT> listener = Contexts.interceptCall(
+                        context,
+                        call,
+                        headers,
+                        next);
+                return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(
+                        listener) {
+                    @Override
+                    public void onHalfClose() {
+                        try {
+                            super.onHalfClose();
+                        } catch (RuntimeException ex) {
+                            handleException(ex, call, headers);
+                            throw ex;
+                        }
+                    }
+
+                    private void handleException(
+                            RuntimeException e,
+                            ServerCall<ReqT, RespT> serverCall,
+                            io.grpc.Metadata headers) {
+                        // Translate it to INTERNAL status.
+                        var status = Status.INTERNAL.withDescription(e.getMessage()).withCause(e);
+                        var newStatus = Status.fromThrowable(status.asException());
+                        serverCall.close(newStatus, headers);
+                    }
+                };
+            }
+        };
+
         String serverName = InProcessServerBuilder.generateName();
 
-        GRPCConfig grpcServerConfig = GRPCConfig.newBuilder()
-                .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
-                .socketPath(Constants.DEFAULT_SOCKET_PATH)
-                .infoFilePath("/tmp/numaflow-test-server-info)")
-                .build();
+        CompletableFuture<Void> shutdownSignal = new CompletableFuture<>();
 
-        server = new Server(
-                grpcServerConfig,
-                new TestMapStreamFnErr(),
-                null,
-                serverName);
+        server = new Service(new TestMapStreamerErr(), shutdownSignal);
 
-        server.start();
+        grpcCleanup.register(InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(server)
+                .intercept(interceptor)
+                .build()
+                .start());
 
         inProcessChannel = grpcCleanup.register(InProcessChannelBuilder
                 .forName(serverName)
@@ -47,36 +92,35 @@ public class ServerErrTest {
     }
 
     @After
-    public void tearDown() throws Exception {
-        server.stop();
+    public void tearDown() {
+        inProcessChannel.shutdownNow();
     }
 
     @Test
-    public void TestMapStreamerErr() {
+    public void testMapStreamerFailure() {
         MapOuterClass.MapRequest handshakeRequest = MapOuterClass.MapRequest
                 .newBuilder()
                 .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
                 .build();
 
         ByteString inValue = ByteString.copyFromUtf8("invalue");
-        MapOuterClass.MapRequest request = MapOuterClass.MapRequest
+        MapOuterClass.MapRequest mapRequest = MapOuterClass.MapRequest
                 .newBuilder()
                 .setRequest(MapOuterClass.MapRequest.Request.newBuilder()
-                        .setValue(inValue)
-                        .addKeys("test-map-stream-key")).build();
+                        .addAllKeys(List.of("test-map-key")).setValue(inValue).build())
+                .build();
 
-        MapStreamOutputStreamObserver mapStreamOutputStreamObserver = new MapStreamOutputStreamObserver(
-                2);
+        MapStreamOutputStreamObserver responseObserver = new MapStreamOutputStreamObserver(2);
+
         var stub = MapGrpc.newStub(inProcessChannel);
+        var requestObserver = stub.mapFn(responseObserver);
 
-        var requestStreamObserver = stub
-                .mapFn(mapStreamOutputStreamObserver);
-        requestStreamObserver.onNext(handshakeRequest);
-        requestStreamObserver.onNext(request);
+        requestObserver.onNext(handshakeRequest);
+        requestObserver.onNext(mapRequest);
 
         try {
-            mapStreamOutputStreamObserver.done.get();
-            fail("Should have thrown an exception");
+            responseObserver.done.get();
+            fail("Expected exception not thrown");
         } catch (Exception e) {
             assertEquals(
                     "io.grpc.StatusRuntimeException: INTERNAL: unknown exception",
@@ -84,7 +128,7 @@ public class ServerErrTest {
         }
     }
 
-    private static class TestMapStreamFnErr extends MapStreamer {
+    private static class TestMapStreamerErr extends MapStreamer {
         @Override
         public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {
             throw new RuntimeException("unknown exception");
