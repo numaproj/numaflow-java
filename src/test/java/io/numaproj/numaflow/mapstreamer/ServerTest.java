@@ -75,7 +75,7 @@ public class ServerTest {
         String[] expectedTags = new String[]{"test-tag"};
         ByteString expectedValue = ByteString.copyFromUtf8("invalue" + PROCESSED_VALUE_SUFFIX);
 
-        MapStreamOutputStreamObserver responseObserver = new MapStreamOutputStreamObserver(4);
+        MapStreamOutputStreamObserver responseObserver = new MapStreamOutputStreamObserver(7);
 
         var stub = MapGrpc.newStub(inProcessChannel);
         var requestStreamObserver = stub.mapFn(responseObserver);
@@ -92,13 +92,17 @@ public class ServerTest {
         }
 
         List<MapOuterClass.MapResponse> responses = responseObserver.getMapResponses();
-        assertEquals(4, responses.size());
+        // we should have 7 responses, 1 handshake + 3 actual responses + 3 eofs
+        assertEquals(7, responses.size());
 
         // first response is the handshake response
         assertEquals(handshakeRequest.getHandshake(), responses.get(0).getHandshake());
 
         responses = responses.subList(1, responses.size());
         for (MapOuterClass.MapResponse response : responses) {
+            if (response.getStatus().getEot()) {
+                continue;
+            }
             assertEquals(expectedValue, response.getResults(0).getValue());
             assertEquals(Arrays.asList(expectedKeys), response.getResults(0).getKeysList());
             assertEquals(Arrays.asList(expectedTags), response.getResults(0).getTagsList());

@@ -30,7 +30,7 @@ class MapStreamerActor extends AbstractActor {
                 .match(MapOuterClass.MapRequest.class, this::processRequest)
                 .build();
     }
-    
+
     private void processRequest(MapOuterClass.MapRequest mapRequest) {
         HandlerDatum handlerDatum = new HandlerDatum(
                 mapRequest.getRequest().getValue().toByteArray(),
@@ -46,9 +46,12 @@ class MapStreamerActor extends AbstractActor {
         String[] keys = mapRequest.getRequest().getKeysList().toArray(new String[0]);
 
         try {
-            mapStreamer.processMessage(keys, handlerDatum, new OutputObserverImpl(
+            OutputObserverImpl outputObserver = new OutputObserverImpl(
                     getSender(),
-                    mapRequest.getId()));
+                    mapRequest.getId());
+            mapStreamer.processMessage(keys, handlerDatum, outputObserver);
+            // send eof response
+            outputObserver.sendEOF();
         } catch (Exception e) {
             getSender().tell(e, getSelf());
         }
