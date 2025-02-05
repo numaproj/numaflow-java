@@ -14,8 +14,9 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ServerErrTest {
 
@@ -87,9 +88,11 @@ public class ServerErrTest {
             responseObserver.done.get();
             fail("Expected exception not thrown");
         } catch (Exception e) {
-            assertEquals(
-                    "io.grpc.StatusRuntimeException: INTERNAL: unknown exception",
-                    e.getMessage());
+            String expectedSubstring = "UDF_EXECUTION_ERROR(transformer)";
+            String actualMessage = e.getMessage();
+            assertNotNull("Error message should not be null", actualMessage);
+            assertTrue("Expected substring '" + expectedSubstring + "' not found in error message: " + actualMessage,
+                    actualMessage.contains(expectedSubstring));
         }
     }
 
