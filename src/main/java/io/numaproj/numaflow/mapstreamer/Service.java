@@ -64,15 +64,14 @@ class Service extends MapGrpc.MapImplBase {
                             constructHandlerDatum(request),
                             new OutputObserverImpl(responseObserver));
                 } catch (Exception e) {
-                    String stackTrace = ExceptionUtils.getStackTrace(e);
-                    log.error("Exception in mapStreamFn onNext - {} {}", e.getMessage(), stackTrace);
+                    log.error("Encountered error in mapFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
                     // Build gRPC Status [error]
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
                             .setMessage(ExceptionUtils.ERR_MAP_STREAM_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
                             .addDetails(Any.pack(DebugInfo.newBuilder()
-                                    .setDetail(stackTrace)
+                                    .setDetail(ExceptionUtils.getStackTrace(e))
                                     .build()))
                             .build();
                     responseObserver.onError(StatusProto.toStatusRuntimeException(status));
@@ -91,7 +90,7 @@ class Service extends MapGrpc.MapImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("Encountered error in mapStream Stream - {}", throwable.getMessage());
+                log.error("Encountered error in mapStream Stream", throwable);
                 shutdownSignal.completeExceptionally(throwable);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())

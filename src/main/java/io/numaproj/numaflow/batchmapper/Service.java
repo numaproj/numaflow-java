@@ -101,15 +101,14 @@ class Service extends MapGrpc.MapImplBase {
                         datumStream.writeMessage(constructHandlerDatum(mapRequest));
                     }
                 } catch (Exception e) {
-                    String stackTrace = ExceptionUtils.getStackTrace(e);
-                    log.error("Exception in batch map onNext - {} {}", e.getMessage(), stackTrace);
+                    log.error("Encountered an error in batch map onNext", e);
                     shutdownSignal.completeExceptionally(e);
                     // Build gRPC Status [error]
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
                             .setMessage(ExceptionUtils.ERR_BATCH_MAP_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
                             .addDetails(Any.pack(DebugInfo.newBuilder()
-                                    .setDetail(stackTrace)
+                                    .setDetail(ExceptionUtils.getStackTrace(e))
                                     .build()))
                             .build();
                     responseObserver.onError(StatusProto.toStatusRuntimeException(status));
@@ -119,7 +118,7 @@ class Service extends MapGrpc.MapImplBase {
             // Called when an error occurs
             @Override
             public void onError(Throwable throwable) {
-                log.error("Error Encountered in batchMap Stream - {}", throwable.getMessage());
+                log.error("Error Encountered in batchMap Stream", throwable);
                 shutdownSignal.completeExceptionally(throwable);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())

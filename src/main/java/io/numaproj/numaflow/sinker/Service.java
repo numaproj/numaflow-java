@@ -100,15 +100,17 @@ class Service extends SinkGrpc.SinkImplBase {
                         datumStream.writeMessage(constructHandlerDatum(request));
                     }
                 } catch (Exception e) {
-                    String stackTrace = ExceptionUtils.getStackTrace(e);
-                    log.error("Exception in sinkFn onNext - {} {}", e.getMessage(), stackTrace);
+                    log.error("Encountered error in sinkFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
+                    responseObserver.onError(Status.INTERNAL
+                            .withDescription(e.getMessage())
+                            .asException());
                     // Build gRPC Status [error]
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
                             .setMessage(ExceptionUtils.ERR_SINK_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
                             .addDetails(Any.pack(DebugInfo.newBuilder()
-                                    .setDetail(stackTrace)
+                                    .setDetail(ExceptionUtils.getStackTrace(e))
                                     .build()))
                             .build();
                     responseObserver.onError(StatusProto.toStatusRuntimeException(status));
@@ -117,7 +119,7 @@ class Service extends SinkGrpc.SinkImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("Encountered error in sinkFn - {}", throwable.getMessage());
+                log.error("Encountered error in sinkFn", throwable);
                 shutdownSignal.completeExceptionally(throwable);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())

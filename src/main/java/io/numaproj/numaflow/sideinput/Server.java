@@ -10,6 +10,8 @@ import io.numaproj.numaflow.shared.GrpcServerUtils;
 import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Server is the gRPC server for retrieving side input.
  */
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Server {
 
     private final GRPCConfig grpcConfig;
+    private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private final GrpcServerWrapper server;
 
@@ -32,21 +35,24 @@ public class Server {
     /**
      * constructor to create gRPC server with gRPC config.
      *
-     * @param grpcConfig to configure the max message size for grpc
+     * @param grpcConfig         to configure the max message size for grpc
      * @param sideInputRetriever to retrieve the side input
      */
     public Server(SideInputRetriever sideInputRetriever, GRPCConfig grpcConfig) {
+        this.shutdownSignal = new CompletableFuture<>();
         this.grpcConfig = grpcConfig;
-        this.server = new GrpcServerWrapper(this.grpcConfig, new Service(sideInputRetriever));
+        this.server = new GrpcServerWrapper(this.grpcConfig, new Service(sideInputRetriever, this.shutdownSignal));
     }
 
     @VisibleForTesting
-    protected Server(GRPCConfig grpcConfig, SideInputRetriever service, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, SideInputRetriever service, ServerInterceptor interceptor,
+            String serverName) {
+        this.shutdownSignal = new CompletableFuture<>();
         this.grpcConfig = grpcConfig;
         this.server = new GrpcServerWrapper(
                 interceptor,
                 serverName,
-                new Service(service));
+                new Service(service, this.shutdownSignal));
     }
 
     /**
@@ -67,12 +73,12 @@ public class Server {
 
         log.info(
                 "server started, listening on {}",
-                this.grpcConfig.isLocal() ?
-                        "localhost:" + this.grpcConfig.getPort() : this.grpcConfig.getSocketPath());
+                this.grpcConfig.isLocal() ? "localhost:" + this.grpcConfig.getPort() : this.grpcConfig.getSocketPath());
 
         // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+            // Use stderr here since the logger may have been reset by its JVM shutdown
+            // hook.
             try {
                 this.stop();
             } catch (InterruptedException e) {
@@ -80,14 +86,31 @@ public class Server {
                 e.printStackTrace(System.err);
             }
         }));
+
+        // if there are any exceptions, shutdown the server gracefully.
+        this.shutdownSignal.whenCompleteAsync((v, e) -> { // Add this block
+            if (e != null) {
+                System.err.println(
+                        "*** shutting down side input gRPC server because of an exception - " + e.getMessage());
+                try {
+                    this.stop();
+                } catch (InterruptedException ex) {
+                    Thread.interrupted();
+                    ex.printStackTrace(System.err);
+                }
+            }
+        });
     }
 
     /**
-     * Blocks until the server has terminated. If the server is already terminated, this method
-     * will return immediately. If the server is not yet terminated, this method will block the
+     * Blocks until the server has terminated. If the server is already terminated,
+     * this method
+     * will return immediately. If the server is not yet terminated, this method
+     * will block the
      * calling thread until the server has terminated.
      *
-     * @throws InterruptedException if the current thread is interrupted while waiting
+     * @throws InterruptedException if the current thread is interrupted while
+     *                              waiting
      */
     public void awaitTermination() throws InterruptedException {
         log.info("side input server is waiting for termination");
@@ -96,7 +119,8 @@ public class Server {
     }
 
     /**
-     * Stop serving requests and shutdown resources. Await termination on the main thread since the
+     * Stop serving requests and shutdown resources. Await termination on the main
+     * thread since the
      * grpc library uses daemon threads.
      *
      * @throws InterruptedException if shutdown is interrupted
