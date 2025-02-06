@@ -14,11 +14,10 @@ import com.google.protobuf.Any;
 import com.google.rpc.Code;
 import com.google.rpc.DebugInfo;
 import io.grpc.protobuf.StatusProto;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -55,7 +54,6 @@ class TransformSupervisorActor extends AbstractActor {
     private final CompletableFuture<Void> shutdownSignal;
     private int activeTransformersCount;
     private Exception userException;
-    private static final String ERR_TRANSFORMER_EXCEPTION = "UDF_EXECUTION_ERROR(transformer)";
 
     /**
      * Constructor for TransformSupervisorActor.
@@ -143,7 +141,7 @@ class TransformSupervisorActor extends AbstractActor {
      * @param e The exception to be handled.
      */
     private void handleFailure(Exception e) {
-        String stackTrace = getStackTrace(e);
+        String stackTrace = ExceptionUtils.getStackTrace(e);
         log.error("Exception in sourceTransformFn: {} {}", e.getMessage(), stackTrace);
         if (userException == null) {
             userException = e;
@@ -153,7 +151,7 @@ class TransformSupervisorActor extends AbstractActor {
             // Build gRPC Status [error]
             com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                     .setCode(Code.INTERNAL.getNumber())
-                    .setMessage(ERR_TRANSFORMER_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                    .setMessage(ExceptionUtils.ERR_TRANSFORMER_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
                     .addDetails(Any.pack(DebugInfo.newBuilder()
                             .setDetail(stackTrace)
                             .build()))
@@ -161,18 +159,6 @@ class TransformSupervisorActor extends AbstractActor {
             responseObserver.onError(StatusProto.toStatusRuntimeException(status));
         }
         activeTransformersCount--;
-    }
-
-    /**
-     * Converts the stack trace of an exception into a String.
-     *
-     * @param e the exception to extract the stack trace from
-     * @return the stack trace as a String
-     */
-    private String getStackTrace(Exception e) {
-        StringWriter sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        return sw.toString();
     }
 
     /**
