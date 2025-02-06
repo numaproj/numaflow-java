@@ -59,7 +59,7 @@ class Service extends MapGrpc.MapImplBase {
                             constructHandlerDatum(request),
                             new OutputObserverImpl(responseObserver));
                 } catch (Exception e) {
-                    log.error("Encountered error in mapFn onNext - {}", e.getMessage());
+                    log.error("Encountered error in mapFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
                     responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
@@ -80,7 +80,7 @@ class Service extends MapGrpc.MapImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("Encountered error in mapStream Stream - {}", throwable.getMessage());
+                log.error("Encountered error in mapStream Stream", throwable);
                 shutdownSignal.completeExceptionally(throwable);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())

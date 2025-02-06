@@ -96,7 +96,10 @@ class TransformSupervisorActor extends AbstractActor {
      */
     @Override
     public void preRestart(Throwable reason, Optional<Object> message) {
-        getContext().getSystem().log().warning("supervisor pre restart was executed due to: {}", reason.getMessage());
+        getContext()
+                .getSystem()
+                .log()
+                .warning("supervisor pre restart was executed due to: {}", reason.getMessage());
         responseObserver.onError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
@@ -136,7 +139,7 @@ class TransformSupervisorActor extends AbstractActor {
      * @param e The exception to be handled.
      */
     private void handleFailure(Exception e) {
-        log.error("Encountered error in sourceTransformFn - {}", e.getMessage());
+        log.error("Encountered error in sourceTransformFn", e);
         if (userException == null) {
             userException = e;
             // only send the very first exception to the client
