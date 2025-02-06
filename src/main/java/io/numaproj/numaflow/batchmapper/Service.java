@@ -1,11 +1,16 @@
 package io.numaproj.numaflow.batchmapper;
 
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
 import io.grpc.Status;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -96,12 +101,18 @@ class Service extends MapGrpc.MapImplBase {
                         datumStream.writeMessage(constructHandlerDatum(mapRequest));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered an error in batch map onNext - {}", e.getMessage());
+                    String stackTrace = ExceptionUtils.getStackTrace(e);
+                    log.error("Exception in batch map onNext - {} {}", e.getMessage(), stackTrace);
                     shutdownSignal.completeExceptionally(e);
-                    responseObserver.onError(Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e)
-                            .asException());
+                    // Build gRPC Status [error]
+                    com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
+                            .setCode(Code.INTERNAL.getNumber())
+                            .setMessage(ExceptionUtils.ERR_BATCH_MAP_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                            .addDetails(Any.pack(DebugInfo.newBuilder()
+                                    .setDetail(stackTrace)
+                                    .build()))
+                            .build();
+                    responseObserver.onError(StatusProto.toStatusRuntimeException(status));
                 }
             }
 

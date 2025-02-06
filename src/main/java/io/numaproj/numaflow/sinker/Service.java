@@ -1,8 +1,13 @@
 package io.numaproj.numaflow.sinker;
 
+import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
 import io.grpc.Status;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.AllArgsConstructor;
@@ -95,9 +100,18 @@ class Service extends SinkGrpc.SinkImplBase {
                         datumStream.writeMessage(constructHandlerDatum(request));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered error in sinkFn onNext - {}", e.getMessage());
+                    String stackTrace = ExceptionUtils.getStackTrace(e);
+                    log.error("Exception in sinkFn onNext - {} {}", e.getMessage(), stackTrace);
                     shutdownSignal.completeExceptionally(e);
-                    responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asException());
+                    // Build gRPC Status [error]
+                    com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
+                            .setCode(Code.INTERNAL.getNumber())
+                            .setMessage(ExceptionUtils.ERR_SINK_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                            .addDetails(Any.pack(DebugInfo.newBuilder()
+                                    .setDetail(stackTrace)
+                                    .build()))
+                            .build();
+                    responseObserver.onError(StatusProto.toStatusRuntimeException(status));
                 }
             }
 

@@ -79,7 +79,7 @@ public class ServerErrTest {
             fail("Should have thrown an exception");
         } catch (Exception e) {
             assertEquals(
-                    "io.grpc.StatusRuntimeException: INTERNAL: unknown exception",
+                    "io.grpc.StatusRuntimeException: INTERNAL: UDF_EXECUTION_ERROR(mapstream): unknown exception",
                     e.getMessage());
         }
     }

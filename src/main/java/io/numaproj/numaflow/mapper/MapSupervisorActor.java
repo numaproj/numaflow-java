@@ -9,8 +9,13 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import io.grpc.Status;
+import com.google.protobuf.Any;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
@@ -98,15 +103,21 @@ class MapSupervisorActor extends AbstractActor {
     }
 
     private void handleFailure(Exception e) {
-        log.error("Encountered error in mapFn - {}", e.getMessage());
+        String stackTrace = ExceptionUtils.getStackTrace(e);
+        log.error("Exception in mapFn - {} {}", e.getMessage(), stackTrace);
         if (userException == null) {
             userException = e;
             // only send the very first exception to the client
             // one exception should trigger a container restart
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asException());
+            // Build gRPC Status [error]
+            com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
+                    .setCode(Code.INTERNAL.getNumber())
+                    .setMessage(ExceptionUtils.ERR_MAP_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                    .addDetails(Any.pack(DebugInfo.newBuilder()
+                            .setDetail(stackTrace)
+                            .build()))
+                    .build();
+            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
         }
         activeMapperCount--;
     }
