@@ -71,13 +71,14 @@ class Service extends SourceGrpc.SourceImplBase {
                             .setCode(SourceOuterClass.ReadResponse.Status.Code.SUCCESS)
                             .build();
 
-                    SourceOuterClass.ReadResponse response = SourceOuterClass.ReadResponse.newBuilder()
+                    SourceOuterClass.ReadResponse response = SourceOuterClass.ReadResponse
+                            .newBuilder()
                             .setStatus(status)
                             .build();
 
                     responseObserver.onNext(response);
                 } catch (Exception e) {
-                    log.error("Encountered error in readFn onNext - {}", e.getMessage());
+                    log.error("Encountered error in readFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
                     responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
@@ -88,7 +89,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                log.error("Encountered error in readFn onNext - {}", t.getMessage());
+                log.error("Encountered error in readFn onNext", t);
                 shutdownSignal.completeExceptionally(t);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(t.getMessage())
@@ -152,7 +153,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
                     responseObserver.onNext(response);
                 } catch (Exception e) {
-                    log.error("Encountered error in ackFn onNext - {}", e.getMessage());
+                    log.error("Encountered error in ackFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
                     responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
@@ -163,7 +164,7 @@ class Service extends SourceGrpc.SourceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                log.error("Encountered error in ackFn onNext - {}", t.getMessage());
+                log.error("Encountered error in ackFn onNext", t);
                 shutdownSignal.completeExceptionally(t);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(t.getMessage())
