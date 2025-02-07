@@ -6,7 +6,9 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.numaproj.numaflow/numaflow-java.svg?label=Maven%20Central)](https://central.sonatype.com/search?q=numaflow+java&smo=true)
 
 This SDK provides the interface for
-writing [UDSources](https://numaflow.numaproj.io/user-guide/sources/user-defined-sources/), [UDTransformer](https://numaflow.numaproj.io/user-guide/sources/transformer/overview/), [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/user-defined-functions/)
+writing [UDSources](https://numaflow.numaproj.io/user-guide/sources/user-defined-sources/)
+, [UDTransformer](https://numaflow.numaproj.io/user-guide/sources/transformer/overview/)
+, [UDFs](https://numaflow.numaproj.io/user-guide/user-defined-functions/user-defined-functions/)
 and [UDSinks](https://numaflow.numaproj.io/user-guide/sinks/user-defined-sinks/) in Java.
 
 ## Getting Started
@@ -26,7 +28,7 @@ Add this dependency to your project's POM:
 <dependency>
   <groupId>io.numaproj.numaflow</groupId>
   <artifactId>numaflow-java</artifactId>
-  <version>0.9.1</version>
+  <version>0.9.2</version>
 </dependency>
 ```
 
@@ -35,7 +37,7 @@ Add this dependency to your project's POM:
 Add this dependency to your project's build file:
 
 ```groovy
-compile "io.numaproj.numaflow:numaflow-java:0.9.1"
+compile "io.numaproj.numaflow:numaflow-java:0.9.2"
 ```
 
 ### Build
@@ -45,6 +47,7 @@ mvn clean install
 ```
 
 ### Examples on how to write UDSources, UDTransformers, UDFs, UDSinks and SideInputs in Java
+
 * **User Defined Source(UDSource)**
     * [Source](examples/src/main/java/io/numaproj/numaflow/examples/source/simple)
 
@@ -74,7 +77,8 @@ WARNING: Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x6e9c19c7]'
 This is due to grpc-netty trying to set SO_KEEPALIVE when it
 shouldn't (https://github.com/grpc/grpc-java/blob/47ddfa4f205d4672e035c37349dfd3036c74efb6/netty/src/main/java/io/grpc/netty/NettyClientTransport.java#L237)
 
-It is suggested to use `amazoncorretto:11` as base for your docker image. We observed that without a base image, the java user-defined container can fail the Numaflow health check.
+It is suggested to use `amazoncorretto:11` as base for your docker image. We observed that without a
+base image, the java user-defined container can fail the Numaflow health check.
 
 ### API Documentation
 

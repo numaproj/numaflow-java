@@ -6,11 +6,12 @@
 
     <groupId>io.numaproj.numaflow</groupId>
     <artifactId>numaflow-java</artifactId>
-    <version>0.9.1</version>
+    <version>0.9.2</version>
     <packaging>jar</packaging>
 
     <name>numaflow-java</name>
-    <description>SDK to implement Numaflow Source or User Defined Functions or Sinks in Java.</description>
+    <description>SDK to implement Numaflow Source or User Defined Functions or Sinks in Java.
+    </description>
     <url>https://numaflow.numaproj.io/</url>
 
     <licenses>
@@ -397,8 +398,8 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                  <include>numaflow-java-sdk-version.properties</include>
-                </includes>                
+                    <include>numaflow-java-sdk-version.properties</include>
+                </includes>
             </resource>
         </resources>
     </build>
