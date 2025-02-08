@@ -96,7 +96,7 @@ class Service extends MapGrpc.MapImplBase {
                         datumStream.writeMessage(constructHandlerDatum(mapRequest));
                     }
                 } catch (Exception e) {
-                    log.error("Encountered an error in batch map onNext - {}", e.getMessage());
+                    log.error("Encountered an error in batch map onNext", e);
                     shutdownSignal.completeExceptionally(e);
                     responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
@@ -108,7 +108,7 @@ class Service extends MapGrpc.MapImplBase {
             // Called when an error occurs
             @Override
             public void onError(Throwable throwable) {
-                log.error("Error Encountered in batchMap Stream - {}", throwable.getMessage());
+                log.error("Error Encountered in batchMap Stream", throwable);
                 shutdownSignal.completeExceptionally(throwable);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(throwable.getMessage())

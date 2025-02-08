@@ -101,7 +101,7 @@ class MapSupervisorActor extends AbstractActor {
     }
 
     private void handleFailure(Exception e) {
-        log.error("Encountered error in mapFn - {}", e.getMessage());
+        log.error("Encountered error in mapFn", e);
         if (userException == null) {
             userException = e;
             // only send the very first exception to the client

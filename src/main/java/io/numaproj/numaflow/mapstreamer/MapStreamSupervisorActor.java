@@ -112,7 +112,7 @@ class MapStreamSupervisorActor extends AbstractActor {
     }
 
     private void handleFailure(Exception e) {
-        getContext().getSystem().log().error("Error in map stream - {}", e.getMessage());
+        getContext().getSystem().log().error("Encountered error in mapStreamFn", e);
         if (userException == null) {
             userException = e;
             synchronized (responseObserver) {
