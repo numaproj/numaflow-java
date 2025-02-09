@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.sideinput;
 
 import com.google.protobuf.Empty;
-import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.grpc.stub.StreamObserver;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.sideinput.v1.SideInputGrpc;

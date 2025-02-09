@@ -13,7 +13,6 @@ public class ExceptionUtils {
     public static final String ERR_MAP_STREAM_EXCEPTION = "UDF_EXECUTION_ERROR(mapstream)";
     public static final String ERR_MAP_EXCEPTION = "UDF_EXECUTION_ERROR(map)";
     public static final String ERR_BATCH_MAP_EXCEPTION = "UDF_EXECUTION_ERROR(batchmap)";
-    public static final String ERR_SIDE_INPUT_EXCEPTION = "UDF_EXECUTION_ERROR(sideinput)";
 
     /**
      * Converts the stack trace of an exception into a String.
