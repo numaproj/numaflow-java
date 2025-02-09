@@ -105,7 +105,7 @@ class Service extends SinkGrpc.SinkImplBase {
                     responseObserver.onError(Status.INTERNAL
                             .withDescription(e.getMessage())
                             .asException());
-                    // Build gRPC Status [error]
+                    // Build gRPC Status
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
                             .setMessage(ExceptionUtils.ERR_SINK_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))

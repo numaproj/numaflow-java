@@ -85,7 +85,7 @@ class Service extends SourceGrpc.SourceImplBase {
                 } catch (Exception e) {
                     log.error("Encountered error in readFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
-                    // Build gRPC Status [error]
+                    // Build gRPC Status
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
                             .setMessage(ExceptionUtils.ERR_SOURCE_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))

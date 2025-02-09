@@ -150,7 +150,7 @@ class TransformSupervisorActor extends AbstractActor {
             // only send the very first exception to the client
             // one exception should trigger a container restart
 
-            // Build gRPC Status [error]
+            // Build gRPC Status
             com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                     .setCode(Code.INTERNAL.getNumber())
                     .setMessage(ExceptionUtils.ERR_TRANSFORMER_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))

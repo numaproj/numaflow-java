@@ -103,7 +103,7 @@ class Service extends MapGrpc.MapImplBase {
                 } catch (Exception e) {
                     log.error("Encountered an error in batch map onNext", e);
                     shutdownSignal.completeExceptionally(e);
-                    // Build gRPC Status [error]
+                    // Build gRPC Status
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
                             .setMessage(ExceptionUtils.ERR_BATCH_MAP_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))

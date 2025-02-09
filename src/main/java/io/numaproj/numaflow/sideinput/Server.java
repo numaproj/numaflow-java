@@ -10,8 +10,6 @@ import io.numaproj.numaflow.shared.GrpcServerUtils;
 import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Server is the gRPC server for retrieving side input.
  */
@@ -19,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 public class Server {
 
     private final GRPCConfig grpcConfig;
-    private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private final GrpcServerWrapper server;
 
@@ -39,20 +36,18 @@ public class Server {
      * @param sideInputRetriever to retrieve the side input
      */
     public Server(SideInputRetriever sideInputRetriever, GRPCConfig grpcConfig) {
-        this.shutdownSignal = new CompletableFuture<>();
         this.grpcConfig = grpcConfig;
-        this.server = new GrpcServerWrapper(this.grpcConfig, new Service(sideInputRetriever, this.shutdownSignal));
+        this.server = new GrpcServerWrapper(this.grpcConfig, new Service(sideInputRetriever));
     }
 
     @VisibleForTesting
     protected Server(GRPCConfig grpcConfig, SideInputRetriever service, ServerInterceptor interceptor,
             String serverName) {
-        this.shutdownSignal = new CompletableFuture<>();
         this.grpcConfig = grpcConfig;
         this.server = new GrpcServerWrapper(
                 interceptor,
                 serverName,
-                new Service(service, this.shutdownSignal));
+                new Service(service));
     }
 
     /**
@@ -77,8 +72,7 @@ public class Server {
 
         // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Use stderr here since the logger may have been reset by its JVM shutdown
-            // hook.
+            // Use stderr here since the logger may have been reset by its JVM shutdown hook.
             try {
                 this.stop();
             } catch (InterruptedException e) {
@@ -86,20 +80,6 @@ public class Server {
                 e.printStackTrace(System.err);
             }
         }));
-
-        // if there are any exceptions, shutdown the server gracefully.
-        this.shutdownSignal.whenCompleteAsync((v, e) -> { // Add this block
-            if (e != null) {
-                System.err.println(
-                        "*** shutting down side input gRPC server because of an exception - " + e.getMessage());
-                try {
-                    this.stop();
-                } catch (InterruptedException ex) {
-                    Thread.interrupted();
-                    ex.printStackTrace(System.err);
-                }
-            }
-        });
     }
 
     /**
