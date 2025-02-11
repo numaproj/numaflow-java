@@ -1,7 +1,7 @@
 package io.numaproj.numaflow.mapstreamer;
 
+import akka.actor.ActorRef;
 import com.google.protobuf.ByteString;
-import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
 import lombok.AllArgsConstructor;
 
@@ -9,21 +9,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * OutputObserverImpl is the implementation of the OutputObserver interface.
- * It is used to send messages to the gRPC client when the send method is called.
+ * Implementation of the OutputObserver interface.
+ * It sends messages to the supervisor actor when the send method is called.
+ * <p>
+ * We create a new output observer for every map stream invocation, but they
+ * all forward the response to a common actor (supervisor) who will send the
+ * responses back to the client. We cannot directly write to the gRPC stream
+ * from the output observer because the gRPC stream observer is not thread
+ * safe, whereas writing to an actor is thread safe, and only one actor will
+ * write the responses back to the client.
  */
 @AllArgsConstructor
-class OutputObserverImpl implements OutputObserver {
-    StreamObserver<MapOuterClass.MapResponse> responseObserver;
+public class OutputObserverImpl implements OutputObserver {
+    private final ActorRef supervisorActor;
+    private final String requestID;
 
     @Override
     public void send(Message message) {
-        MapOuterClass.MapResponse response = buildResponse(message);
-        responseObserver.onNext(response);
-    }
-
-    private MapOuterClass.MapResponse buildResponse(Message message) {
-        return MapOuterClass.MapResponse.newBuilder()
+        MapOuterClass.MapResponse response = MapOuterClass.MapResponse.newBuilder()
+                .setId(requestID)
                 .addResults(MapOuterClass.MapResponse.Result.newBuilder()
                         .setValue(
                                 message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
@@ -33,5 +37,14 @@ class OutputObserverImpl implements OutputObserver {
                         .addAllTags(message.getTags()
                                 == null ? new ArrayList<>() : List.of(message.getTags()))
                         .build()).build();
+        supervisorActor.tell(response, ActorRef.noSender());
+    }
+
+    public void sendEOF() {
+        supervisorActor.tell(MapOuterClass.MapResponse
+                .newBuilder()
+                .setId(requestID)
+                .setStatus(MapOuterClass.TransmissionStatus.newBuilder().setEot(true).build())
+                .build(), ActorRef.noSender());
     }
 }
