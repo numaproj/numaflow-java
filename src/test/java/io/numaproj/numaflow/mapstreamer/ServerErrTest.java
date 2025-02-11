@@ -29,7 +29,7 @@ public class ServerErrTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private Service server;
+    private Service service;
     private ManagedChannel inProcessChannel;
 
     @Before
@@ -75,12 +75,12 @@ public class ServerErrTest {
 
         CompletableFuture<Void> shutdownSignal = new CompletableFuture<>();
 
-        server = new Service(new TestMapStreamerErr(), shutdownSignal);
+        service = new Service(new TestMapStreamerErr(), shutdownSignal);
 
         grpcCleanup.register(InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(server)
+                .addService(service)
                 .intercept(interceptor)
                 .build()
                 .start());

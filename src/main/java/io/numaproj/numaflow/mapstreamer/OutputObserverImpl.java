@@ -3,6 +3,7 @@ package io.numaproj.numaflow.mapstreamer;
 import akka.actor.ActorRef;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +19,10 @@ import java.util.List;
  * safe, whereas writing to an actor is thread safe, and only one actor will
  * write the responses back to the client.
  */
+@AllArgsConstructor
 public class OutputObserverImpl implements OutputObserver {
     private final ActorRef supervisorActor;
     private final String requestID;
-
-    public OutputObserverImpl(ActorRef supervisorActor, String requestID) {
-        this.supervisorActor = supervisorActor;
-        this.requestID = requestID;
-    }
 
     @Override
     public void send(Message message) {

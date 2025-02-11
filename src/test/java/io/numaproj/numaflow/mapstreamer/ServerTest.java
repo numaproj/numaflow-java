@@ -26,7 +26,7 @@ public class ServerTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
-    private Service server;
+    private Service service;
     private ManagedChannel inProcessChannel;
 
     @Before
@@ -35,12 +35,12 @@ public class ServerTest {
 
         CompletableFuture<Void> shutdownSignal = new CompletableFuture<>();
 
-        server = new Service(new TestMapStreamer(), shutdownSignal);
+        service = new Service(new TestMapStreamer(), shutdownSignal);
 
         grpcCleanup.register(InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(server)
+                .addService(service)
                 .build()
                 .start());
 
