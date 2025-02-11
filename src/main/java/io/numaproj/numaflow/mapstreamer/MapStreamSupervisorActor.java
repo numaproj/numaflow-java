@@ -122,9 +122,7 @@ class MapStreamSupervisorActor extends AbstractActor {
     }
 
     private void sendResponse(MapOuterClass.MapResponse mapResponse) {
-        synchronized (responseObserver) {
-            responseObserver.onNext(mapResponse);
-        }
+        responseObserver.onNext(mapResponse);
         activeMapStreamersCount--;
     }
 

@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class ServerErrTest {
+public class ServiceErrTest {
 
     @Rule
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
