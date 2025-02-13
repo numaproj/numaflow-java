@@ -127,7 +127,7 @@ public class ServerErrTest {
             fail("Expected exception not thrown");
         } catch (Exception e) {
             assertEquals(
-                    "io.grpc.StatusRuntimeException: INTERNAL: unknown exception",
+                    "io.grpc.StatusRuntimeException: INTERNAL: UDF_EXECUTION_ERROR(map): unknown exception",
                     e.getMessage());
         }
     }

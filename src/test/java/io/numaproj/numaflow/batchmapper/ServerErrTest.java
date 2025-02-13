@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ServerErrTest {
@@ -85,9 +87,11 @@ public class ServerErrTest {
             outputStreamObserver.done.get();
             fail("Expected exception not thrown");
         } catch (InterruptedException | ExecutionException e) {
-            assertEquals(
-                    "INTERNAL: java.lang.RuntimeException: unknown exception",
-                    e.getCause().getMessage());
+            String expectedSubstring = "UDF_EXECUTION_ERROR(batchmap)";
+            String actualMessage = e.getMessage();
+            assertNotNull("Error message should not be null", actualMessage);
+            assertTrue("Expected substring '" + expectedSubstring + "' not found in error message: " + actualMessage,
+                    actualMessage.contains(expectedSubstring));
         }
     }
 

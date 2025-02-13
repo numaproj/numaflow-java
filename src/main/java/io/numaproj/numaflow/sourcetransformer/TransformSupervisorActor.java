@@ -8,8 +8,13 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import io.grpc.Status;
+import com.google.protobuf.Any;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
+import io.grpc.protobuf.StatusProto;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -144,10 +149,16 @@ class TransformSupervisorActor extends AbstractActor {
             userException = e;
             // only send the very first exception to the client
             // one exception should trigger a container restart
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asException());
+
+            // Build gRPC Status
+            com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
+                    .setCode(Code.INTERNAL.getNumber())
+                    .setMessage(ExceptionUtils.ERR_TRANSFORMER_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                    .addDetails(Any.pack(DebugInfo.newBuilder()
+                            .setDetail(ExceptionUtils.getStackTrace(e))
+                            .build()))
+                    .build();
+            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
         }
         activeTransformersCount--;
     }
@@ -217,7 +228,6 @@ class TransformSupervisorActor extends AbstractActor {
                                     .asException());
                             return SupervisorStrategy.stop();
                         })
-                        .build()
-        );
+                        .build());
     }
 }

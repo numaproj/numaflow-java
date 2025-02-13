@@ -1,13 +1,12 @@
 package io.numaproj.numaflow.sideinput;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
+import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.sideinput.v1.SideInputGrpc;
 import io.numaproj.numaflow.sideinput.v1.Sideinput;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 
 @Slf4j
 @AllArgsConstructor
@@ -29,11 +28,8 @@ class Service extends SideInputGrpc.SideInputImplBase {
                     responseObserver);
             return;
         }
-
-
         // process request
         Message message = sideInputRetriever.retrieveSideInput();
-
         // set response
         responseObserver.onNext(buildResponse(message));
         responseObserver.onCompleted();
@@ -50,8 +46,9 @@ class Service extends SideInputGrpc.SideInputImplBase {
 
     private Sideinput.SideInputResponse buildResponse(Message message) {
         return Sideinput.SideInputResponse.newBuilder()
-                .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                        message.getValue()))
+                .setValue(message.getValue() == null ? ByteString.EMPTY
+                        : ByteString.copyFrom(
+                                message.getValue()))
                 .setNoBroadcast(message.isNoBroadcast())
                 .build();
     }

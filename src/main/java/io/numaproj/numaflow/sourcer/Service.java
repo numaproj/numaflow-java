@@ -1,8 +1,13 @@
 package io.numaproj.numaflow.sourcer;
 
+import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
 import io.grpc.Status;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import lombok.AllArgsConstructor;
@@ -14,7 +19,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static io.numaproj.numaflow.source.v1.SourceGrpc.getPendingFnMethod;
-
 
 /**
  * Implementation of the gRPC service for the sourcer.
@@ -31,7 +35,8 @@ class Service extends SourceGrpc.SourceImplBase {
      * @param responseObserver the response observer
      */
     @Override
-    public StreamObserver<SourceOuterClass.ReadRequest> readFn(final StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
+    public StreamObserver<SourceOuterClass.ReadRequest> readFn(
+            final StreamObserver<SourceOuterClass.ReadResponse> responseObserver) {
         return new StreamObserver<>() {
             private boolean handshakeDone = false;
 
@@ -80,10 +85,15 @@ class Service extends SourceGrpc.SourceImplBase {
                 } catch (Exception e) {
                     log.error("Encountered error in readFn onNext", e);
                     shutdownSignal.completeExceptionally(e);
-                    responseObserver.onError(Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e)
-                            .asException());
+                    // Build gRPC Status
+                    com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
+                            .setCode(Code.INTERNAL.getNumber())
+                            .setMessage(ExceptionUtils.ERR_SOURCE_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                            .addDetails(Any.pack(DebugInfo.newBuilder()
+                                    .setDetail(ExceptionUtils.getStackTrace(e))
+                                    .build()))
+                            .build();
+                    responseObserver.onError(StatusProto.toStatusRuntimeException(status));
                 }
             }
 
@@ -201,7 +211,8 @@ class Service extends SourceGrpc.SourceImplBase {
                 SourceOuterClass.PendingResponse.Result
                         .newBuilder()
                         .setCount(this.sourcer.getPending())
-                        .build()).build());
+                        .build())
+                .build());
         responseObserver.onCompleted();
     }
 
@@ -236,8 +247,8 @@ class Service extends SourceGrpc.SourceImplBase {
         responseObserver.onNext(SourceOuterClass.PartitionsResponse.newBuilder()
                 .setResult(
                         SourceOuterClass.PartitionsResponse.Result.newBuilder()
-                                .addAllPartitions(partitions)).
-                build());
+                                .addAllPartitions(partitions))
+                .build());
         responseObserver.onCompleted();
     }
 }

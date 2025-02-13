@@ -32,7 +32,7 @@ public class Server {
     /**
      * constructor to create gRPC server with gRPC config.
      *
-     * @param grpcConfig to configure the max message size for grpc
+     * @param grpcConfig         to configure the max message size for grpc
      * @param sideInputRetriever to retrieve the side input
      */
     public Server(SideInputRetriever sideInputRetriever, GRPCConfig grpcConfig) {
@@ -41,7 +41,8 @@ public class Server {
     }
 
     @VisibleForTesting
-    protected Server(GRPCConfig grpcConfig, SideInputRetriever service, ServerInterceptor interceptor, String serverName) {
+    protected Server(GRPCConfig grpcConfig, SideInputRetriever service, ServerInterceptor interceptor,
+            String serverName) {
         this.grpcConfig = grpcConfig;
         this.server = new GrpcServerWrapper(
                 interceptor,
@@ -67,8 +68,7 @@ public class Server {
 
         log.info(
                 "server started, listening on {}",
-                this.grpcConfig.isLocal() ?
-                        "localhost:" + this.grpcConfig.getPort() : this.grpcConfig.getSocketPath());
+                this.grpcConfig.isLocal() ? "localhost:" + this.grpcConfig.getPort() : this.grpcConfig.getSocketPath());
 
         // register shutdown hook to gracefully shut down the server
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -83,11 +83,14 @@ public class Server {
     }
 
     /**
-     * Blocks until the server has terminated. If the server is already terminated, this method
-     * will return immediately. If the server is not yet terminated, this method will block the
+     * Blocks until the server has terminated. If the server is already terminated,
+     * this method
+     * will return immediately. If the server is not yet terminated, this method
+     * will block the
      * calling thread until the server has terminated.
      *
-     * @throws InterruptedException if the current thread is interrupted while waiting
+     * @throws InterruptedException if the current thread is interrupted while
+     *                              waiting
      */
     public void awaitTermination() throws InterruptedException {
         log.info("side input server is waiting for termination");
@@ -96,7 +99,8 @@ public class Server {
     }
 
     /**
-     * Stop serving requests and shutdown resources. Await termination on the main thread since the
+     * Stop serving requests and shutdown resources. Await termination on the main
+     * thread since the
      * grpc library uses daemon threads.
      *
      * @throws InterruptedException if shutdown is interrupted
