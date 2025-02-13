@@ -2,15 +2,12 @@ package io.numaproj.numaflow.sinker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import io.grpc.BindableService;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptor;
-import io.grpc.inprocess.InProcessServerBuilder;
 import io.numaproj.numaflow.info.ContainerType;
 import io.numaproj.numaflow.info.ServerInfoAccessor;
 import io.numaproj.numaflow.info.ServerInfoAccessorImpl;
-import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
+import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
@@ -85,7 +82,8 @@ public class Server {
         // if there are any exceptions, shutdown the server gracefully.
         shutdownSignal.whenCompleteAsync((v, e) -> {
             if (e != null) {
-                System.err.println("*** shutting down sink gRPC server because of an exception - " + e.getMessage());
+                System.err.println("*** shutting down sink gRPC server because of an exception - "
+                        + e.getMessage());
                 try {
                     this.stop();
                 } catch (InterruptedException ex) {
@@ -121,7 +119,11 @@ public class Server {
     }
 
     @VisibleForTesting
-    protected Server(GRPCConfig grpcConfig, Sinker sinker, ServerInterceptor interceptor, String serverName) {
+    protected Server(
+            GRPCConfig grpcConfig,
+            Sinker sinker,
+            ServerInterceptor interceptor,
+            String serverName) {
         this.grpcConfig = grpcConfig;
         this.shutdownSignal = new CompletableFuture<>();
         this.service = new Service(sinker, this.shutdownSignal);
