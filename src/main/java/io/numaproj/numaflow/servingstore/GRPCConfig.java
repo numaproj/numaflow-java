@@ -1,11 +1,11 @@
-package io.numaproj.numaflow.mapper;
+package io.numaproj.numaflow.servingstore;
 
 import io.numaproj.numaflow.shared.GrpcConfigRetriever;
 import lombok.Builder;
 import lombok.Getter;
 
 /**
- * GRPCConfig is used to provide configurations for map gRPC server.
+ * GRPCConfig is used to provide configurations for gRPC server.
  */
 @Getter
 @Builder(builderMethodName = "newBuilder")
@@ -31,8 +31,8 @@ public class GRPCConfig implements GrpcConfigRetriever {
         return GRPCConfig.newBuilder()
                 .infoFilePath(Constants.DEFAULT_SERVER_INFO_FILE_PATH)
                 .maxMessageSize(Constants.DEFAULT_MESSAGE_SIZE)
-                .isLocal(System.getenv("NUMAFLOW_POD") == null) // if NUMAFLOW_POD is not set, then we are not running
-                                                                // using numaflow
+                .isLocal(System.getenv("NUMAFLOW_POD")
+                        == null) // if NUMAFLOW_POD is not set, then we are not running using numaflow
                 .socketPath(Constants.DEFAULT_SOCKET_PATH).build();
     }
 }

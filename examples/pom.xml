@@ -337,6 +337,28 @@
                             </to>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>serving-inmem-store</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.servingstore.memory.ServingInMemoryStore
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>
+                                    numaflow-java-examples/serving-inmem-store:${docker.tag}
+                                </image>
+                            </to>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
