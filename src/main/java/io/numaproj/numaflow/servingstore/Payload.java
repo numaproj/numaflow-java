@@ -1,39 +1,16 @@
 package io.numaproj.numaflow.servingstore;
 
+import lombok.Getter;
+import lombok.AllArgsConstructor;
+
 /**
- * Payload is each independent result stored in the Store per origin for a given
- * ID.
+ * Payload is each independent result stored in the Store per origin for a given ID.
  */
+@Getter
+@AllArgsConstructor
 public class Payload {
+    // origin is the name of the vertex that produced the payload.
     private String origin;
+    // value is the byte array of the payload.
     private byte[] value;
-
-    /**
-     * Creates a new Payload from the given value.
-     *
-     * @param origin the origin name
-     * @param value  the value of the payload
-     */
-    public Payload(String origin, byte[] value) {
-        this.origin = origin;
-        this.value = value;
-    }
-
-    /**
-     * Returns the value of the Payload.
-     *
-     * @return the value of the payload
-     */
-    public byte[] getValue() {
-        return value;
-    }
-
-    /**
-     * Returns the origin name.
-     *
-     * @return the origin name
-     */
-    public String getOrigin() {
-        return origin;
-    }
 }
