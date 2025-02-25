@@ -318,6 +318,7 @@
                                 <exclude>io/numaproj/numaflow/shared/*</exclude>
                                 <exclude>io/numaproj/numaflow/sideinput/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/source/v1/*</exclude>
+                                <exclude>io/numaproj/numaflow/serving/v1/*</exclude>
                                 <exclude>**/*TestKit*</exclude>
                             </excludes>
                         </configuration>
@@ -355,7 +356,8 @@
                         io.numaproj.numaflow.shared,
                         io.numaproj.numaflow.sideinput.v1,
                         io.numaproj.numaflow.source.v1,
-                        io.numaproj.numaflow.sessionreduce.v1
+                        io.numaproj.numaflow.sessionreduce.v1,
+                        io.numaproj.numaflow.serving.v1
                     </excludePackageNames>
                 </configuration>
                 <executions>
