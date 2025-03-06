@@ -36,7 +36,7 @@ public class ServerInfo {
             entry(ContainerType.SESSION_REDUCER, "1.4.0-z"),
             entry(ContainerType.SIDEINPUT, "1.4.0-z"),
             entry(ContainerType.FBSINKER, "1.4.0-z"),
-            entry(ContainerType.SERVING, "1.4.0-z")
+            entry(ContainerType.SERVING, "1.5.0-z")
     );
     @JsonProperty("protocol")
     private Protocol protocol;
