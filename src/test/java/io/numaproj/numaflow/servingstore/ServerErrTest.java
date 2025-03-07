@@ -40,7 +40,7 @@ public class ServerErrTest {
     }
 
     @org.junit.Test
-    public void testServingStorePutGetSuccess() {
+    public void testServingStoreError() {
         io.numaproj.numaflow.serving.v1.ServingStoreGrpc.ServingStoreBlockingStub stub = io.numaproj.numaflow.serving.v1.ServingStoreGrpc.newBlockingStub(inProcessChannel);
 
         try {

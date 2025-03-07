@@ -92,10 +92,6 @@ public class Server {
             System.err.println("*** shutting down gRPC server since JVM is shutting down");
             try {
                 this.stop();
-                // FIXME - this is a workaround to immediately terminate the JVM process
-                // The correct way to do this is to stop all the actors and wait for them to
-                // terminate
-                System.exit(0);
             } catch (InterruptedException e) {
                 Thread.interrupted();
                 e.printStackTrace(System.err);
@@ -110,10 +106,6 @@ public class Server {
                                 + e.getMessage());
                 try {
                     this.stop();
-                    // FIXME - this is a workaround to immediately terminate the JVM process
-                    // The correct way to do this is to stop all the actors and wait for them to
-                    // terminate
-                    System.exit(0);
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);
