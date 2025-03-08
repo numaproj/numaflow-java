@@ -23,9 +23,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @AllArgsConstructor
 class Service extends SinkGrpc.SinkImplBase {
-    // sinkTaskExecutor is the executor for the sinker. It is a fixed size thread pool
-    // with the number of threads equal to the number of cores on the machine times 2.
-    // We use 2 times the number of cores because the sinker is a CPU intensive task.
+    // sinkTaskExecutor is the executor for the sinker. It is a fixed size thread
+    // pool
+    // with the number of threads equal to the number of cores on the machine times
+    // 2.
+    // We use 2 times the number of cores because the sinker is a CPU intensive
+    // task.
     private final ExecutorService sinkTaskExecutor = Executors
             .newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
@@ -36,7 +39,8 @@ class Service extends SinkGrpc.SinkImplBase {
      * Applies a function to each datum element in the stream.
      */
     @Override
-    public StreamObserver<SinkOuterClass.SinkRequest> sinkFn(StreamObserver<SinkOuterClass.SinkResponse> responseObserver) {
+    public StreamObserver<SinkOuterClass.SinkRequest> sinkFn(
+            StreamObserver<SinkOuterClass.SinkResponse> responseObserver) {
         return new StreamObserver<>() {
             private boolean startOfStream = true;
             private CompletableFuture<ResponseList> result;
@@ -101,19 +105,17 @@ class Service extends SinkGrpc.SinkImplBase {
                     }
                 } catch (Exception e) {
                     log.error("Encountered error in sinkFn onNext", e);
-                    shutdownSignal.completeExceptionally(e);
-                    responseObserver.onError(Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .asException());
                     // Build gRPC Status
                     com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                             .setCode(Code.INTERNAL.getNumber())
-                            .setMessage(ExceptionUtils.ERR_SINK_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                            .setMessage(ExceptionUtils.ERR_SINK_EXCEPTION + ": "
+                                    + (e.getMessage() != null ? e.getMessage() : ""))
                             .addDetails(Any.pack(DebugInfo.newBuilder()
                                     .setDetail(ExceptionUtils.getStackTrace(e))
                                     .build()))
                             .build();
                     responseObserver.onError(StatusProto.toStatusRuntimeException(status));
+                    shutdownSignal.completeExceptionally(e);
                 }
             }
 
@@ -135,8 +137,8 @@ class Service extends SinkGrpc.SinkImplBase {
     }
 
     private SinkOuterClass.SinkResponse.Result buildResult(Response response) {
-        SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK :
-                response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
+        SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK
+                : response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
         return SinkOuterClass.SinkResponse.Result.newBuilder()
                 .setId(response.getId() == null ? "" : response.getId())
                 .setErrMsg(response.getErr() == null ? "" : response.getErr())
@@ -166,8 +168,7 @@ class Service extends SinkGrpc.SinkImplBase {
                         d.getRequest().getEventTime().getSeconds(),
                         d.getRequest().getEventTime().getNanos()),
                 d.getRequest().getId(),
-                d.getRequest().getHeadersMap()
-        );
+                d.getRequest().getHeadersMap());
     }
 
     // shuts down the executor service
@@ -175,7 +176,8 @@ class Service extends SinkGrpc.SinkImplBase {
         this.sinkTaskExecutor.shutdown();
         try {
             // SHUTDOWN_TIME is the time to wait for the sinker to shut down, in seconds.
-            // We use 30 seconds as the default value because it provides a balance between giving tasks enough time to complete
+            // We use 30 seconds as the default value because it provides a balance between
+            // giving tasks enough time to complete
             // and not delaying program termination unduly.
             long SHUTDOWN_TIME = 30;
 
