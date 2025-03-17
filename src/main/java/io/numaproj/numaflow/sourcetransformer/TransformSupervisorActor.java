@@ -153,7 +153,7 @@ class TransformSupervisorActor extends AbstractActor {
             // Build gRPC Status
             com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                     .setCode(Code.INTERNAL.getNumber())
-                    .setMessage(ExceptionUtils.ERR_TRANSFORMER_EXCEPTION + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                    .setMessage(ExceptionUtils.getExceptionErrorString() + ": " + (e.getMessage() != null ? e.getMessage() : ""))
                     .addDetails(Any.pack(DebugInfo.newBuilder()
                             .setDetail(ExceptionUtils.getStackTrace(e))
                             .build()))

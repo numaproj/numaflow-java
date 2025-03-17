@@ -2,6 +2,7 @@ package io.numaproj.numaflow.servingstore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 
 public class ServerErrTest {
 
@@ -53,7 +54,7 @@ public class ServerErrTest {
                     .build());
             fail("Expected an exception to be thrown");
         } catch (Exception e) {
-            assertEquals("INTERNAL: UDF_EXECUTION_ERROR(servingstore): unknown exception", e.getMessage());
+            assertEquals("INTERNAL: " + ExceptionUtils.getExceptionErrorString() + ": unknown exception", e.getMessage());
         }
     }
 

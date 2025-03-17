@@ -46,7 +46,7 @@ class Service extends ServingStoreGrpc.ServingStoreImplBase {
             // Build gRPC Status
             com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                     .setCode(Code.INTERNAL.getNumber())
-                    .setMessage(ExceptionUtils.ERR_SERVING_STORE_EXCEPTION + ": "
+                    .setMessage(ExceptionUtils.getExceptionErrorString() + ": "
                             + (e.getMessage() != null ? e.getMessage() : ""))
                     .addDetails(Any.pack(DebugInfo.newBuilder()
                             .setDetail(ExceptionUtils.getStackTrace(e))
@@ -78,7 +78,7 @@ class Service extends ServingStoreGrpc.ServingStoreImplBase {
             // Build gRPC Status
             com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
                     .setCode(Code.INTERNAL.getNumber())
-                    .setMessage(ExceptionUtils.ERR_SERVING_STORE_EXCEPTION + ": "
+                    .setMessage(ExceptionUtils.getExceptionErrorString() + ": "
                             + (e.getMessage() != null ? e.getMessage() : ""))
                     .addDetails(Any.pack(DebugInfo.newBuilder()
                             .setDetail(ExceptionUtils.getStackTrace(e))
