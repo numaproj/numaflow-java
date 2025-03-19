@@ -7,6 +7,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -88,7 +89,7 @@ public class ServerErrTest {
             responseObserver.done.get();
             fail("Expected exception not thrown");
         } catch (Exception e) {
-            String expectedSubstring = "UDF_EXECUTION_ERROR(transformer)";
+            String expectedSubstring = ExceptionUtils.getExceptionErrorString();
             String actualMessage = e.getMessage();
             assertNotNull("Error message should not be null", actualMessage);
             assertTrue("Expected substring '" + expectedSubstring + "' not found in error message: " + actualMessage,

@@ -14,6 +14,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -127,7 +128,7 @@ public class ServerErrTest {
             fail("Expected exception not thrown");
         } catch (Exception e) {
             assertEquals(
-                    "io.grpc.StatusRuntimeException: INTERNAL: UDF_EXECUTION_ERROR(map): unknown exception",
+                    "io.grpc.StatusRuntimeException: INTERNAL: " + ExceptionUtils.getExceptionErrorString() + ": unknown exception",
                     e.getMessage());
         }
     }

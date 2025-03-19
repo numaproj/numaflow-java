@@ -2,24 +2,20 @@ package io.numaproj.numaflow.shared;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Objects;
 
 public class ExceptionUtils {
-    /**
-     * Formalized exception error strings
-     */
-    public static final String ERR_SOURCE_EXCEPTION = "UDF_EXECUTION_ERROR(source)";
-    public static final String ERR_TRANSFORMER_EXCEPTION = "UDF_EXECUTION_ERROR(transformer)";
-    public static final String ERR_SINK_EXCEPTION = "UDF_EXECUTION_ERROR(sink)";
-    public static final String ERR_MAP_STREAM_EXCEPTION = "UDF_EXECUTION_ERROR(mapstream)";
-    public static final String ERR_MAP_EXCEPTION = "UDF_EXECUTION_ERROR(map)";
-    public static final String ERR_BATCH_MAP_EXCEPTION = "UDF_EXECUTION_ERROR(batchmap)";
-    public static final String ERR_SERVING_STORE_EXCEPTION = "UDF_EXECUTION_ERROR(servingstore)";
-    public static final String ERR_ACCUMULATOR_EXCEPTION = "UDF_EXECUTION_ERROR(accumulator)";
+
+    /** 
+     * UD Container Type Environment Variable 
+    */
+    public static final String ENV_UD_CONTAINER_TYPE = "NUMAFLOW_UD_CONTAINER_TYPE";
+    public static final String CONTAINER_NAME = System.getenv(ENV_UD_CONTAINER_TYPE);
 
     /**
      * Converts the stack trace of an exception into a String.
      *
-     * @param e the exception to extract the stack trace from
+     * @param t the exception to extract the stack trace from
      *
      * @return the stack trace as a String
      */
@@ -30,5 +26,14 @@ public class ExceptionUtils {
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         return sw.toString();
+    }
+
+    /**
+     * Returns a formalized exception error string.
+     *
+     * @return the formalized exception error string
+     */
+    public static String getExceptionErrorString() {
+        return "UDF_EXECUTION_ERROR(" + Objects.requireNonNullElse(CONTAINER_NAME, "unknown-container") + ")";
     }
 }

@@ -8,6 +8,7 @@ import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -87,7 +88,7 @@ public class ServerErrTest {
             outputStreamObserver.done.get();
             fail("Expected exception not thrown");
         } catch (InterruptedException | ExecutionException e) {
-            String expectedSubstring = "UDF_EXECUTION_ERROR(batchmap)";
+            String expectedSubstring = ExceptionUtils.getExceptionErrorString();
             String actualMessage = e.getMessage();
             assertNotNull("Error message should not be null", actualMessage);
             assertTrue("Expected substring '" + expectedSubstring + "' not found in error message: " + actualMessage,
