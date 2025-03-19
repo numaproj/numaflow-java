@@ -79,7 +79,11 @@ public class AccumulatorSupervisorActor extends AbstractActor {
      * close the accumulator actor.
      */
     private void invokeActor(AccumulatorOuterClass.AccumulatorRequest request) {
-        String[] keys = request.getPayload().getKeysList().toArray(new String[0]);
+        String[] keys = request
+                .getOperation()
+                .getKeyedWindow()
+                .getKeysList()
+                .toArray(new String[0]);
         String uniqueId = getUniqueIdentifier(keys);
 
         switch (request.getOperation().getEvent()) {
@@ -89,10 +93,9 @@ public class AccumulatorSupervisorActor extends AbstractActor {
                     ActorRef actorRef = getContext()
                             .actorOf(AccumulatorActor.props(
                                     accumulatorHandler,
-                                    this.outputActor));
+                                    this.outputActor, request.getOperation().getKeyedWindow()));
                     actorsMap.put(uniqueId, actorRef);
                 }
-                System.out.println("open request");
                 HandlerDatum handlerDatum = constructHandlerDatum(request);
                 actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
                 break;
@@ -100,13 +103,11 @@ public class AccumulatorSupervisorActor extends AbstractActor {
             case APPEND: {
                 HandlerDatum handlerDatum = constructHandlerDatum(request);
                 actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
-                System.out.println("append request");
                 break;
             }
             case CLOSE: {
                 actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
                 actorsMap.remove(uniqueId);
-                System.out.println("close request");
                 break;
             }
             default:

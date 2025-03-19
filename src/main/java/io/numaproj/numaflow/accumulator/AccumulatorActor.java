@@ -14,13 +14,16 @@ public class AccumulatorActor extends AbstractActor {
     private Accumulator accumulator;
     private OutputStreamObserver outputStream;
     private ActorRef outputActor;
+    private AccumulatorOuterClass.KeyedWindow keyedWindow;
 
     public static Props props(
-            Accumulator accumulator, ActorRef outputActor) {
+            Accumulator accumulator,
+            ActorRef outputActor,
+            AccumulatorOuterClass.KeyedWindow keyedWindow) {
         return Props.create(
                 AccumulatorActor.class,
                 accumulator,
-                new OutputStreamObserverImpl(outputActor), outputActor);
+                new OutputStreamObserverImpl(outputActor, keyedWindow), outputActor, keyedWindow);
     }
 
     @Override
@@ -33,17 +36,18 @@ public class AccumulatorActor extends AbstractActor {
     }
 
     private void invokeHandler(HandlerDatum handlerDatum) {
-        System.out.println("Got request");
         this.accumulator.processMessage(handlerDatum, outputStream);
     }
 
     private void sendEOF(String EOF) {
         // invoke handleEndOfStream to materialize the messages received so far.
         this.accumulator.handleEndOfStream(outputStream);
-        // construct an actor response and send it back to the supervisor actor, indicating the actor
-        // has finished processing all the messages for the corresponding key set.
+
         AccumulatorOuterClass.AccumulatorResponse eofResponse = AccumulatorOuterClass.AccumulatorResponse
                 .newBuilder()
+                .setWindow(AccumulatorOuterClass.KeyedWindow
+                        .newBuilder()
+                        .addAllKeys(this.keyedWindow.getKeysList()))
                 .setEOF(true)
                 .build();
 

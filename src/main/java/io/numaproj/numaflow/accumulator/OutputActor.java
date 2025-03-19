@@ -30,22 +30,15 @@ class OutputActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(AccumulatorOuterClass.AccumulatorResponse.class, this::handleResponse)
+                .match(String.class, this::handleEOF)
                 .build();
     }
 
     private void handleResponse(AccumulatorOuterClass.AccumulatorResponse response) {
-        if (response.getEOF()) {
-            // send the very last response.
-            responseObserver.onNext(response);
-            // close the output stream.
-            responseObserver.onCompleted();
-            // stop the AKKA system right after we close the output stream.
-            // note: could make more sense if the supervisor actor stops the system,
-            // but it requires an extra tell.
-            getContext().getSystem().stop(getSender());
-        } else {
-            System.out.println("writing response");
-            responseObserver.onNext(response);
-        }
+        responseObserver.onNext(response);
+    }
+
+    private void handleEOF(String eof) {
+        responseObserver.onCompleted();
     }
 }

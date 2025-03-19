@@ -15,10 +15,10 @@ import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.accumulator.model.Accumulator;
 import io.numaproj.numaflow.accumulator.model.AccumulatorFactory;
 import io.numaproj.numaflow.accumulator.model.Datum;
-import io.numaproj.numaflow.accumulator.model.Message;
 import io.numaproj.numaflow.accumulator.model.OutputStreamObserver;
 import io.numaproj.numaflow.accumulator.v1.AccumulatorGrpc;
 import io.numaproj.numaflow.accumulator.v1.AccumulatorOuterClass;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -130,7 +130,9 @@ public class ServerErrTest {
             fail("Expected exception not thrown");
         } catch (Exception e) {
             assertEquals(
-                    "io.grpc.StatusRuntimeException: INTERNAL: UDF_EXECUTION_ERROR(accumulator): java.lang.RuntimeException: unknown exception",
+                    "io.grpc.StatusRuntimeException: INTERNAL: "
+                            + ExceptionUtils.getExceptionErrorString()
+                            + ": java.lang.RuntimeException: unknown exception",
                     e.getMessage());
         }
     }

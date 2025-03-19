@@ -89,7 +89,6 @@ class Service extends AccumulatorGrpc.AccumulatorImplBase {
             public void onNext(AccumulatorOuterClass.AccumulatorRequest request) {
                 // send the message to parent actor, which takes care of distribution.
                 if (!supervisorActor.isTerminated()) {
-                    System.out.println("Received request");
                     supervisorActor.tell(request, ActorRef.noSender());
                 } else {
                     responseObserver.onError(new Throwable("Supervisor actor was terminated"));

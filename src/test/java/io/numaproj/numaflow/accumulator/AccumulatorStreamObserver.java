@@ -18,7 +18,6 @@ public class AccumulatorStreamObserver implements StreamObserver<AccumulatorOute
 
     @Override
     public void onNext(AccumulatorOuterClass.AccumulatorResponse response) {
-        System.out.println(response);
         responses.add(response);
         if (responses.size() == responseCount) {
             done.complete(null);

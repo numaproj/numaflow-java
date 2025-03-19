@@ -14,23 +14,30 @@ import java.util.List;
 
 class OutputStreamObserverImpl implements OutputStreamObserver {
     private final ActorRef outputActor;
+    private final AccumulatorOuterClass.KeyedWindow keyedWindow;
     private final Instant latestWatermark = Instant.ofEpochMilli(-1);
 
-    public OutputStreamObserverImpl(ActorRef outputActor) {
+    public OutputStreamObserverImpl(
+            ActorRef outputActor,
+            AccumulatorOuterClass.KeyedWindow keyedWindow) {
         this.outputActor = outputActor;
+        this.keyedWindow = keyedWindow;
     }
 
     private AccumulatorOuterClass.AccumulatorResponse buildResponse(Message message) {
         AccumulatorOuterClass.AccumulatorResponse.Builder responseBuilder = AccumulatorOuterClass.AccumulatorResponse.newBuilder();
         // set the window using the actor metadata.
-        responseBuilder.setWindow(AccumulatorOuterClass.Window.newBuilder()
+        responseBuilder.setWindow(AccumulatorOuterClass.KeyedWindow.newBuilder()
                 .setStart(Timestamp.newBuilder()
                         .setSeconds(0)
                         .setNanos(0))
                 .setEnd(Timestamp.newBuilder()
                         .setSeconds(this.latestWatermark.getEpochSecond())
                         .setNanos(this.latestWatermark.getNano()))
-                .setSlot("slot-0").build());
+                .setSlot("slot-0")
+                .addAllKeys(this.keyedWindow.getKeysList())
+                .build());
+        
         responseBuilder.setEOF(false);
         // set the result.
         return responseBuilder
