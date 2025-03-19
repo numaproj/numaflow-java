@@ -14,6 +14,7 @@ public class ExceptionUtils {
     public static final String ERR_MAP_EXCEPTION = "UDF_EXECUTION_ERROR(map)";
     public static final String ERR_BATCH_MAP_EXCEPTION = "UDF_EXECUTION_ERROR(batchmap)";
     public static final String ERR_SERVING_STORE_EXCEPTION = "UDF_EXECUTION_ERROR(servingstore)";
+    public static final String ERR_ACCUMULATOR_EXCEPTION = "UDF_EXECUTION_ERROR(accumulator)";
 
     /**
      * Converts the stack trace of an exception into a String.

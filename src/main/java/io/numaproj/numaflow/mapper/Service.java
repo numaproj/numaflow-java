@@ -24,7 +24,8 @@ class Service extends MapGrpc.MapImplBase {
     private final CompletableFuture<Void> shutdownSignal;
 
     @Override
-    public StreamObserver<MapOuterClass.MapRequest> mapFn(final StreamObserver<MapOuterClass.MapResponse> responseObserver) {
+    public StreamObserver<MapOuterClass.MapRequest> mapFn(
+            final StreamObserver<MapOuterClass.MapResponse> responseObserver) {
 
         if (this.mapper == null) {
             return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(

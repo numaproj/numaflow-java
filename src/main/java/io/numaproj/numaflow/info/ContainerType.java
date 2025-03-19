@@ -12,7 +12,8 @@ public enum ContainerType {
     SESSION_REDUCER("sessionreducer"),
     SIDEINPUT("sideinput"),
     FBSINKER("fb-sinker"),
-    SERVING("serving");
+    SERVING("serving"),
+    ACCUMULATOR("accumulator");
 
     private final String name;
 
