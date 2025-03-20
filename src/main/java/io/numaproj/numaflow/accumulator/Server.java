@@ -102,9 +102,7 @@ public class Server {
      *         waiting
      */
     public void awaitTermination() throws InterruptedException {
-        log.info("accumulagtor server is waiting for termination");
         this.server.awaitTermination();
-        log.info("accumulagtor server terminated");
     }
 
     /**

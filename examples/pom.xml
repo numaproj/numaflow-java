@@ -359,6 +359,28 @@
                             </to>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>accumulator-stream-sorter</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.accumulator.sorter.StreamSorterFactory
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>
+                                    numaflow-java-examples/accumulator-stream-sorter:${docker.tag}
+                                </image>
+                            </to>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
