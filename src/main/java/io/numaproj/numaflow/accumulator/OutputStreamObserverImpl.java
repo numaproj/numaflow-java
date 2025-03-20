@@ -37,7 +37,7 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
                 .setSlot("slot-0")
                 .addAllKeys(this.keyedWindow.getKeysList())
                 .build());
-        
+
         responseBuilder.setEOF(false);
         // set the result.
         return responseBuilder
@@ -55,10 +55,10 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
                         .putAllHeaders(message.getHeaders())
                         .addAllKeys(message.getKeys()
                                 == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
+                        .setId(message.getId())
                         .build())
                 .addAllTags(
                         message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
-                .setId(message.getId())
                 .build();
     }
 

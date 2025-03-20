@@ -138,7 +138,7 @@ public class AccumulatorSupervisorActor extends AbstractActor {
                         request.getPayload().getEventTime().getSeconds(),
                         request.getPayload().getEventTime().getNanos()),
                 request.getPayload().getHeadersMap(),
-                request.getId());
+                request.getPayload().getId());
     }
 
     /*
