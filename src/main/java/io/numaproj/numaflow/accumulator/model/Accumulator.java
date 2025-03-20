@@ -11,8 +11,7 @@ public abstract class Accumulator {
      *
      * @param datum current message to be processed by the accumulator
      * @param outputStream observer for sending the output {@link Message} to the
-     *         output
-     *         stream.
+     *         output stream.
      */
     public abstract void processMessage(
             Datum datum,

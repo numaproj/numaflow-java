@@ -9,6 +9,9 @@ import io.numaproj.numaflow.accumulator.model.OutputStreamObserver;
 import io.numaproj.numaflow.accumulator.v1.AccumulatorOuterClass;
 import lombok.AllArgsConstructor;
 
+/**
+ * Accumulator Actor is responsible for invoking accumulator handle and handling exceptions.
+ */
 @AllArgsConstructor
 public class AccumulatorActor extends AbstractActor {
     private Accumulator accumulator;
