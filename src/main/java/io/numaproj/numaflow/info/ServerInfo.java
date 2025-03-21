@@ -24,7 +24,8 @@ import static java.util.Map.entry;
 @AllArgsConstructor
 public class ServerInfo {
     // Specify the minimum Numaflow version required by the current SDK version
-    // To update this value, please follow the instructions for MINIMUM_NUMAFLOW_VERSION in
+    // To update this value, please follow the instructions for
+    // MINIMUM_NUMAFLOW_VERSION in
     // https://github.com/numaproj/numaflow-rs/blob/main/src/shared.rs
     public static final Map<ContainerType, String> MINIMUM_NUMAFLOW_VERSION = Map.ofEntries(
             entry(ContainerType.SOURCER, "1.4.0-z"),
@@ -36,8 +37,9 @@ public class ServerInfo {
             entry(ContainerType.SESSION_REDUCER, "1.4.0-z"),
             entry(ContainerType.SIDEINPUT, "1.4.0-z"),
             entry(ContainerType.FBSINKER, "1.4.0-z"),
-            entry(ContainerType.SERVING, "1.5.0-z")
-    );
+            entry(ContainerType.SERVING, "1.5.0-z"),
+            entry(ContainerType.ACCUMULATOR, "1.5.0-z"));
+
     @JsonProperty("protocol")
     private Protocol protocol;
     @JsonProperty("language")
