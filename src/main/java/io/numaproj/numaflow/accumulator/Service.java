@@ -70,8 +70,7 @@ class Service extends AccumulatorGrpc.AccumulatorImplBase {
 
         handleFailure(failureFuture, responseObserver);
 
-        // create an output actor that ensures synchronized delivery of reduce
-        // responses.
+        // create an output actor that ensures synchronized delivery of accumulator responses.
         ActorRef outputActor = accumulatorActorSystem.actorOf(OutputActor.props(responseObserver));
 
         /*
