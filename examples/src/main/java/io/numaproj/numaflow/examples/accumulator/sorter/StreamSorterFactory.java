@@ -36,8 +36,9 @@ public class StreamSorterFactory extends AccumulatorFactory<StreamSorterFactory.
 
     public static class StreamSorter extends Accumulator {
         private Instant latestWm = Instant.ofEpochMilli(-1);
-        private final TreeSet<Datum> sortedBuffer = new TreeSet<>(Comparator.comparing(Datum::getEventTime));
-
+        private final TreeSet<Datum> sortedBuffer = new TreeSet<>(Comparator
+                .comparing(Datum::getEventTime)
+                .thenComparing(Datum::getID)); // Assuming Datum has a getUniqueId() method
         @Override
         public void processMessage(Datum datum, OutputStreamObserver outputStream) {
             log.info("Received datum with event time: {}", datum.toString());
@@ -50,6 +51,7 @@ public class StreamSorterFactory extends AccumulatorFactory<StreamSorterFactory.
 
         @Override
         public void handleEndOfStream(OutputStreamObserver outputStreamObserver) {
+            log.info("Eof received, flushing sortedBuffer: {}", latestWm.toEpochMilli());
             flushBuffer(outputStreamObserver);
         }
 
