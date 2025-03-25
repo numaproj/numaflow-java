@@ -72,17 +72,19 @@ public class Server {
 
         log.info("server started, listening on socket path: {}", this.grpcConfig.getSocketPath());
 
-        // register shutdown hook to gracefully shut down the server
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-            System.err.println("*** shutting down map streamer gRPC server since JVM is shutting down");
-            try {
-                this.stop();
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-                e.printStackTrace(System.err);
-            }
-        }));
+        if (!this.grpcConfig.isLocal()) {
+            // register shutdown hook to gracefully shut down the server
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
+                System.err.println("*** shutting down map streamer gRPC server since JVM is shutting down");
+                try {
+                    this.stop();
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    e.printStackTrace(System.err);
+                }
+            }));
+        }
 
         // if there are any exceptions, shutdown the server gracefully.
         this.shutdownSignal.whenCompleteAsync((v, e) -> {

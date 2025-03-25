@@ -76,6 +76,19 @@ public class Server {
                     this.grpcConfig.getSocketPath(),
                     this.grpcConfig.getInfoFilePath(),
                     ContainerType.SERVING);
+
+            // register shutdown hook to gracefully shut down the server
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                // Use stderr here since the logger may have been reset by its JVM shutdown
+                // hook.
+                System.err.println("*** shutting down gRPC server since JVM is shutting down");
+                try {
+                    this.stop();
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                    e.printStackTrace(System.err);
+                }
+            }));
         }
 
         this.server.start();
@@ -84,19 +97,6 @@ public class Server {
                 "server started, listening on {}",
                 this.grpcConfig.isLocal() ?
                         "localhost:" + this.grpcConfig.getPort() : this.grpcConfig.getSocketPath());
-
-        // register shutdown hook to gracefully shut down the server
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // Use stderr here since the logger may have been reset by its JVM shutdown
-            // hook.
-            System.err.println("*** shutting down gRPC server since JVM is shutting down");
-            try {
-                this.stop();
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-                e.printStackTrace(System.err);
-            }
-        }));
 
         // if there are any exceptions, shutdown the server gracefully.
         this.shutdownSignal.whenCompleteAsync((v, e) -> {
