@@ -153,7 +153,6 @@ public class ServerTest {
     private static class TestSourceTransformer extends SourceTransformer {
         @Override
         public MessageList processMessage(String[] keys, Datum datum) {
-            System.out.println("Processing message");
             String[] updatedKeys = Arrays
                     .stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
