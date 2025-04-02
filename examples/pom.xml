@@ -360,7 +360,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>accumulator-stream-sorter</id>
+                        <id>stream-sorter</id>
                         <phase>package</phase>
                         <goals>
                             <goal>dockerBuild</goal>
@@ -376,7 +376,7 @@
                             </container>
                             <to>
                                 <image>
-                                    numaflow-java-examples/accumulator-stream-sorter:${docker.tag}
+                                    numaflow-java-examples/stream-sorter:${docker.tag}
                                 </image>
                             </to>
                         </configuration>
