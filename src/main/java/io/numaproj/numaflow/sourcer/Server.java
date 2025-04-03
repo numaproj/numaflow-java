@@ -26,7 +26,7 @@ public class Server {
     /**
      * constructor to create gRPC server.
      *
-     * @param sourcer Sourcer interface
+     * @param sourcer {@link Sourcer} interface
      */
     public Server(Sourcer sourcer) {
         this(sourcer, GRPCConfig.defaultGrpcConfig());
@@ -35,8 +35,8 @@ public class Server {
     /**
      * constructor to create gRPC server with gRPC config.
      *
-     * @param grpcConfig to configure the max message size for grpc
-     * @param sourcer Sourcer interface
+     * @param grpcConfig {@link GRPCConfig} to configure the max message size for grpc
+     * @param sourcer {@link Sourcer} interface
      */
     public Server(Sourcer sourcer, GRPCConfig grpcConfig) {
         this.shutdownSignal = new CompletableFuture<>();
