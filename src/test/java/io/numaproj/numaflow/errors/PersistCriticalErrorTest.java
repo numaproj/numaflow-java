@@ -6,11 +6,20 @@ import static org.junit.Assert.fail;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.After;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-
+@Slf4j
 public class PersistCriticalErrorTest {
+
+    @After
+    public void resetIsPersisted() {
+        // Reset the isPersisted flag to its default value (false) after each test
+        PersistCriticalError.setIsPersisted(false);
+    }
 
     @Test
     public void test_writes_error_details_to_new_file() throws Exception {
@@ -58,6 +67,51 @@ public class PersistCriticalErrorTest {
             assertTrue(fileContent.contains(errorDetails));
         }catch(Exception e){
             fail("Exception occurred while writing error details to the file: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void test_persistCriticalError_when_isPersisted_is_true_with_threads() {
+        // Set isPersisted to true before calling persistCriticalError
+        PersistCriticalError.setIsPersisted(true);
+
+        String errorCode = "500";
+        String errorMessage = "Critical Error";
+        String errorDetails = "A critical error occurred.";
+
+       // Number of threads to simulate concurrent calls
+       int numberOfThreads = 5;
+
+        // Create a thread pool
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        // Runnable task to call persistCriticalError
+        Runnable task = () -> {
+            try {
+                PersistCriticalError.persistCriticalError(errorCode, errorMessage, errorDetails);
+                fail("Expected IllegalStateException to be thrown, but it was not.");
+            } catch (IllegalStateException e) {
+                // Assert that the exception message is as expected
+                assertTrue(e.getMessage().contains("Persist critical error function has already been executed."));
+            } catch (Exception e) {
+                fail("Unexpected exception occurred: " + e.getMessage());
+            }
+        };
+
+        // Submit tasks to the executor
+        for (int i = 0; i < numberOfThreads; i++) {
+            executorService.submit(task);
+        }
+
+        // Shut down the executor
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                fail("Executor service did not terminate in the expected time.");
+            }
+        } catch (InterruptedException e) {
+            fail("Runtime exception occurred: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 }

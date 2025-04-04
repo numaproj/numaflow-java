@@ -33,6 +33,15 @@ public class PersistCriticalError {
     private static final AtomicBoolean isPersisted = new AtomicBoolean(false);
 
     /**
+     * Resets the isPersisted flag for testing purposes.
+     *
+     * @param value the value to set for isPersisted
+     */
+    static void setIsPersisted(boolean value) {
+        isPersisted.set(value);
+    }
+
+    /**
      * Persists a critical error to a file. Ensures the method is executed only once.
      *
      * @param errorCode    the error code
@@ -40,7 +49,7 @@ public class PersistCriticalError {
      * @param errorDetails additional error details
      * @throws IllegalStateException if the method has already been executed
      */
-    public static synchronized void persistCriticalError(String errorCode, String errorMessage, String errorDetails) throws Exception {
+    public static synchronized void persistCriticalError(String errorCode, String errorMessage, String errorDetails) throws IllegalStateException {
         // Check if the function has already been executed
         if (!isPersisted.compareAndSet(false, true)) {
             throw new IllegalStateException("Persist critical error function has already been executed.");
@@ -48,9 +57,8 @@ public class PersistCriticalError {
         try{
             persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH);
         } catch(IOException e){
-            log.error("Error occurred while persisting critical error: {}", e.getMessage(), e);
+            log.error("Error occurred while persisting critical error", e);
         }
-        
     }
 
     /**
