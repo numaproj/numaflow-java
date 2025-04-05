@@ -5,20 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermissions;
 
-
-/** The PersistCriticalError class provides functionality to persist critical errors to a file
-* in a runtime directory. This is useful for logging critical errors in a structured format
-* for debugging and monitoring purposes. The class ensures that the error persistence operation
-* is executed only once during the application's runtime.
-*/
+/**
+ * The PersistCriticalError class provides functionality to persist critical errors to a file
+ * in a runtime directory. This is useful for logging critical errors in a structured format
+ * for debugging and monitoring purposes. The class ensures that the error persistence operation
+ * is executed only once during the application's runtime.
+ */
 @Slf4j
 public class PersistCriticalError {
 
@@ -51,13 +49,12 @@ public class PersistCriticalError {
      * @throws IllegalStateException if the method has already been executed
      */
     public static synchronized void persistCriticalError(String errorCode, String errorMessage, String errorDetails) throws IllegalStateException {
-        // Check if the function has already been executed
         if (!isPersisted.compareAndSet(false, true)) {
             throw new IllegalStateException("Persist critical error function has already been executed.");
         }
-        try{
+        try {
             persistCriticalErrorToFile(errorCode, errorMessage, errorDetails, DEFAULT_RUNTIME_APPLICATION_ERRORS_PATH);
-        } catch(IOException e){
+        } catch (IOException e) {
             log.error("Error occurred while persisting critical error", e);
         }
     }
@@ -71,27 +68,22 @@ public class PersistCriticalError {
      * @throws IOException if an error occurs while writing to the file
      */
     static void persistCriticalErrorToFile(String errorCode, String errorMessage, String errorDetails, String baseDir) throws IOException {
-
-        Path baseDirPath = createDirectory(Paths.get(baseDir));
-        Path containerDirPath = createDirectory(baseDirPath.resolve(CONTAINER_TYPE));
+        Path containerDirPath = createDirectory(Paths.get(baseDir).resolve(CONTAINER_TYPE));
 
         errorCode = (errorCode == null || errorCode.isEmpty()) ? INTERNAL_ERROR : errorCode;
         long timestamp = Instant.now().getEpochSecond();
 
-        // Create an ErrorEntry object
         ErrorEntry errorEntry = new ErrorEntry(CONTAINER_TYPE, timestamp, errorCode, errorMessage, errorDetails);
-        // Convert the ErrorEntry object to JSON
         String errorEntryJson = errorEntry.toJson();
 
         Path currentFilePath = containerDirPath.resolve(CURRENT_FILE);
-        // Create or overwrite an existing file for writing the error entry
         Files.writeString(currentFilePath, errorEntryJson, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        // Rename the current file to include the timestamp
+
         Path finalFilePath = containerDirPath.resolve(String.format("%d-udf.json", timestamp));
         Files.move(currentFilePath, finalFilePath, StandardCopyOption.REPLACE_EXISTING);
     }
 
-     /**
+    /**
      * Creates a directory with read,write,execute permissions for all if it does not already exist.
      *
      * @param dirPath the path of the directory to create
