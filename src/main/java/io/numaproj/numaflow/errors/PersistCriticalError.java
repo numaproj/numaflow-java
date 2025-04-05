@@ -26,6 +26,7 @@ public class PersistCriticalError {
     private static final String CURRENT_FILE = "current-udf.json";
     private static final String INTERNAL_ERROR = "Internal error";
     private static final String UNKNOWN_CONTAINER = "unknown-container";
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
     static final String CONTAINER_TYPE = System.getenv(ExceptionUtils.ENV_UD_CONTAINER_TYPE) != null
             ? System.getenv(ExceptionUtils.ENV_UD_CONTAINER_TYPE)
             : UNKNOWN_CONTAINER;
@@ -135,9 +136,8 @@ public class PersistCriticalError {
          * @throws IOException if an error occurs during serialization
          */
         public String toJson() throws IOException {
-            ObjectMapper objectMapper = new ObjectMapper();
             try {
-                return objectMapper.writeValueAsString(this);
+                return jsonMapper.writeValueAsString(this);
             } catch (JsonProcessingException e) {
                 throw new IOException("Failed to convert ErrorEntry to JSON", e);
             }
