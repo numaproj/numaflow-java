@@ -73,7 +73,7 @@ public class PersistCriticalError {
         errorCode = (errorCode == null || errorCode.isEmpty()) ? INTERNAL_ERROR : errorCode;
         long timestamp = Instant.now().getEpochSecond();
 
-        ErrorEntry errorEntry = new ErrorEntry(CONTAINER_TYPE, timestamp, errorCode, errorMessage, errorDetails);
+        RuntimeErrorEntry errorEntry = new RuntimeErrorEntry(CONTAINER_TYPE, timestamp, errorCode, errorMessage, errorDetails);
         String errorEntryJson = errorEntry.toJson();
 
         Path currentFilePath = containerDirPath.resolve(CURRENT_FILE);
@@ -99,9 +99,9 @@ public class PersistCriticalError {
     }
 
     /**
-     * Private static class representing an error entry.
+     * Private static class representing runtime error entry.
      */
-    private static class ErrorEntry {
+    private static class RuntimeErrorEntry {
         @JsonProperty("container")
         private final String container;
         @JsonProperty("timestamp")
@@ -113,7 +113,7 @@ public class PersistCriticalError {
         @JsonProperty("details")
         private final String details;
 
-        public ErrorEntry(String container, long timestamp, String code, String message, String details) {
+        public RuntimeErrorEntry(String container, long timestamp, String code, String message, String details) {
             this.container = container;
             this.timestamp = timestamp;
             this.code = code;
@@ -122,16 +122,16 @@ public class PersistCriticalError {
         }
 
         /**
-         * Converts the ErrorEntry object to a JSON string.
+         * Converts the RuntimeErrorEntry object to a JSON string.
          *
-         * @return JSON representation of the error entry
+         * @return JSON representation of the runtime error entry
          * @throws IOException if an error occurs during serialization
          */
         public String toJson() throws IOException {
             try {
                 return jsonMapper.writeValueAsString(this);
             } catch (JsonProcessingException e) {
-                throw new IOException("Failed to convert ErrorEntry to JSON", e);
+                throw new IOException("Failed to convert RuntimeErrorEntry to JSON", e);
             }
         }
     }
