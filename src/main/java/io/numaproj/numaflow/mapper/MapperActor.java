@@ -5,6 +5,7 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,6 +69,14 @@ class MapperActor extends AbstractActor {
      * @return map response
      */
     private MapOuterClass.MapResponse buildResponse(MessageList messageList, String ID) {
+        // Users should not null as the response, we will let client handle it.
+        if (messageList == null) {
+            return MapOuterClass.MapResponse
+                    .newBuilder()
+                    .setId(ID)
+                    .build();
+        }
+
         MapOuterClass.MapResponse.Builder responseBuilder = MapOuterClass
                 .MapResponse
                 .newBuilder();
