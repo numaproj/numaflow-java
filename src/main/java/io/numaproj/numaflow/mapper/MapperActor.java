@@ -69,7 +69,7 @@ class MapperActor extends AbstractActor {
      * @return map response
      */
     private MapOuterClass.MapResponse buildResponse(MessageList messageList, String ID) {
-        // Users should not null as the response, we will let client handle it.
+        // Users should not send null as the response, we will let client handle it.
         if (messageList == null) {
             return MapOuterClass.MapResponse
                     .newBuilder()

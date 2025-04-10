@@ -93,7 +93,7 @@ public class Server {
         // if there are any exceptions, shutdown the server gracefully.
         this.shutdownSignal.whenCompleteAsync((v, e) -> {
             if (e != null) {
-                System.err.println("*** shutting down sink gRPC server because of an exception - " + e.getMessage());
+                System.err.println("*** shutting down transformer gRPC server because of an exception - " + e.getMessage());
                 try {
                     this.stop();
                     // FIXME - this is a workaround to immediately terminate the JVM process
