@@ -79,13 +79,15 @@ class Service extends SinkGrpc.SinkImplBase {
                         // End of transmission, write EOF datum to the stream
                         // Wait for the result and send the response back to the client
                         datumStream.writeMessage(HandlerDatum.EOF_DATUM);
-
                         ResponseList responses = result.join();
-                        SinkOuterClass.SinkResponse.Builder responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
-                        for (Response response : responses.getResponses()) {
-                            responseBuilder.addResults(buildResult(response));
+
+                        if (responses != null) {
+                            SinkOuterClass.SinkResponse.Builder responseBuilder = SinkOuterClass.SinkResponse.newBuilder();
+                            for (Response response : responses.getResponses()) {
+                                responseBuilder.addResults(buildResult(response));
+                            }
+                            responseObserver.onNext(responseBuilder.build());
                         }
-                        responseObserver.onNext(responseBuilder.build());
 
                         // send eot response to indicate end of transmission for the batch
                         SinkOuterClass.SinkResponse eotResponse = SinkOuterClass.SinkResponse

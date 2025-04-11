@@ -93,6 +93,13 @@ class TransformerActor extends AbstractActor {
     private Sourcetransformer.SourceTransformResponse buildResponse(
             MessageList messageList,
             String ID) {
+        // Users should not send null as the response, we will let client handle it.
+        if (messageList == null) {
+            return Sourcetransformer.SourceTransformResponse
+                    .newBuilder()
+                    .setId(ID)
+                    .build();
+        }
         Sourcetransformer.SourceTransformResponse.Builder responseBuilder = Sourcetransformer
                 .SourceTransformResponse
                 .newBuilder();

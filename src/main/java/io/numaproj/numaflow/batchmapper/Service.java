@@ -138,29 +138,33 @@ class Service extends MapGrpc.MapImplBase {
     private void buildAndStreamResponse(
             BatchResponses responses,
             StreamObserver<MapOuterClass.MapResponse> responseObserver) {
-        responses.getItems().forEach(message -> {
-            List<MapOuterClass.MapResponse.Result> mapResponseResult = new ArrayList<>();
-            message.getItems().forEach(res -> {
-                mapResponseResult.add(
-                        MapOuterClass.MapResponse.Result
-                                .newBuilder()
-                                .setValue(res.getValue()
-                                        == null ? ByteString.EMPTY : ByteString.copyFrom(
-                                        res.getValue()))
-                                .addAllKeys(res.getKeys()
-                                        == null ? new ArrayList<>() : List.of(res.getKeys()))
-                                .addAllTags(res.getTags()
-                                        == null ? new ArrayList<>() : List.of(res.getTags()))
-                                .build()
-                );
+        
+        if (responses != null) {
+            responses.getItems().forEach(message -> {
+                List<MapOuterClass.MapResponse.Result> mapResponseResult = new ArrayList<>();
+                message.getItems().forEach(res -> {
+                    mapResponseResult.add(
+                            MapOuterClass.MapResponse.Result
+                                    .newBuilder()
+                                    .setValue(res.getValue()
+                                            == null ? ByteString.EMPTY : ByteString.copyFrom(
+                                            res.getValue()))
+                                    .addAllKeys(res.getKeys()
+                                            == null ? new ArrayList<>() : List.of(res.getKeys()))
+                                    .addAllTags(res.getTags()
+                                            == null ? new ArrayList<>() : List.of(res.getTags()))
+                                    .build()
+                    );
+                });
+                MapOuterClass.MapResponse singleRequestResponse = MapOuterClass.MapResponse
+                        .newBuilder()
+                        .setId(message.getId())
+                        .addAllResults(mapResponseResult)
+                        .build();
+                responseObserver.onNext(singleRequestResponse);
             });
-            MapOuterClass.MapResponse singleRequestResponse = MapOuterClass.MapResponse
-                    .newBuilder()
-                    .setId(message.getId())
-                    .addAllResults(mapResponseResult)
-                    .build();
-            responseObserver.onNext(singleRequestResponse);
-        });
+        }
+
         // Send an EOT message to indicate the end of the transmission for the batch.
         MapOuterClass.MapResponse eotResponse = MapOuterClass.MapResponse
                 .newBuilder()

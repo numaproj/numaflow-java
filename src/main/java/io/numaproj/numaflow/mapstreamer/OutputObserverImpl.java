@@ -26,6 +26,9 @@ public class OutputObserverImpl implements OutputObserver {
 
     @Override
     public void send(Message message) {
+        if (message == null) {
+            return;
+        }
         MapOuterClass.MapResponse response = MapOuterClass.MapResponse.newBuilder()
                 .setId(requestID)
                 .addResults(MapOuterClass.MapResponse.Result.newBuilder()
