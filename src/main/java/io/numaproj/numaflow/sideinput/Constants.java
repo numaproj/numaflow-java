@@ -1,11 +1,15 @@
 package io.numaproj.numaflow.sideinput;
 
-public class Constants {
-    public static final String SIDE_INPUT_DIR = "/var/numaflow/side-inputs";
-    static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/sideinput.sock";
+class Constants {
+  public static final String SIDE_INPUT_DIR = "/var/numaflow/side-inputs";
+  static final String DEFAULT_SOCKET_PATH = "/var/run/numaflow/sideinput.sock";
+  static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/sideinput-server-info";
+  static final String DEFAULT_HOST = "localhost";
+  static int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
+  static int DEFAULT_PORT = 50051;
 
-    static final String DEFAULT_SERVER_INFO_FILE_PATH = "/var/run/numaflow/sideinput-server-info";
-    static final String DEFAULT_HOST = "localhost";
-    static int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
-    static int DEFAULT_PORT = 50051;
+  // Private constructor to prevent instantiation
+  private Constants() {
+    throw new IllegalStateException("Utility class 'Constants' should not be instantiated");
+  }
 }
