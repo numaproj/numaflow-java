@@ -1,51 +1,46 @@
 package io.numaproj.numaflow.info;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-
-import java.io.File;
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor
+@Slf4j
 public class ServerInfoAccessorImpl implements ServerInfoAccessor {
     private ObjectMapper objectMapper;
+    private static final String INFO_EOF = "U+005C__END__";
 
     @Override
     public String getSDKVersion() {
-        String version = "";
-        try (InputStream in = getClass()
-                .getClassLoader()
-                .getResourceAsStream("numaflow-java-sdk-version.properties")) {
-            if (in != null) {
-                Properties properties = new Properties();
-                properties.load(in);
-                version = properties.getProperty("sdk.version");
+        try (InputStream in =
+                     getClass().getClassLoader().getResourceAsStream("numaflow-java-sdk-version.properties")) {
+            if (in == null) {
+                log.warn("numaflow-java-sdk-version.properties not found in classpath");
+                return "";
             }
+            Properties properties = new Properties();
+            properties.load(in);
+            return properties.getProperty("sdk.version", "");
         } catch (IOException e) {
-            return version;
+            log.error("Error reading numaflow-java-sdk-version.properties", e);
+            return "";
         }
-        return version;
     }
 
     @Override
     public void write(ServerInfo serverInfo, String filePath) throws Exception {
-        File file = new File(filePath);
-        if (file.exists()) {
-            file.delete();
-        }
-        FileWriter fileWriter = new FileWriter(filePath, false);
-        FileWriter eofWriter = new FileWriter(filePath, true);
-        try {
-            objectMapper.writeValue(fileWriter, serverInfo);
-            eofWriter.append(ServerInfoAccessor.INFO_EOF);
-        } finally {
-            eofWriter.close();
-            fileWriter.close();
+        try (FileWriter fileWriter = new FileWriter(filePath);
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+            String jsonContent = objectMapper.writeValueAsString(serverInfo);
+            bufferedWriter.write(jsonContent);
+            bufferedWriter.write(INFO_EOF);
         }
     }
 
@@ -53,16 +48,15 @@ public class ServerInfoAccessorImpl implements ServerInfoAccessor {
     public ServerInfo read(String filePath) throws Exception {
         String content = Files.readString(Path.of(filePath));
         String trimmedContent = verifyEOFAtEndAndTrim(content);
-        ServerInfo serverInfo = objectMapper.readValue(trimmedContent, ServerInfo.class);
-        return serverInfo;
+        return objectMapper.readValue(trimmedContent, ServerInfo.class);
     }
 
     private String verifyEOFAtEndAndTrim(String content) throws Exception {
-        int eofIndex = content.lastIndexOf(ServerInfoAccessor.INFO_EOF);
+        int eofIndex = content.lastIndexOf(INFO_EOF);
         if (eofIndex == -1) {
             throw new Exception("EOF marker not found in the file content");
         }
-        if (eofIndex != content.length() - ServerInfoAccessor.INFO_EOF.length()) {
+        if (eofIndex != content.length() - INFO_EOF.length()) {
             throw new Exception("EOF marker is not at the end of the file content");
         }
         return content.substring(0, eofIndex);
