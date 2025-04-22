@@ -22,9 +22,11 @@ public class Message {
    * @param tags message tags which will be used for conditional forwarding
    */
   public Message(byte[] value, Instant eventTime, String[] keys, String[] tags) {
-    this.keys = keys;
-    this.value = value;
-    this.tags = tags;
+    // defensive copy - once the Message is created, the caller should not be able to modify it.
+    this.keys = keys == null ? null : keys.clone();
+    this.value = value == null ? null : value.clone();
+    this.tags = tags == null ? null : tags.clone();
+    // The Instant class in Java is already immutable.
     this.eventTime = eventTime;
   }
 

@@ -61,10 +61,12 @@ public class Message {
    */
   public Message(
       byte[] value, Offset offset, Instant eventTime, String[] keys, Map<String, String> headers) {
-    this.value = value;
-    this.offset = offset;
+    // defensive copy - once the Message is created, the caller should not be able to modify it.
+    this.keys = keys == null ? null : keys.clone();
+    this.value = value == null ? null : value.clone();
+    this.headers = headers == null ? null : Map.copyOf(headers);
+    this.offset = offset == null ? null : new Offset(offset.getValue(), offset.getPartitionId());
+    // The Instant class in Java is already immutable.
     this.eventTime = eventTime;
-    this.keys = keys;
-    this.headers = headers;
   }
 }
