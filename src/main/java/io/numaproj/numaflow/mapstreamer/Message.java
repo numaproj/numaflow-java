@@ -1,13 +1,12 @@
 package io.numaproj.numaflow.mapstreamer;
 
-import lombok.Getter;
 import lombok.AccessLevel;
+import lombok.Getter;
 
 /** Message is used to wrap the data returned by MapStreamer. */
 @Getter(AccessLevel.PROTECTED)
 public class Message {
-  public static final String DROP = "U+005C__DROP__";
-
+  private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private final String[] keys;
   private final byte[] value;
   private final String[] tags;
@@ -50,6 +49,6 @@ public class Message {
    * @return returns the Message which will be dropped
    */
   public static Message toDrop() {
-    return new Message(new byte[0], null, new String[] {DROP});
+    return new Message(new byte[0], null, DROP_TAGS);
   }
 }
