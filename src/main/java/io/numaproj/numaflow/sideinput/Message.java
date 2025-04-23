@@ -7,7 +7,7 @@ import lombok.Getter;
 /** Message is used to wrap the data returned by Side Input Retriever. */
 @Getter(AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Message {
+public final class Message {
   private final byte[] value;
   private final boolean noBroadcast;
 

@@ -1,17 +1,16 @@
 package io.numaproj.numaflow.mapper;
 
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
-import lombok.AccessLevel;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /** MessageList is used to return the list of Messages returned from Map functions. */
 @Getter(AccessLevel.PROTECTED)
 @Builder(builderMethodName = "newBuilder")
-public class MessageList {
+public final class MessageList {
 
   @Singular("addMessage")
   private List<Message> messages;

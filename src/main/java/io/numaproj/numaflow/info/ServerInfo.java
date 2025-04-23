@@ -1,14 +1,13 @@
 package io.numaproj.numaflow.info;
 
+import static java.util.Map.entry;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.Map;
-
-import static java.util.Map.entry;
 
 /**
  * Server Information to be used by client to determine:
@@ -22,7 +21,7 @@ import static java.util.Map.entry;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServerInfo {
+public final class ServerInfo {
     // Specify the minimum Numaflow version required by the current SDK version
     // To update this value, please follow the instructions for
     // MINIMUM_NUMAFLOW_VERSION in

@@ -7,7 +7,7 @@ import lombok.Getter;
 
 /** Message is used to wrap the data returned by Sourcer. */
 @Getter(AccessLevel.PROTECTED)
-public class Message {
+public final class Message {
 
   private final String[] keys;
   private final byte[] value;

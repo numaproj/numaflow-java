@@ -1,16 +1,15 @@
 package io.numaproj.numaflow.reducer;
 
+import java.util.ArrayList;
+import java.util.List;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
-import lombok.AccessLevel;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter(AccessLevel.PROTECTED)
 @Builder(builderMethodName = "newBuilder")
-public class MessageList {
+public final class MessageList {
 
   @Singular("addMessage")
   private List<Message> messages;

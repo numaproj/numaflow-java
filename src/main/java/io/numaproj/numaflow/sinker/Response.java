@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-
 /**
  * Response is used to send response from the user defined sinker. It contains the id of the
  * message, success status, an optional error message and a fallback status. Various static factory
@@ -12,7 +11,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Response {
+public final class Response {
     private final String id;
     private final boolean success;
     private final String err;

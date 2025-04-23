@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /** Message is used to wrap the data returned by MapStreamer. */
 @Getter(AccessLevel.PROTECTED)
-public class Message {
+public final class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private final String[] keys;
   private final byte[] value;
