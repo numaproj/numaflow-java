@@ -2,11 +2,10 @@ package io.numaproj.numaflow.sourcer;
 
 import java.time.Instant;
 import java.util.Map;
-import lombok.AccessLevel;
 import lombok.Getter;
 
 /** Message is used to wrap the data returned by Sourcer. */
-@Getter(AccessLevel.PROTECTED)
+@Getter
 public final class Message {
 
   private final String[] keys;

@@ -1,11 +1,10 @@
 package io.numaproj.numaflow.sourcetransformer;
 
 import java.time.Instant;
-import lombok.AccessLevel;
 import lombok.Getter;
 
 /** Message is used to wrap the data return by SourceTransformer functions. */
-@Getter(AccessLevel.PROTECTED)
+@Getter
 public final class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private final String[] keys;

@@ -2,12 +2,11 @@ package io.numaproj.numaflow.reducer;
 
 import java.util.ArrayList;
 import java.util.List;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 
-@Getter(AccessLevel.PROTECTED)
+@Getter
 @Builder(builderMethodName = "newBuilder")
 public final class MessageList {
 

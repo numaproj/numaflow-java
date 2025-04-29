@@ -1,10 +1,9 @@
 package io.numaproj.numaflow.mapper;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 
 /** Message is used to wrap the data returned by Mapper. */
-@Getter(AccessLevel.PROTECTED)
+@Getter
 public final class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private final String[] keys;
