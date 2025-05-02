@@ -1,15 +1,19 @@
 package io.numaproj.numaflow.sideinput;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /** Message is used to wrap the data returned by Side Input Retriever. */
 @Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Message {
   private final byte[] value;
   private final boolean noBroadcast;
+
+  /** used to create Message with value and noBroadcast flag. */
+  private Message(byte[] value, boolean noBroadcast) {
+    // defensive copy - once the Message is created, the caller should not be able to modify it.
+    this.value = value == null ? null : value.clone();
+    this.noBroadcast = noBroadcast;
+  }
 
   /**
    * createBroadcastMessage creates a new Message with the given value This is used to broadcast the
