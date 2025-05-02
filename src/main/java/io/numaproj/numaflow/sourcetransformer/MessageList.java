@@ -9,7 +9,7 @@ import lombok.Singular;
 /** MessageList is used to return the list of Messages from SourceTransformer functions. */
 @Getter
 @Builder(builderMethodName = "newBuilder")
-public final class MessageList {
+public class MessageList {
 
   @Singular("addMessage")
   private List<Message> messages;

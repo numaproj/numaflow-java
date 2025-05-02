@@ -8,7 +8,7 @@ import lombok.Singular;
 
 @Getter
 @Builder(builderMethodName = "newBuilder")
-public final class MessageList {
+public class MessageList {
 
   @Singular("addMessage")
   private List<Message> messages;

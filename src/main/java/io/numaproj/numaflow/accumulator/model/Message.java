@@ -6,7 +6,7 @@ import lombok.Getter;
 
 /** Message is used to wrap the data returned by Accumulator functions. */
 @Getter
-public final class Message {
+public class Message {
   private final Instant eventTime;
   private final Instant watermark;
   private final Map<String, String> headers;

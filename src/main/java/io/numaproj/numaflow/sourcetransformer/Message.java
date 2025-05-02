@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /** Message is used to wrap the data return by SourceTransformer functions. */
 @Getter
-public final class Message {
+public class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private final String[] keys;
   private final byte[] value;
