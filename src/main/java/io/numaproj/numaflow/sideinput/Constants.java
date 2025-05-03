@@ -7,9 +7,4 @@ class Constants {
   static final String DEFAULT_HOST = "localhost";
   static int DEFAULT_MESSAGE_SIZE = 1024 * 1024 * 64;
   static int DEFAULT_PORT = 50051;
-
-  // Private constructor to prevent instantiation
-  private Constants() {
-    throw new IllegalStateException("Utility class 'Constants' should not be instantiated");
-  }
 }
