@@ -13,9 +13,9 @@ import lombok.Getter;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Response {
   private final String id;
-  private final boolean success;
+  private final Boolean success;
   private final String err;
-  private final boolean fallback;
+  private final Boolean fallback;
 
   /**
    * Static method to create response for successful message processing.
