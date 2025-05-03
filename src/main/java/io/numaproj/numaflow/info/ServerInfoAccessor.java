@@ -1,8 +1,6 @@
 package io.numaproj.numaflow.info;
 
 public interface ServerInfoAccessor {
-    String INFO_EOF = "U+005C__END__";
-
     /**
      * Get current runtime numaflow-java SDK version.
      */
@@ -11,7 +9,6 @@ public interface ServerInfoAccessor {
     /**
      * Delete filePath if it exists.
      * Write serverInfo to filePath in Json format.
-     * Append {@link ServerInfoAccessor#INFO_EOF} as a new line to indicate end of file.
      *
      * @param serverInfo server information POJO
      * @param filePath file path to write to

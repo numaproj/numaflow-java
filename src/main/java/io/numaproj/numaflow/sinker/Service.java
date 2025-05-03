@@ -139,8 +139,8 @@ class Service extends SinkGrpc.SinkImplBase {
     }
 
     private SinkOuterClass.SinkResponse.Result buildResult(Response response) {
-        SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK
-                : response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
+        SinkOuterClass.Status status = response.isFallback() ? SinkOuterClass.Status.FALLBACK
+                : response.isSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
         return SinkOuterClass.SinkResponse.Result.newBuilder()
                 .setId(response.getId() == null ? "" : response.getId())
                 .setErrMsg(response.getErr() == null ? "" : response.getErr())
