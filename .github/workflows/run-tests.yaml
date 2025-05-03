@@ -17,6 +17,8 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven, run unit tests and the coverage check
         run: mvn clean install
+      - name: Build Examples
+        run: cd examples && mvn clean install
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:

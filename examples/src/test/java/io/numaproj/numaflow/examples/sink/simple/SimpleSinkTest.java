@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-
 @Slf4j
 public class SimpleSinkTest {
 
@@ -29,7 +28,7 @@ public class SimpleSinkTest {
         ResponseList responseList = simpleSink.processMessages(testListIterator);
         Assertions.assertEquals(datumCount, responseList.getResponses().size());
         for (Response response : responseList.getResponses()) {
-            Assertions.assertEquals(true, response.getSuccess());
+            Assertions.assertEquals(true, response.isSuccess());
         }
         // we can add the logic to verify if the messages were
         // successfully written to the sink(could be a file, database, etc.)

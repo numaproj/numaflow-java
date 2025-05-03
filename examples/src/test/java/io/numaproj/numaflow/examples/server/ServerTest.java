@@ -14,17 +14,16 @@ import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.SinkerTestKit;
 import io.numaproj.numaflow.sourcetransformer.SourceTransformerTestKit;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Slf4j
@@ -182,7 +181,7 @@ public class ServerTest {
             ResponseList responseList = client.sendRequest(testListIterator);
             Assertions.assertEquals(datumCount, responseList.getResponses().size());
             for (Response response : responseList.getResponses()) {
-                Assertions.assertEquals(true, response.getSuccess());
+                Assertions.assertEquals(true, response.isSuccess());
             }
         } catch (Exception e) {
             Assertions.fail("Failed to send requests");
