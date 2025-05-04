@@ -8,7 +8,11 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.reducer.ReduceActor;
+import io.numaproj.numaflow.reducer.ReduceSupervisorActor;
+import io.numaproj.numaflow.reducer.Reducer;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
@@ -29,18 +33,26 @@ class SupervisorActor extends AbstractActor {
     private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
     private final Metadata md;
     private final ActorRef shutdownActor;
-    private final ActorRef outputActor;
-    private final Map<String, ActorRef> actorsMap = new HashMap<>();
+    private final Map<String, ActorInfo> windowMap = new HashMap<>();
+
+    // Inner class to hold actor information
+    private static class ActorInfo {
+        final Map<String, ActorRef> actorsMap;
+        final ReduceOuterClass.Window window;
+
+        ActorInfo(ReduceOuterClass.Window window) {
+            this.actorsMap = new HashMap<>();
+            this.window = window;
+        }
+    }
 
     public SupervisorActor(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
             Metadata md,
-            ActorRef shutdownActor,
-            ActorRef outputActor) {
+            ActorRef shutdownActor) {
         this.reduceStreamerFactory = reduceStreamerFactory;
         this.md = md;
         this.shutdownActor = shutdownActor;
-        this.outputActor = outputActor;
     }
 
     public static Props props(
@@ -92,25 +104,78 @@ class SupervisorActor extends AbstractActor {
         track all the child actors using actors map
      */
     private void invokeActor(ActorRequest actorRequest) {
-        String[] keys = actorRequest.getKeySet();
-        String uniqueId = actorRequest.getUniqueIdentifier();
-        if (!actorsMap.containsKey(uniqueId)) {
-            ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
-            ActorRef actorRef = getContext()
-                    .actorOf(ReduceStreamerActor.props(
-                            keys,
-                            this.md,
-                            reduceStreamerHandler,
-                            this.outputActor));
-            actorsMap.put(uniqueId, actorRef);
+        ReduceOuterClass.ReduceRequest request = actorRequest.getRequest();
+        ReduceOuterClass.ReduceRequest.WindowOperation operation = request.getOperation();
+        ReduceOuterClass.ReduceRequest.WindowOperation.Event event = operation.getEvent();
+
+        switch (event) {
+            case OPEN:
+                // For OPEN, create a new actor for the window and keys
+                String[] keys = actorRequest.getKeySet();
+                String uniqueId = actorRequest.getUniqueIdentifier();
+
+                // Create a new reducer actor
+                ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
+                ActorRef actorRef = getContext()
+                        .actorOf(ReduceStreamerActor.props(
+                                keys,
+                                this.md,
+                                reduceStreamerHandler,
+                                getSelf()));
+
+                // Track this actor by its window
+                String windowId = getWindowId(operation.getWindows(0));
+                windowMap.computeIfAbsent(windowId, k -> new SupervisorActor.ActorInfo(operation.getWindows(0)))
+                        .actorsMap.put(uniqueId, actorRef);
+
+                // Process the payload if present
+                if (request.hasPayload()) {
+                    HandlerDatum handlerDatum = constructHandlerDatum(request.getPayload());
+                    actorRef.tell(handlerDatum, getSelf());
+                }
+                break;
+
+            case APPEND:
+                // For APPEND, use existing actor
+                String appendUniqueId = actorRequest.getUniqueIdentifier();
+                String appendWindowId = getWindowId(operation.getWindows(0));
+
+                ActorInfo actorInfo = windowMap.get(appendWindowId);
+                if (actorInfo == null || !actorInfo.actorsMap.containsKey(appendUniqueId)) {
+                    log.warn("Received APPEND for non-existent actor: {}", appendUniqueId);
+                    break;
+                }
+
+                // Process the payload
+                if (request.hasPayload()) {
+                    HandlerDatum appendHandlerDatum = constructHandlerDatum(request.getPayload());
+                    actorInfo.actorsMap.get(appendUniqueId).tell(appendHandlerDatum, getSelf());
+                }
+                break;
+
+            case CLOSE:
+                // For CLOSE, we need to find all actors with matching window
+                String closeWindowId = getWindowId(operation.getWindows(0));
+                ActorInfo closeActorInfo = windowMap.get(closeWindowId);
+
+                if (closeActorInfo != null) {
+                    // Send EOF to all actors for this window
+                    for (Map.Entry<String, ActorRef> entry : closeActorInfo.actorsMap.entrySet()) {
+                        entry.getValue().tell(Constants.EOF, getSelf());
+                    }
+                }
+                break;
+
+            default:
+                log.warn("Unsupported operation: {}", event);
         }
-        HandlerDatum handlerDatum = constructHandlerDatum(actorRequest.getRequest().getPayload());
-        actorsMap.get(uniqueId).tell(handlerDatum, getSelf());
     }
 
     private void sendEOF(String EOF) {
-        for (Map.Entry<String, ActorRef> entry : actorsMap.entrySet()) {
-            entry.getValue().tell(EOF, getSelf());
+        for (ActorInfo actorInfo : windowMap.values()) {
+            for (ActorRef actor : actorInfo.actorsMap.values()) {
+                actor.tell(EOF, getSelf());
+            }
         }
     }
 
@@ -118,12 +183,22 @@ class SupervisorActor extends AbstractActor {
         // when the supervisor receives an actor response, it means the corresponding
         // reduce streamer actor has finished its job.
         // we remove the entry from the actors map.
-        actorsMap.remove(actorResponse.getActorUniqueIdentifier());
-        if (actorsMap.isEmpty()) {
-            // since the actors map is empty, this particular actor response is the last response to forward to output gRPC stream.
-            // for reduce streamer, we only send to output stream one single EOF response, which is the last one.
-            // we don't care about per-key-set EOFs.
+        ReduceOuterClass.Window window = actorResponse.getResponse().getWindow();
+        String windowId = getWindowId(window);
+        String actorId = actorResponse.getActorUniqueIdentifier();
+
+        ActorInfo actorInfo = windowMap.get(windowId);
+        if (actorInfo == null) {
+            log.warn("Received response for unknown window: {}", windowId);
+            return;
+        }
+
+        actorInfo.actorsMap.remove(actorId);
+
+        // If this window has no more actors, remove it
+        if (actorInfo.actorsMap.isEmpty()) {
             this.outputActor.tell(actorResponse, getSelf());
+            windowMap.remove(windowId);
         }
     }
 
@@ -178,5 +253,18 @@ class SupervisorActor extends AbstractActor {
             log.debug("process failure of supervisor strategy executed - {}", getSelf().toString());
             shutdownActor.tell(cause, context.parent());
         }
+    }
+
+    // Helper method to get a unique ID for a window
+    private String getWindowId(ReduceOuterClass.Window window) {
+        long startMillis = convertToEpochMilli(window.getStart());
+        long endMillis = convertToEpochMilli(window.getEnd());
+        return String.format(
+                "%d:%d",
+                startMillis, endMillis);
+    }
+
+    private long convertToEpochMilli(Timestamp timestamp) {
+        return Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos()).toEpochMilli();
     }
 }
