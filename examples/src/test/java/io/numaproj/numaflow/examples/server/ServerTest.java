@@ -29,7 +29,6 @@ import java.util.Map;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Slf4j
 public class ServerTest {
-
     @Test
     @Order(1)
     public void testMapServerInvocation() {
