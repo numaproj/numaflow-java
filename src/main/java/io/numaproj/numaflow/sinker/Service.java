@@ -10,15 +10,14 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
@@ -139,8 +138,8 @@ class Service extends SinkGrpc.SinkImplBase {
     }
 
     private SinkOuterClass.SinkResponse.Result buildResult(Response response) {
-        SinkOuterClass.Status status = response.isFallback() ? SinkOuterClass.Status.FALLBACK
-                : response.isSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
+        SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK
+                : response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
         return SinkOuterClass.SinkResponse.Result.newBuilder()
                 .setId(response.getId() == null ? "" : response.getId())
                 .setErrMsg(response.getErr() == null ? "" : response.getErr())

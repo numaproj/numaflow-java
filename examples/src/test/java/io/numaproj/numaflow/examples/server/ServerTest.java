@@ -29,7 +29,6 @@ import java.util.Map;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Slf4j
 public class ServerTest {
-
     @Test
     @Order(1)
     public void testMapServerInvocation() {
@@ -73,10 +72,8 @@ public class ServerTest {
         }
 
         MapperTestKit.Client client = new MapperTestKit.Client();
-        MapperTestKit.TestDatum datum = MapperTestKit.TestDatum
-                .builder()
-                .value("apple,banana,carrot".getBytes())
-                .build();
+        MapperTestKit.TestDatum datum =
+                MapperTestKit.TestDatum.builder().value("apple,banana,carrot".getBytes()).build();
 
         MessageList result = client.sendRequest(new String[]{}, datum);
 
@@ -113,26 +110,27 @@ public class ServerTest {
         // create 10 datum with values 1 to 10
         List<Datum> datumList = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            datumList.add(ReducerTestKit.TestDatum
-                    .builder()
-                    .value(Integer.toString(i).getBytes())
-                    .build());
+            datumList.add(
+                    ReducerTestKit.TestDatum
+                            .builder()
+                            .value(Integer.toString(i).getBytes())
+                            .build());
         }
 
         // create a client and send requests to the server
         ReducerTestKit.Client client = new ReducerTestKit.Client();
 
-        ReducerTestKit.TestReduceRequest testReduceRequest = ReducerTestKit.TestReduceRequest
-                .builder()
-                .datumList(datumList)
-                .keys(new String[]{"test-key"})
-                .startTime(Instant.ofEpochSecond(60000))
-                .endTime(Instant.ofEpochSecond(60010))
-                .build();
+        ReducerTestKit.TestReduceRequest testReduceRequest =
+                ReducerTestKit.TestReduceRequest.builder()
+                        .datumList(datumList)
+                        .keys(new String[]{"test-key"})
+                        .startTime(Instant.ofEpochSecond(60000))
+                        .endTime(Instant.ofEpochSecond(60010))
+                        .build();
 
         try {
-            io.numaproj.numaflow.reducer.MessageList messageList = client.sendReduceRequest(
-                    testReduceRequest);
+            io.numaproj.numaflow.reducer.MessageList messageList =
+                    client.sendReduceRequest(testReduceRequest);
             // check if the response is correct
             if (messageList.getMessages().size() != 1) {
                 Assertions.fail("Expected 1 message in the response");
@@ -169,12 +167,12 @@ public class ServerTest {
         // Create a test datum iterator with 10 messages
         SinkerTestKit.TestListIterator testListIterator = new SinkerTestKit.TestListIterator();
         for (int i = 0; i < datumCount; i++) {
-            testListIterator.addDatum(SinkerTestKit.TestDatum
-                    .builder()
-                    .id("id-" + i)
-                    .value(("value-" + i).getBytes())
-                    .headers(Map.of("test-key", "test-value"))
-                    .build());
+            testListIterator.addDatum(
+                    SinkerTestKit.TestDatum.builder()
+                            .id("id-" + i)
+                            .value(("value-" + i).getBytes())
+                            .headers(Map.of("test-key", "test-value"))
+                            .build());
         }
 
         SinkerTestKit.Client client = new SinkerTestKit.Client();
@@ -199,47 +197,51 @@ public class ServerTest {
         // we can add the logic to verify if the messages were
         // successfully written to the sink(could be a file, database, etc.)
     }
-// FIXME: once tester kit changes are done for bidirectional streaming source
-//    @Ignore
-//    @Test
-//    @Order(5)
-//    public void testSourceServerInvocation() {
-//        SimpleSource simpleSource = new SimpleSource();
-//
-//        SourcerTestKit sourcerTestKit = new SourcerTestKit(simpleSource);
-//        try {
-//            sourcerTestKit.startServer();
-//        } catch (Exception e) {
-//            Assertions.fail("Failed to start server");
-//        }
-//
-//        // create a client to send requests to the server
-//        SourcerTestKit.Client sourcerClient = new SourcerTestKit.Client();
-//        // create a test observer to receive messages from the server
-//        SourcerTestKit.TestListBasedObserver testObserver = new SourcerTestKit.TestListBasedObserver();
-//        // create a read request with count 10 and timeout 1 second
-//        SourcerTestKit.TestReadRequest testReadRequest = SourcerTestKit.TestReadRequest.builder()
-//                .count(10).timeout(Duration.ofSeconds(1)).build();
-//
-//        try {
-//            sourcerClient.sendReadRequest(testReadRequest, testObserver);
-//            Assertions.assertEquals(10, testObserver.getMessages().size());
-//        } catch (Exception e) {
-//            Assertions.fail("Failed to send request to server");
-//        }
-//
-//        try {
-//            sourcerClient.close();
-//            sourcerTestKit.stopServer();
-//        } catch (InterruptedException e) {
-//            Assertions.fail("Failed to stop server");
-//        }
-//    }
+
+    // FIXME: once tester kit changes are done for bidirectional streaming source
+    //    @Ignore
+    //    @Test
+    //    @Order(5)
+    //    public void testSourceServerInvocation() {
+    //        SimpleSource simpleSource = new SimpleSource();
+    //
+    //        SourcerTestKit sourcerTestKit = new SourcerTestKit(simpleSource);
+    //        try {
+    //            sourcerTestKit.startServer();
+    //        } catch (Exception e) {
+    //            Assertions.fail("Failed to start server");
+    //        }
+    //
+    //        // create a client to send requests to the server
+    //        SourcerTestKit.Client sourcerClient = new SourcerTestKit.Client();
+    //        // create a test observer to receive messages from the server
+    //        SourcerTestKit.TestListBasedObserver testObserver = new
+    // SourcerTestKit.TestListBasedObserver();
+    //        // create a read request with count 10 and timeout 1 second
+    //        SourcerTestKit.TestReadRequest testReadRequest =
+    // SourcerTestKit.TestReadRequest.builder()
+    //                .count(10).timeout(Duration.ofSeconds(1)).build();
+    //
+    //        try {
+    //            sourcerClient.sendReadRequest(testReadRequest, testObserver);
+    //            Assertions.assertEquals(10, testObserver.getMessages().size());
+    //        } catch (Exception e) {
+    //            Assertions.fail("Failed to send request to server");
+    //        }
+    //
+    //        try {
+    //            sourcerClient.close();
+    //            sourcerTestKit.stopServer();
+    //        } catch (InterruptedException e) {
+    //            Assertions.fail("Failed to stop server");
+    //        }
+    //    }
 
     @Test
     @Order(6)
     public void testSourceTransformerServerInvocation() {
-        SourceTransformerTestKit sourceTransformerTestKit = new SourceTransformerTestKit(new EventTimeFilterFunction());
+        SourceTransformerTestKit sourceTransformerTestKit =
+                new SourceTransformerTestKit(new EventTimeFilterFunction());
         try {
             sourceTransformerTestKit.startServer();
         } catch (Exception e) {
@@ -249,13 +251,13 @@ public class ServerTest {
         // Create a client which can send requests to the server
         SourceTransformerTestKit.Client client = new SourceTransformerTestKit.Client();
 
-        SourceTransformerTestKit.TestDatum datum = SourceTransformerTestKit.TestDatum.builder()
-                .eventTime(Instant.ofEpochMilli(1640995200000L))
-                .value("test".getBytes())
-                .build();
-        io.numaproj.numaflow.sourcetransformer.MessageList result = client.sendRequest(
-                new String[]{},
-                datum);
+        SourceTransformerTestKit.TestDatum datum =
+                SourceTransformerTestKit.TestDatum.builder()
+                        .eventTime(Instant.ofEpochMilli(1640995200000L))
+                        .value("test".getBytes())
+                        .build();
+        io.numaproj.numaflow.sourcetransformer.MessageList result =
+                client.sendRequest(new String[]{}, datum);
 
         List<io.numaproj.numaflow.sourcetransformer.Message> messages = result.getMessages();
         Assertions.assertEquals(1, messages.size());
