@@ -14,7 +14,6 @@ public class SimpleSinkTest {
   public void testSimpleSink() {
     int datumCount = 10;
     SimpleSink simpleSink = new SimpleSink();
-
     // Create a test datum iterator with 10 messages
     SinkerTestKit.TestListIterator testListIterator = new SinkerTestKit.TestListIterator();
     for (int i = 0; i < datumCount; i++) {
