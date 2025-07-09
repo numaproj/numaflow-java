@@ -25,16 +25,16 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-          server-id: ossrh
+          server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           settings-path: ${{ github.workspace }} # location for the settings.xml file
 
       - name: Publish to the Maven Central Repository
-        run: mvn -DcentralRelease=true -P ossrh deploy -s $GITHUB_WORKSPACE/settings.xml
+        run: mvn -DcentralRelease=true -P central deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_USERNAME: ${{ secrets.MVN_CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MVN_CENTRAL_PASSWORD }}
 
       - name: Set up Java for publishing to GitHub Packages
         uses: actions/setup-java@v3
