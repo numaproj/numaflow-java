@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +161,7 @@ public class MapperTestKit {
                 String requestId) {
             return MapOuterClass.MapRequest.newBuilder().setRequest(
                     MapOuterClass.MapRequest.Request.newBuilder()
-                            .addAllKeys(keys == null ? new ArrayList<>() : List.of(keys))
+                            .addAllKeys(keys == null ? new ArrayList<>() : Arrays.asList(keys))
                             .setValue(data.getValue()
                                     == null ? ByteString.EMPTY : ByteString.copyFrom(data.getValue()))
                             .setEventTime(

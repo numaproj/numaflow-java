@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Reduce actor invokes the reducer and returns the result.
@@ -70,7 +69,7 @@ class ReduceActor extends AbstractActor {
                 .addAllKeys(message.getKeys()
                         == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                 .addAllTags(
-                        message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
+                        message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                 .build());
         return new ActorResponse(responseBuilder.build());
     }
@@ -89,7 +88,7 @@ class ReduceActor extends AbstractActor {
         // set a dummy result with the keys.
         responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
                 .newBuilder()
-                .addAllKeys(List.of(this.keys))
+                .addAllKeys(Arrays.asList(this.keys))
                 .build());
         return new ActorResponse(responseBuilder.build());
     }

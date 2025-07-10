@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -150,9 +151,9 @@ class Service extends MapGrpc.MapImplBase {
                                             == null ? ByteString.EMPTY : ByteString.copyFrom(
                                             res.getValue()))
                                     .addAllKeys(res.getKeys()
-                                            == null ? new ArrayList<>() : List.of(res.getKeys()))
+                                            == null ? new ArrayList<>() : Arrays.asList(res.getKeys()))
                                     .addAllTags(res.getTags()
-                                            == null ? new ArrayList<>() : List.of(res.getTags()))
+                                            == null ? new ArrayList<>() : Arrays.asList(res.getTags()))
                                     .build()
                     );
                 });
