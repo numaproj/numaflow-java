@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,7 +158,7 @@ public class SinkerTestKit {
                         .newBuilder()
                         .addAllKeys(
                                 datum.getKeys()
-                                        == null ? new ArrayList<>() : List.of(datum.getKeys()))
+                                        == null ? new ArrayList<>() : Arrays.asList(datum.getKeys()))
                         .setValue(datum.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                                 datum.getValue()))
                         .setId(datum.getId())

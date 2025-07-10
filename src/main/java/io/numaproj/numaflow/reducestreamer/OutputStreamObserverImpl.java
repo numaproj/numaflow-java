@@ -11,7 +11,6 @@ import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @AllArgsConstructor
 class OutputStreamObserverImpl implements OutputStreamObserver {
@@ -42,7 +41,7 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
                 .addAllKeys(message.getKeys()
                         == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                 .addAllTags(
-                        message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
+                        message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                 .build());
         return new ActorResponse(responseBuilder.build());
     }

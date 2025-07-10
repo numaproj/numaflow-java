@@ -6,7 +6,7 @@ import io.numaproj.numaflow.map.v1.MapOuterClass;
 import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * Implementation of the OutputObserver interface.
@@ -36,9 +36,9 @@ public class OutputObserverImpl implements OutputObserver {
                                 message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                                         message.getValue()))
                         .addAllKeys(message.getKeys()
-                                == null ? new ArrayList<>() : List.of(message.getKeys()))
+                                == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                         .addAllTags(message.getTags()
-                                == null ? new ArrayList<>() : List.of(message.getTags()))
+                                == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                         .build()).build();
         supervisorActor.tell(response, ActorRef.noSender());
     }
