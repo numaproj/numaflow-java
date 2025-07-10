@@ -172,7 +172,6 @@ class Service extends MapGrpc.MapImplBase {
                 .setStatus(MapOuterClass.TransmissionStatus.newBuilder().setEot(true).build())
                 .build();
         responseObserver.onNext(eotResponse);
-        responseObserver.onCompleted();
     }
 
     // IsReady is the heartbeat endpoint for gRPC.
