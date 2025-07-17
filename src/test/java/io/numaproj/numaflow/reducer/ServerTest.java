@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.reducer;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
@@ -91,16 +92,11 @@ public class ServerTest {
     public void given_inputReduceRequestsShareSameKey_when_serverStarts_then_allRequestsGetAggregatedToOneResponse() {
         String reduceKey = "reduce-key";
 
-        Metadata metadata = new Metadata();
-        metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
-        metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
-
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
                 .newStub(inProcessChannel)
-                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
         for (int i = 1; i <= 10; i++) {
@@ -110,6 +106,15 @@ public class ServerTest {
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .addAllKeys(List.of(reduceKey))
                             .build())
+                    .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                            .newBuilder()
+                            .addWindows(
+                                    ReduceOuterClass.Window
+                                            .newBuilder()
+                                            .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .setEnd(Timestamp.newBuilder().setSeconds(120000).build())
+                                            .build()
+                            ))
                     .build();
             inputStreamObserver.onNext(request);
         }
@@ -143,16 +148,11 @@ public class ServerTest {
         String reduceKey = "reduce-key";
         int keyCount = 10;
 
-        Metadata metadata = new Metadata();
-        metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
-        metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
-
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
                 .newStub(inProcessChannel)
-                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
         // send messages with keyCount different keys
@@ -164,6 +164,15 @@ public class ServerTest {
                                 .addAllKeys(List.of(reduceKey + j))
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                 .build())
+                        .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                                .newBuilder()
+                                .addWindows(
+                                        ReduceOuterClass.Window
+                                                .newBuilder()
+                                                .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                                .setEnd(Timestamp.newBuilder().setSeconds(120000).build())
+                                                .build()
+                                ))
                         .build();
                 inputStreamObserver.onNext(request);
             }
