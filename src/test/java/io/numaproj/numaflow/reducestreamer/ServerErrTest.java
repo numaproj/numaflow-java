@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.reducestreamer;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
@@ -91,10 +92,6 @@ public class ServerErrTest {
 
     @Test
     public void given_reducerThrows_when_serverRuns_then_outputStreamContainsThrowable() {
-        Metadata metadata = new Metadata();
-        metadata.put(Metadata.Key.of(WIN_START_KEY, Metadata.ASCII_STRING_MARSHALLER), "60000");
-        metadata.put(Metadata.Key.of(WIN_END_KEY, Metadata.ASCII_STRING_MARSHALLER), "120000");
-
         // create an output stream observer
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         // we need to maintain a reference to any exceptions thrown inside the thread, otherwise even if the assertion failed in the thread,
@@ -121,7 +118,6 @@ public class ServerErrTest {
 
         StreamObserver<ReduceOuterClass.ReduceRequest> inputStreamObserver = ReduceGrpc
                 .newStub(inProcessChannel)
-                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(metadata))
                 .reduceFn(outputStreamObserver);
 
         for (int i = 1; i <= 10; i++) {
@@ -132,6 +128,15 @@ public class ServerErrTest {
                             .addKeys("reduce-key")
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
+                    .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                            .newBuilder()
+                            .addWindows(
+                                    ReduceOuterClass.Window
+                                            .newBuilder()
+                                            .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .setEnd(Timestamp.newBuilder().setSeconds(120000).build())
+                                            .build()
+                            ))
                     .build();
             inputStreamObserver.onNext(reduceRequest);
         }

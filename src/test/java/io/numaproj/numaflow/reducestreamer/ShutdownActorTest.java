@@ -5,6 +5,7 @@ import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducestreamer.model.Datum;
 import io.numaproj.numaflow.reducestreamer.model.Message;
@@ -36,9 +37,6 @@ public class ShutdownActorTest {
                 .actorOf(ShutdownActor
                         .props(completableFuture));
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
@@ -48,7 +46,6 @@ public class ShutdownActorTest {
                 .actorOf(SupervisorActor
                         .props(
                                 new TestExceptionFactory(),
-                                md,
                                 shutdownActor,
                                 outputActor));
 
@@ -58,6 +55,15 @@ public class ShutdownActorTest {
                                 .addKeys("reduce-test")
                                 .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                                 .build())
+                        .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                                .newBuilder()
+                                .addWindows(
+                                        ReduceOuterClass.Window
+                                                .newBuilder()
+                                                .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                                .setEnd(Timestamp.newBuilder().setSeconds(60000).build())
+                                                .build()
+                                ))
                         .build());
         supervisorActor.tell(reduceRequest, ActorRef.noSender());
 
@@ -80,9 +86,6 @@ public class ShutdownActorTest {
 
         actorSystem.eventStream().subscribe(shutdownActor, AllDeadLetters.class);
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
@@ -92,7 +95,6 @@ public class ShutdownActorTest {
                 .actorOf(SupervisorActor
                         .props(
                                 new TestExceptionFactory(),
-                                md,
                                 shutdownActor,
                                 outputActor));
 

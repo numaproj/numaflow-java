@@ -55,18 +55,6 @@ class Service extends ReduceGrpc.ReduceImplBase {
                     responseObserver);
         }
 
-        // get window start and end time from gPRC metadata
-        String winSt = GrpcServerUtils.WINDOW_START_TIME.get();
-        String winEt = GrpcServerUtils.WINDOW_END_TIME.get();
-
-        // convert the start and end time to Instant
-        Instant startTime = Instant.ofEpochMilli(Long.parseLong(winSt));
-        Instant endTime = Instant.ofEpochMilli(Long.parseLong(winEt));
-
-        // create metadata
-        IntervalWindow iw = new IntervalWindowImpl(startTime, endTime);
-        Metadata md = new MetadataImpl(iw);
-
         CompletableFuture<Void> failureFuture = new CompletableFuture<>();
 
         // create a shutdown actor that listens to exceptions.
@@ -88,7 +76,6 @@ class Service extends ReduceGrpc.ReduceImplBase {
         ActorRef supervisorActor = reduceActorSystem
                 .actorOf(SupervisorActor.props(
                         reduceStreamerFactory,
-                        md,
                         shutdownActorRef,
                         outputActor));
 

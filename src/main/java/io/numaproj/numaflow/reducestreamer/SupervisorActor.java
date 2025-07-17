@@ -9,6 +9,7 @@ import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.reducestreamer.model.IntervalWindow;
 import io.numaproj.numaflow.reducestreamer.model.Metadata;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamerFactory;
@@ -27,31 +28,26 @@ import java.util.Optional;
 @Slf4j
 class SupervisorActor extends AbstractActor {
     private final ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory;
-    private final Metadata md;
     private final ActorRef shutdownActor;
     private final ActorRef outputActor;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
     public SupervisorActor(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
-            Metadata md,
             ActorRef shutdownActor,
             ActorRef outputActor) {
         this.reduceStreamerFactory = reduceStreamerFactory;
-        this.md = md;
         this.shutdownActor = shutdownActor;
         this.outputActor = outputActor;
     }
 
     public static Props props(
             ReduceStreamerFactory<? extends ReduceStreamer> reduceStreamerFactory,
-            Metadata md,
             ActorRef shutdownActor,
             ActorRef outputActor) {
         return Props.create(
                 SupervisorActor.class,
                 reduceStreamerFactory,
-                md,
                 shutdownActor,
                 outputActor);
     }
@@ -94,12 +90,22 @@ class SupervisorActor extends AbstractActor {
     private void invokeActor(ActorRequest actorRequest) {
         String[] keys = actorRequest.getKeySet();
         String uniqueId = actorRequest.getUniqueIdentifier();
+        ReduceOuterClass.Window window = actorRequest.getRequest().getOperation().getWindows(0);
         if (!actorsMap.containsKey(uniqueId)) {
             ReduceStreamer reduceStreamerHandler = reduceStreamerFactory.createReduceStreamer();
+            // create metadata
+            IntervalWindow iw = new IntervalWindowImpl(
+                    Instant.ofEpochSecond(
+                            window.getStart().getSeconds(),
+                            window.getStart().getNanos()),
+                    Instant.ofEpochSecond(
+                            window.getEnd().getSeconds(),
+                            window.getEnd().getNanos()));
+            Metadata md = new MetadataImpl(iw);
             ActorRef actorRef = getContext()
                     .actorOf(ReduceStreamerActor.props(
                             keys,
-                            this.md,
+                            md,
                             reduceStreamerHandler,
                             this.outputActor));
             actorsMap.put(uniqueId, actorRef);
