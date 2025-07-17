@@ -3,6 +3,7 @@ package io.numaproj.numaflow.reducestreamer;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducestreamer.model.Datum;
 import io.numaproj.numaflow.reducestreamer.model.Message;
@@ -32,9 +33,6 @@ public class SupervisorActorTest {
                 .actorOf(ShutdownActor
                         .props(completableFuture));
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         io.numaproj.numaflow.reducer.ReduceOutputStreamObserver reduceOutputStreamObserver = new io.numaproj.numaflow.reducer.ReduceOutputStreamObserver();
 
         ActorRef outputActor = actorSystem.actorOf(OutputActor
@@ -44,7 +42,6 @@ public class SupervisorActorTest {
                 .actorOf(SupervisorActor
                         .props(
                                 new TestReduceStreamerFactory(),
-                                md,
                                 shutdownActor,
                                 outputActor));
 
@@ -58,6 +55,15 @@ public class SupervisorActorTest {
                                     .addAllKeys(Arrays.asList("key-1", "key-2"))
                                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                     .build())
+                            .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                                    .newBuilder()
+                                    .addWindows(
+                                            ReduceOuterClass.Window
+                                                    .newBuilder()
+                                                    .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                                    .setEnd(Timestamp.newBuilder().setSeconds(60000).build())
+                                                    .build()
+                                    ))
                             .build());
             supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
@@ -94,9 +100,6 @@ public class SupervisorActorTest {
                 .actorOf(ShutdownActor
                         .props(completableFuture));
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         io.numaproj.numaflow.reducestreamer.ReduceOutputStreamObserver reduceOutputStreamObserver = new ReduceOutputStreamObserver();
         ActorRef outputActor = actorSystem.actorOf(OutputActor
                 .props(reduceOutputStreamObserver));
@@ -104,7 +107,6 @@ public class SupervisorActorTest {
                 .actorOf(SupervisorActor
                         .props(
                                 new TestReduceStreamerFactory(),
-                                md,
                                 shutdownActor,
                                 outputActor)
                 );
@@ -119,6 +121,15 @@ public class SupervisorActorTest {
                                     .addAllKeys(Arrays.asList("shared-key", "unique-key-" + i))
                                     .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                                     .build())
+                            .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                                    .newBuilder()
+                                    .addWindows(
+                                            ReduceOuterClass.Window
+                                                    .newBuilder()
+                                                    .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                                    .setEnd(Timestamp.newBuilder().setSeconds(60000).build())
+                                                    .build()
+                                    ))
                             .build());
             supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
