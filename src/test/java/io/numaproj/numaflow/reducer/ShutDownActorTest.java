@@ -5,12 +5,10 @@ import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
 import akka.actor.DeadLetter;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
 import org.junit.Test;
 
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
@@ -33,14 +31,10 @@ public class ShutDownActorTest {
                 .actorOf(ReduceShutdownActor
                         .props(completableFuture));
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(
                                 new TestExceptionFactory(),
-                                md,
                                 shutdownActor,
                                 new ReduceOutputStreamObserver()));
 
@@ -49,6 +43,15 @@ public class ShutDownActorTest {
                         .addKeys("reduce-test")
                         .setValue(ByteString.copyFromUtf8(String.valueOf(1)))
                         .build())
+                .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                        .newBuilder()
+                        .addWindows(
+                                ReduceOuterClass.Window
+                                        .newBuilder()
+                                        .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                        .setEnd(Timestamp.newBuilder().setSeconds(60000).build())
+                                        .build()
+                        ))
                 .build());
         supervisorActor.tell(reduceRequest, ActorRef.noSender());
 
@@ -56,7 +59,7 @@ public class ShutDownActorTest {
             completableFuture.get();
             fail("Expected the future to complete with exception");
         } catch (Exception e) {
-            assertEquals(e.getMessage(), "java.lang.RuntimeException: UDF Failure");
+            assertEquals("java.lang.RuntimeException: UDF Failure", e.getMessage());
         }
     }
 
@@ -71,14 +74,10 @@ public class ShutDownActorTest {
 
         actorSystem.eventStream().subscribe(shutdownActor, AllDeadLetters.class);
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(
                                 new TestExceptionFactory(),
-                                md,
                                 shutdownActor,
                                 new ReduceOutputStreamObserver()));
 
@@ -89,7 +88,7 @@ public class ShutDownActorTest {
             completableFuture.get();
             fail("Expected the future to complete with exception");
         } catch (Exception e) {
-            assertEquals(e.getMessage(), "java.lang.Throwable: dead letters");
+            assertEquals("java.lang.Throwable: dead letters", e.getMessage());
         }
     }
 

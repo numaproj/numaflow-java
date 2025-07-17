@@ -3,12 +3,10 @@ package io.numaproj.numaflow.reducer;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
-import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
-import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
 import org.junit.Test;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,14 +27,11 @@ public class SupervisorActorTest {
                 .actorOf(ReduceShutdownActor
                         .props(completableFuture));
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
 
         ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
-                        .props(new TestReducerFactory(), md, shutdownActor, outputStreamObserver));
+                        .props(new TestReducerFactory(), shutdownActor, outputStreamObserver));
 
         for (int i = 1; i <= 10; i++) {
             ActorRequest reduceRequest = new ActorRequest(ReduceOuterClass.ReduceRequest
@@ -47,6 +42,15 @@ public class SupervisorActorTest {
                             .addAllKeys(Arrays.asList("key-1", "key-2"))
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
+                    .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                            .newBuilder()
+                            .addWindows(
+                                    ReduceOuterClass.Window
+                                            .newBuilder()
+                                            .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .setEnd(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .build()
+                            ))
                     .build());
             supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }
@@ -57,11 +61,12 @@ public class SupervisorActorTest {
             List<ReduceOuterClass.ReduceResponse> result = outputStreamObserver.resultDatum.get();
             // the observer should receive 2 messages, one is the aggregated result, the other is the EOF response.
             assertEquals(2, result.size());
-            assertEquals("10", result
-                    .get(0)
-                    .getResult()
-                    .getValue()
-                    .toStringUtf8());
+            assertEquals(
+                    "10", result
+                            .get(0)
+                            .getResult()
+                            .getValue()
+                            .toStringUtf8());
             assertTrue(result
                     .get(1)
                     .getEOF());
@@ -80,15 +85,11 @@ public class SupervisorActorTest {
                 .actorOf(ReduceShutdownActor
                         .props(completableFuture));
 
-        Metadata md = new MetadataImpl(
-                new IntervalWindowImpl(Instant.now(), Instant.now()));
-
         ReduceOutputStreamObserver outputStreamObserver = new ReduceOutputStreamObserver();
         ActorRef supervisorActor = actorSystem
                 .actorOf(ReduceSupervisorActor
                         .props(
                                 new TestReducerFactory(),
-                                md,
                                 shutdownActor,
                                 outputStreamObserver)
                 );
@@ -102,6 +103,15 @@ public class SupervisorActorTest {
                             .addAllKeys(Arrays.asList("shared-key", "unique-key-" + i))
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
+                    .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                            .newBuilder()
+                            .addWindows(
+                                    ReduceOuterClass.Window
+                                            .newBuilder()
+                                            .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .setEnd(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .build()
+                            ))
                     .build());
             supervisorActor.tell(reduceRequest, ActorRef.noSender());
         }

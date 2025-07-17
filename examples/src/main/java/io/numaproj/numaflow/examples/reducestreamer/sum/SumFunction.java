@@ -29,7 +29,7 @@ public class SumFunction extends ReduceStreamer {
             log.info("error while parsing integer - {}", e.getMessage());
         }
         if (sum >= 100) {
-            outputStreamObserver.send(new Message(String.valueOf(sum).getBytes()));
+            outputStreamObserver.send(new Message(String.valueOf(sum).getBytes(), keys));
             sum = 0;
         }
     }

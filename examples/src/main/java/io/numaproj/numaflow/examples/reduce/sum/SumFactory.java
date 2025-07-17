@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SumFactory extends ReducerFactory<SumFunction> {
 
     public static void main(String[] args) throws Exception {
-        log.info("sum udf was invoked");
+        log.info("Starting sum udf server");
         Server server = new Server(new SumFactory());
 
         // Start the server
