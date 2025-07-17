@@ -16,7 +16,6 @@ public class SumFunction extends Reducer {
     @Override
     public void addMessage(String[] keys, Datum datum, Metadata md) {
         try {
-            log.info("Datum {}", datum.getValue().length);
             sum += Integer.parseInt(new String(datum.getValue()));
         } catch (NumberFormatException e) {
             log.info("error while parsing integer - {}", e.getMessage());
