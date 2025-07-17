@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.reducer;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.ManagedChannel;
@@ -128,6 +129,15 @@ public class ServerErrTest {
                             .addKeys("reduce-key")
                             .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
                             .build())
+                    .setOperation(ReduceOuterClass.ReduceRequest.WindowOperation
+                            .newBuilder()
+                            .addWindows(
+                                    ReduceOuterClass.Window
+                                            .newBuilder()
+                                            .setStart(Timestamp.newBuilder().setSeconds(60000).build())
+                                            .setEnd(Timestamp.newBuilder().setSeconds(120000).build())
+                                            .build()
+                            ))
                     .build();
             inputStreamObserver.onNext(reduceRequest);
         }

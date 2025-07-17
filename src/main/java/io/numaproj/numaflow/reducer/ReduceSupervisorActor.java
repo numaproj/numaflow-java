@@ -10,6 +10,8 @@ import akka.japi.pf.ReceiveBuilder;
 import com.google.common.base.Preconditions;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
+import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
+import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
 import lombok.extern.slf4j.Slf4j;
 import scala.PartialFunction;
 import scala.collection.Iterable;
@@ -25,31 +27,26 @@ import java.util.Optional;
 @Slf4j
 class ReduceSupervisorActor extends AbstractActor {
     private final ReducerFactory<? extends Reducer> reducerFactory;
-    private final Metadata md;
     private final ActorRef shutdownActor;
     private final StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver;
     private final Map<String, ActorRef> actorsMap = new HashMap<>();
 
     public ReduceSupervisorActor(
             ReducerFactory<? extends Reducer> reducerFactory,
-            Metadata md,
             ActorRef shutdownActor,
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
         this.reducerFactory = reducerFactory;
-        this.md = md;
         this.shutdownActor = shutdownActor;
         this.responseObserver = responseObserver;
     }
 
     public static Props props(
             ReducerFactory<? extends Reducer> reducerFactory,
-            Metadata md,
             ActorRef shutdownActor,
             StreamObserver<ReduceOuterClass.ReduceResponse> responseObserver) {
         return Props.create(
                 ReduceSupervisorActor.class,
                 reducerFactory,
-                md,
                 shutdownActor,
                 responseObserver);
     }
@@ -92,8 +89,18 @@ class ReduceSupervisorActor extends AbstractActor {
     private void invokeActors(ActorRequest actorRequest) {
         String[] keys = actorRequest.getKeySet();
         String uniqueId = actorRequest.getUniqueIdentifier();
+        ReduceOuterClass.Window window = actorRequest.getRequest().getOperation().getWindows(0);
         if (!actorsMap.containsKey(uniqueId)) {
             Reducer reduceHandler = reducerFactory.createReducer();
+            // create metadata
+            IntervalWindow iw = new IntervalWindowImpl(
+                    Instant.ofEpochSecond(
+                            window.getStart().getSeconds(),
+                            window.getStart().getNanos()),
+                    Instant.ofEpochSecond(
+                            window.getEnd().getSeconds(),
+                            window.getEnd().getNanos()));
+            Metadata md = new MetadataImpl(iw);
             ActorRef actorRef = getContext()
                     .actorOf(ReduceActor.props(keys, md, reduceHandler));
             actorsMap.put(uniqueId, actorRef);

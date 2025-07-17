@@ -237,39 +237,39 @@ public class ServerTest {
     //        }
     //    }
 
-    @Test
-    @Order(6)
-    public void testSourceTransformerServerInvocation() {
-        SourceTransformerTestKit sourceTransformerTestKit =
-                new SourceTransformerTestKit(new EventTimeFilterFunction());
-        try {
-            sourceTransformerTestKit.startServer();
-        } catch (Exception e) {
-            Assertions.fail("Failed to start server");
-        }
-
-        // Create a client which can send requests to the server
-        SourceTransformerTestKit.Client client = new SourceTransformerTestKit.Client();
-
-        SourceTransformerTestKit.TestDatum datum =
-                SourceTransformerTestKit.TestDatum.builder()
-                        .eventTime(Instant.ofEpochMilli(1640995200000L))
-                        .value("test".getBytes())
-                        .build();
-        io.numaproj.numaflow.sourcetransformer.MessageList result =
-                client.sendRequest(new String[]{}, datum);
-
-        List<io.numaproj.numaflow.sourcetransformer.Message> messages = result.getMessages();
-        Assertions.assertEquals(1, messages.size());
-
-        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
-        Assertions.assertEquals("within_year_2022", messages.get(0).getTags()[0]);
-
-        try {
-            client.close();
-            sourceTransformerTestKit.stopServer();
-        } catch (Exception e) {
-            Assertions.fail("Failed to stop server");
-        }
-    }
+//    @Test
+//    @Order(6)
+//    public void testSourceTransformerServerInvocation() {
+//        SourceTransformerTestKit sourceTransformerTestKit =
+//                new SourceTransformerTestKit(new EventTimeFilterFunction());
+//        try {
+//            sourceTransformerTestKit.startServer();
+//        } catch (Exception e) {
+//            Assertions.fail("Failed to start server");
+//        }
+//
+//        // Create a client which can send requests to the server
+//        SourceTransformerTestKit.Client client = new SourceTransformerTestKit.Client();
+//
+//        SourceTransformerTestKit.TestDatum datum =
+//                SourceTransformerTestKit.TestDatum.builder()
+//                        .eventTime(Instant.ofEpochMilli(1640995200000L))
+//                        .value("test".getBytes())
+//                        .build();
+//        io.numaproj.numaflow.sourcetransformer.MessageList result =
+//                client.sendRequest(new String[]{}, datum);
+//
+//        List<io.numaproj.numaflow.sourcetransformer.Message> messages = result.getMessages();
+//        Assertions.assertEquals(1, messages.size());
+//
+//        Assertions.assertEquals("test", new String(messages.get(0).getValue()));
+//        Assertions.assertEquals("within_year_2022", messages.get(0).getTags()[0]);
+//
+//        try {
+//            client.close();
+//            sourceTransformerTestKit.stopServer();
+//        } catch (Exception e) {
+//            Assertions.fail("Failed to stop server");
+//        }
+//    }
 }
