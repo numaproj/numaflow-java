@@ -9,7 +9,7 @@ import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * Mapper actor that processes the map request. It invokes the mapper to process the request and
@@ -86,9 +86,9 @@ class MapperActor extends AbstractActor {
                     .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                             message.getValue()))
                     .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>() : List.of(message.getKeys()))
+                            == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                     .addAllTags(message.getTags()
-                            == null ? new ArrayList<>() : List.of(message.getTags()))
+                            == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                     .build());
         });
         return responseBuilder.setId(ID).build();

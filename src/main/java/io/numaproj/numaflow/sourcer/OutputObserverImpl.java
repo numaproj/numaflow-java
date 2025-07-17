@@ -7,8 +7,8 @@ import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * OutputObserverImpl is the implementation of the OutputObserver interface.
@@ -29,7 +29,7 @@ class OutputObserverImpl implements OutputObserver {
                 .newBuilder()
                 .setResult(SourceOuterClass.ReadResponse.Result.newBuilder()
                         .addAllKeys(message.getKeys()
-                                == null ? new ArrayList<>() : List.of(message.getKeys()))
+                                == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                         .setPayload(
                                 message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                                         message.getValue()))
