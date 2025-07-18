@@ -50,6 +50,8 @@ public class AccumulatorActor extends AbstractActor {
                 .newBuilder()
                 .setWindow(AccumulatorOuterClass.KeyedWindow
                         .newBuilder()
+                        .setStart(this.keyedWindow.getStart())
+                        .setEnd(this.keyedWindow.getEnd())
                         .addAllKeys(this.keyedWindow.getKeysList()))
                 .setEOF(true)
                 .build();
