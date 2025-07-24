@@ -11,7 +11,7 @@ import io.numaproj.numaflow.reducestreamer.model.OutputStreamObserver;
 import io.numaproj.numaflow.reducestreamer.model.ReduceStreamer;
 import lombok.AllArgsConstructor;
 
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * Reduce streamer actor invokes user defined functions to handle reduce requests.
@@ -71,7 +71,7 @@ class ReduceStreamerActor extends AbstractActor {
         // set a dummy result with the keys.
         responseBuilder.setResult(ReduceOuterClass.ReduceResponse.Result
                 .newBuilder()
-                .addAllKeys(List.of(this.keys))
+                .addAllKeys(Arrays.asList(this.keys))
                 .build());
         return new ActorResponse(responseBuilder.build());
     }

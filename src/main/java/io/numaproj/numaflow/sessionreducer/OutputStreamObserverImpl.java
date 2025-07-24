@@ -10,7 +10,6 @@ import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * OutputStreamObserverImpl transforms a message to an ActorResponse.
@@ -42,7 +41,7 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
                 .addAllKeys(message.getKeys()
                         == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                 .addAllTags(
-                        message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
+                        message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                 .build());
         return ActorResponse.builder()
                 .response(responseBuilder.build())

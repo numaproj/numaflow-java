@@ -9,7 +9,7 @@ import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * TransformerActor is an actor that processes the SourceTransformRequest.
@@ -114,9 +114,9 @@ class TransformerActor extends AbstractActor {
                                     .getEpochSecond())
                             .setNanos(message.getEventTime().getNano()))
                     .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>() : List.of(message.getKeys()))
+                            == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                     .addAllTags(message.getTags()
-                            == null ? new ArrayList<>() : List.of(message.getTags()))
+                            == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                     .build());
         });
         return responseBuilder.setId(ID).build();

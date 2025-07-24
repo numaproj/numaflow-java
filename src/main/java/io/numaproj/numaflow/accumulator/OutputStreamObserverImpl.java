@@ -10,7 +10,6 @@ import io.numaproj.numaflow.accumulator.v1.AccumulatorOuterClass;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 class OutputStreamObserverImpl implements OutputStreamObserver {
     private final ActorRef outputActor;
@@ -61,7 +60,7 @@ class OutputStreamObserverImpl implements OutputStreamObserver {
                         .setId(message.getId())
                         .build())
                 .addAllTags(
-                        message.getTags() == null ? new ArrayList<>() : List.of(message.getTags()))
+                        message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                 .build();
     }
 
