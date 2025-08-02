@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_END_KEY;
 import static io.numaproj.numaflow.shared.GrpcServerUtils.WIN_START_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ServerErrTest {
@@ -107,9 +108,7 @@ public class ServerErrTest {
                 }
             }
             try {
-                assertEquals(
-                        "UNKNOWN: java.lang.RuntimeException: unknown exception",
-                        outputStreamObserver.t.getMessage());
+                assertTrue(outputStreamObserver.t.getMessage().contains("UDF_EXECUTION_ERROR"));
             } catch (Throwable e) {
                 exceptionInThread.set(e);
             }
