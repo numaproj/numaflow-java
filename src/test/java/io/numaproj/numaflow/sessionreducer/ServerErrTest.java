@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ServerErrTest {
@@ -78,9 +79,7 @@ public class ServerErrTest {
             try {
                 // this test triggers a supervisor runtime exception by sending an OPEN request with 2 windows.
                 // we are expecting the error message below.
-                assertEquals(
-                        "UNKNOWN: java.lang.RuntimeException: open operation error: expected exactly one window",
-                        outputStreamObserver.t.getMessage());
+                assertTrue(outputStreamObserver.t.getMessage().contains("expected exactly one window"));
             } catch (Throwable e) {
                 exceptionInThread.set(e);
             }
@@ -148,9 +147,7 @@ public class ServerErrTest {
                 }
             }
             try {
-                assertEquals(
-                        "UNKNOWN: java.lang.RuntimeException: unknown exception",
-                        outputStreamObserver.t.getMessage());
+                assertTrue(outputStreamObserver.t.getMessage().contains("UDF_EXECUTION_ERROR"));
             } catch (Throwable e) {
                 exceptionInThread.set(e);
             }

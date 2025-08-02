@@ -39,6 +39,7 @@ public class StreamSorterFactory extends AccumulatorFactory<StreamSorterFactory.
         private final TreeSet<Datum> sortedBuffer = new TreeSet<>(Comparator
                 .comparing(Datum::getEventTime)
                 .thenComparing(Datum::getID)); // Assuming Datum has a getUniqueId() method
+
         @Override
         public void processMessage(Datum datum, OutputStreamObserver outputStream) {
             log.info("Received datum with event time: {}", datum.toString());
@@ -57,10 +58,10 @@ public class StreamSorterFactory extends AccumulatorFactory<StreamSorterFactory.
 
         private void flushBuffer(OutputStreamObserver outputStream) {
             log.info("Watermark updated, flushing sortedBuffer: {}", latestWm.toEpochMilli());
-            while (!sortedBuffer.isEmpty() && !sortedBuffer
+            while (!sortedBuffer.isEmpty() && sortedBuffer
                     .first()
                     .getEventTime()
-                    .isAfter(latestWm)) {
+                    .isBefore(latestWm)) {
                 Datum datum = sortedBuffer.pollFirst();
                 assert datum != null;
                 outputStream.send(new Message(datum));
