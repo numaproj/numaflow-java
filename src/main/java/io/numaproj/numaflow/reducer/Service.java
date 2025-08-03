@@ -3,13 +3,18 @@ package io.numaproj.numaflow.reducer;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.AllDeadLetters;
+import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
 import io.grpc.Status;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.reduce.v1.ReduceGrpc;
 import io.numaproj.numaflow.reduce.v1.ReduceOuterClass;
 import io.numaproj.numaflow.reducer.metadata.IntervalWindowImpl;
 import io.numaproj.numaflow.reducer.metadata.MetadataImpl;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import io.numaproj.numaflow.shared.GrpcServerUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,8 +42,14 @@ class Service extends ReduceGrpc.ReduceImplBase {
                 failureFuture.get();
             } catch (Exception e) {
                 e.printStackTrace();
-                var status = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
-                responseObserver.onError(status.asException());
+                com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
+                        .setCode(Code.INTERNAL.getNumber())
+                        .setMessage(ExceptionUtils.getExceptionErrorString() + ": " + (e.getMessage() != null ? e.getMessage() : ""))
+                        .addDetails(Any.pack(DebugInfo.newBuilder()
+                                .setDetail(ExceptionUtils.getStackTrace(e))
+                                .build()))
+                        .build();
+                responseObserver.onError(StatusProto.toStatusRuntimeException(status));
             }
         }).start();
     }
