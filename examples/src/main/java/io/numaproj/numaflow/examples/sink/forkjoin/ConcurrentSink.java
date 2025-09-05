@@ -27,7 +27,7 @@ import java.util.concurrent.*;
 @Slf4j
 public class ConcurrentSink extends Sinker {
 
-    private static final int DEFAULT_THREAD_POOL_SIZE = 10;
+    private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     private final ThreadPoolExecutor threadPool;
 
@@ -46,20 +46,21 @@ public class ConcurrentSink extends Sinker {
                     private int counter = 0;
                     @Override
                     public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r, "ConcurrentSink-Worker-" + (++counter));
-                        t.setDaemon(true);
-                        return t;
+                        return new Thread(r, "ConcurrentSink-Worker-" + (++counter));
                     }
                 }
         );
     }
 
     public static void main(String[] args) throws Exception {
-        ConcurrentSink concurrentSink = new ConcurrentSink(4);
+        ConcurrentSink concurrentSink = new ConcurrentSink();
 
         Server server = new Server(concurrentSink);
         server.start();
         server.awaitTermination();
+        server.stop();
+
+        concurrentSink.shutdown();
     }
 
     @Override
@@ -69,7 +70,7 @@ public class ConcurrentSink extends Sinker {
         
         List<Datum> messages = new ArrayList<>();
         while (true) {
-            Datum datum = null;
+            Datum datum;
             try {
                 datum = datumIterator.next();
             } catch (InterruptedException e) {
@@ -164,7 +165,6 @@ public class ConcurrentSink extends Sinker {
          */
         private String processMessage(String message) {
             StringBuilder processed = new StringBuilder();
-            
             processed.append("PROCESSED[")
                     .append(new StringBuilder(message).reverse())
                     .append("]-")
