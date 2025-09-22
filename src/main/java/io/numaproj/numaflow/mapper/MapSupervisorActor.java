@@ -112,13 +112,7 @@ class MapSupervisorActor extends AbstractActor {
             // only send the very first exception to the client
             // one exception should trigger a container restart
             // Build gRPC Status
-            com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
-                    .setCode(Code.INTERNAL.getNumber())
-                    .setMessage(ExceptionUtils.getExceptionErrorString() + ": " + (e.getMessage() != null ? e.getMessage() : ""))
-                    .addDetails(Any.pack(DebugInfo.newBuilder()
-                            .setDetail(ExceptionUtils.getStackTrace(e))
-                            .build()))
-                    .build();
+            com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
             responseObserver.onError(StatusProto.toStatusRuntimeException(status));
         }
         activeMapperCount--;

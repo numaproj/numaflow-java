@@ -154,6 +154,11 @@ public class ServerErrTest {
         }
 
         @Override
+        public void nack(NackRequest request) {
+            throw new RuntimeException("unknown exception");
+        }
+
+        @Override
         public List<Integer> getPartitions() {
             return Sourcer.defaultPartitions();
         }

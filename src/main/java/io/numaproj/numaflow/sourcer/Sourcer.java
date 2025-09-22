@@ -35,9 +35,16 @@ public abstract class Sourcer {
     /**
      * method will be used for acknowledging messages from source.
      *
-     * @param request the request contains the offset to be acknowledged
+     * @param request the request contains the offsets to be acknowledged
      */
     public abstract void ack(AckRequest request);
+
+    /**
+     * method will be used for negatively acknowledging messages from source.
+     *
+     * @param request the request contains the offsets to be negatively acknowledged.
+     */
+    public abstract void nack(NackRequest request);
 
     /**
      * method will be used for getting the number of pending messages from source.

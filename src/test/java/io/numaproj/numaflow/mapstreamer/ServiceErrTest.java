@@ -122,9 +122,7 @@ public class ServiceErrTest {
             responseObserver.done.get();
             fail("Expected exception not thrown");
         } catch (Exception e) {
-            assertEquals(
-                    "io.grpc.StatusRuntimeException: INTERNAL: unknown exception",
-                    e.getMessage());
+            assert(e.getMessage().contains("UDF_EXECUTION_ERROR"));
         }
     }
 

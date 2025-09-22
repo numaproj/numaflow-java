@@ -80,7 +80,7 @@ public class ServerTest {
                         .build())
                 .build();
         List<SourceOuterClass.AckRequest> ackRequests = new ArrayList<>();
-
+        List<SourceOuterClass.Offset> offsets = new ArrayList<>();
         StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<>() {
             int count = 0;
             boolean handshake = false;
@@ -99,6 +99,7 @@ public class ServerTest {
                 }
                 count++;
                 SourceOuterClass.Offset offset = readResponse.getResult().getOffset();
+                offsets.add(offset);
                 SourceOuterClass.AckRequest.Request ackRequest = SourceOuterClass.AckRequest
                         .newBuilder()
                         .getRequest()
@@ -199,6 +200,20 @@ public class ServerTest {
             }
         });
 
+        stub.nackFn(SourceOuterClass.NackRequest.newBuilder().setRequest(SourceOuterClass.NackRequest.Request.newBuilder().addAllOffsets(offsets).build()).build(), new StreamObserver<>() {
+            @Override
+            public void onNext(SourceOuterClass.NackResponse nackResponse) {
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        });
+
         readRequestObserver.onCompleted();
         ackRequestObserver.onCompleted();
     }
@@ -207,6 +222,7 @@ public class ServerTest {
         List<Message> messages = new ArrayList<>();
         AtomicInteger readIndex = new AtomicInteger(0);
         Map<Integer, Boolean> yetToBeAcked = new ConcurrentHashMap<>();
+        Map<Integer, Boolean> nacked = new ConcurrentHashMap<>();
 
         public TestSourcer() {
             Instant eventTime = Instant.ofEpochMilli(1000L);
@@ -222,6 +238,15 @@ public class ServerTest {
 
         @Override
         public void read(ReadRequest request, OutputObserver observer) {
+            if (!nacked.isEmpty()) {
+                for (int i = 0; i < nacked.size(); i++) {
+                    observer.send(messages.get(readIndex.get()));
+                    yetToBeAcked.put(readIndex.get(), true);
+                    readIndex.incrementAndGet();
+                }
+                nacked.clear();
+            }
+
             if (readIndex.get() >= messages.size()) {
                 return;
             }
@@ -245,6 +270,16 @@ public class ServerTest {
             for (Offset offset : request.getOffsets()) {
                 Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
                 yetToBeAcked.remove(decoded_offset);
+            }
+        }
+
+        @Override
+        public void nack(NackRequest request) {
+            for (Offset offset : request.getOffsets()) {
+                Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
+                yetToBeAcked.remove(decoded_offset);
+                nacked.put(decoded_offset, true);
+                readIndex.decrementAndGet();
             }
         }
 

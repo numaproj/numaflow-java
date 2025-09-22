@@ -8,8 +8,10 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import io.grpc.Status;
+import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.ExceptionUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
@@ -110,13 +112,11 @@ class MapStreamSupervisorActor extends AbstractActor {
     }
 
     private void handleFailure(Exception e) {
-        getContext().getSystem().log().error("Encountered error in mapStreamFn", e);
+        getContext().getSystem().log().error("Encountered error in mapStreamFn {}", e);
         if (userException == null) {
             userException = e;
-            responseObserver.onError(Status.INTERNAL
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asException());
+            com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
+            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
         }
         activeMapStreamersCount--;
     }

@@ -3,6 +3,7 @@ package io.numaproj.numaflow.examples.source.simple;
 import com.google.common.primitives.Longs;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
+import io.numaproj.numaflow.sourcer.NackRequest;
 import io.numaproj.numaflow.sourcer.Offset;
 import io.numaproj.numaflow.sourcer.OutputObserver;
 import io.numaproj.numaflow.sourcer.ReadRequest;
@@ -77,6 +78,11 @@ public class SimpleSource extends Sourcer {
             // remove the acknowledged messages from the map
             messages.remove(decoded_offset);
         }
+    }
+
+    @Override
+    public void nack(NackRequest request) {
+
     }
 
     @Override
