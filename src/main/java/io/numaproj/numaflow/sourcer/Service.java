@@ -1,9 +1,6 @@
 package io.numaproj.numaflow.sourcer;
 
-import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
-import com.google.rpc.Code;
-import com.google.rpc.DebugInfo;
 import io.grpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
@@ -18,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static io.numaproj.numaflow.source.v1.SourceGrpc.getNackFnMethod;
 import static io.numaproj.numaflow.source.v1.SourceGrpc.getPendingFnMethod;
 
 /**
@@ -84,16 +82,10 @@ class Service extends SourceGrpc.SourceImplBase {
                     responseObserver.onNext(response);
                 } catch (Exception e) {
                     log.error("Encountered error in readFn onNext", e);
-                    shutdownSignal.completeExceptionally(e);
                     // Build gRPC Status
-                    com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
-                            .setCode(Code.INTERNAL.getNumber())
-                            .setMessage(ExceptionUtils.getExceptionErrorString() + ": " + (e.getMessage() != null ? e.getMessage() : ""))
-                            .addDetails(Any.pack(DebugInfo.newBuilder()
-                                    .setDetail(ExceptionUtils.getStackTrace(e))
-                                    .build()))
-                            .build();
+                    com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
                     responseObserver.onError(StatusProto.toStatusRuntimeException(status));
+                    shutdownSignal.completeExceptionally(e);
                 }
             }
 
@@ -164,22 +156,20 @@ class Service extends SourceGrpc.SourceImplBase {
                     responseObserver.onNext(response);
                 } catch (Exception e) {
                     log.error("Encountered error in ackFn onNext", e);
+                    com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
+                    responseObserver.onError(StatusProto.toStatusRuntimeException(status));
                     shutdownSignal.completeExceptionally(e);
-                    responseObserver.onError(Status.INTERNAL
-                            .withDescription(e.getMessage())
-                            .withCause(e)
-                            .asException());
                 }
             }
 
             @Override
             public void onError(Throwable t) {
                 log.error("Encountered error in ackFn onNext", t);
-                shutdownSignal.completeExceptionally(t);
                 responseObserver.onError(Status.INTERNAL
                         .withDescription(t.getMessage())
                         .withCause(t)
                         .asException());
+                shutdownSignal.completeExceptionally(t);
             }
 
             @Override
@@ -187,6 +177,42 @@ class Service extends SourceGrpc.SourceImplBase {
                 responseObserver.onCompleted();
             }
         };
+    }
+
+    @Override
+    public void nackFn(
+            SourceOuterClass.NackRequest nackRequest,
+            StreamObserver<SourceOuterClass.NackResponse> responseObserver
+    ) {
+        if (this.sourcer == null) {
+            io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(
+                    getNackFnMethod(),
+                    responseObserver);
+            return;
+        }
+
+        try {
+            List<Offset> offsets = new ArrayList<>(nackRequest.getRequest().getOffsetsCount());
+            for (SourceOuterClass.Offset offset : nackRequest.getRequest().getOffsetsList()) {
+                offsets.add(new Offset(
+                        offset.getOffset().toByteArray(),
+                        offset.getPartitionId()));
+            }
+            NackRequest nackRequestImpl = new NackRequestImpl(offsets);
+            this.sourcer.nack(nackRequestImpl);
+            SourceOuterClass.NackResponse nackResponse =  SourceOuterClass.NackResponse
+                    .newBuilder()
+                    .setResult(SourceOuterClass.NackResponse.Result.newBuilder().setSuccess(
+                            Empty.newBuilder().build()))
+                    .build();
+            responseObserver.onNext(nackResponse);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            log.error("Encountered error in nackFn", e);
+            com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
+            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
+            shutdownSignal.completeExceptionally(e);
+        }
     }
 
     /**

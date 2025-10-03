@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ServerErrTest {
 
@@ -67,7 +68,7 @@ public class ServerErrTest {
                         .build())
                 .build();
 
-        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<SourceOuterClass.ReadResponse>() {
+        StreamObserver<SourceOuterClass.ReadRequest> readRequestObserver = stub.readFn(new StreamObserver<>() {
             @Override
             public void onNext(SourceOuterClass.ReadResponse readResponse) {
                 // Handle onNext
@@ -140,6 +141,36 @@ public class ServerErrTest {
                 outputStreamObserver.t.getMessage());
     }
 
+    @Test
+    public void testNackError() {
+        var stub = SourceGrpc.newStub(inProcessChannel);
+
+        // Create an output stream observer
+        NackOutputStreamObserver outputStreamObserver = new NackOutputStreamObserver();
+
+        // Create a nack request with some offsets
+        SourceOuterClass.Offset offset = SourceOuterClass.Offset.newBuilder()
+                .setOffset(com.google.protobuf.ByteString.copyFrom(new byte[]{0, 0, 0, 1}))
+                .setPartitionId(0)
+                .build();
+
+        SourceOuterClass.NackRequest nackRequest = SourceOuterClass.NackRequest.newBuilder()
+                .setRequest(SourceOuterClass.NackRequest.Request.newBuilder()
+                        .addOffsets(offset)
+                        .build())
+                .build();
+
+        // Invoke nackFn which should throw an exception
+        stub.nackFn(nackRequest, outputStreamObserver);
+
+        // Wait for the server to process the request
+        while (!outputStreamObserver.completed.get()) ;
+
+        // Check if an error was received
+        assertNotNull(outputStreamObserver.t);
+        assertTrue(outputStreamObserver.t.getMessage().contains("unknown exception"));
+    }
+
     private static class TestSourcerErr extends Sourcer {
 
         @Override
@@ -151,6 +182,11 @@ public class ServerErrTest {
         public void ack(AckRequest request) {
             throw new RuntimeException("unknown exception");
 
+        }
+
+        @Override
+        public void nack(NackRequest request) {
+            throw new RuntimeException("unknown exception");
         }
 
         @Override

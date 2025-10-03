@@ -1,5 +1,10 @@
 package io.numaproj.numaflow.shared;
 
+import com.google.protobuf.Any;
+import com.google.rpc.Code;
+import com.google.rpc.DebugInfo;
+import io.grpc.Status;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Objects;
@@ -40,5 +45,21 @@ public class ExceptionUtils {
     return "UDF_EXECUTION_ERROR("
         + Objects.requireNonNullElse(CONTAINER_NAME, "unknown-container")
         + ")";
+  }
+
+    /**
+     * Builds rpc status from the user's exception.
+     * 
+     * @param exception encountered in user's code.
+     * @return the status constructed using the exception.
+     */
+  public static com.google.rpc.Status buildStatusFromUserException(Exception exception) {
+       return com.google.rpc.Status.newBuilder()
+              .setCode(Code.INTERNAL.getNumber())
+              .setMessage(ExceptionUtils.getExceptionErrorString() + ": " + (exception.getMessage() != null ? exception.getMessage() : ""))
+              .addDetails(Any.pack(DebugInfo.newBuilder()
+                      .setDetail(ExceptionUtils.getStackTrace(exception))
+                      .build()))
+              .build();
   }
 }

@@ -107,14 +107,7 @@ class Service extends SinkGrpc.SinkImplBase {
                 } catch (Exception e) {
                     log.error("Encountered error in sinkFn onNext", e);
                     // Build gRPC Status
-                    com.google.rpc.Status status = com.google.rpc.Status.newBuilder()
-                            .setCode(Code.INTERNAL.getNumber())
-                            .setMessage(ExceptionUtils.getExceptionErrorString() + ": "
-                                    + (e.getMessage() != null ? e.getMessage() : ""))
-                            .addDetails(Any.pack(DebugInfo.newBuilder()
-                                    .setDetail(ExceptionUtils.getStackTrace(e))
-                                    .build()))
-                            .build();
+                    com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
                     responseObserver.onError(StatusProto.toStatusRuntimeException(status));
                     shutdownSignal.completeExceptionally(e);
                 }
