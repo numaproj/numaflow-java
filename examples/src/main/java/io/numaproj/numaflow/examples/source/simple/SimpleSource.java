@@ -61,12 +61,12 @@ public class SimpleSource extends Sourcer {
             return;
         }
 
-        Integer index = readIndex.incrementAndGet();
-
         for (int i = 0; i < request.getCount(); i++) {
             if (System.currentTimeMillis() - startTime > request.getTimeout().toMillis()) {
                 return;
             }
+
+            Integer index = readIndex.incrementAndGet();
             // send the message to the observer
             observer.send(constructMessage(index));
             // keep track of the messages read and not acknowledged
