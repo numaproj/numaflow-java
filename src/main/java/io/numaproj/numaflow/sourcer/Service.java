@@ -200,6 +200,13 @@ class Service extends SourceGrpc.SourceImplBase {
             }
             NackRequestImpl nackRequestImpl = new NackRequestImpl(offsets);
             this.sourcer.nack(nackRequestImpl);
+            SourceOuterClass.NackResponse nackResponse =  SourceOuterClass.NackResponse
+                    .newBuilder()
+                    .setResult(SourceOuterClass.NackResponse.Result.newBuilder().setSuccess(
+                            Empty.newBuilder().build()))
+                    .build();
+            responseObserver.onNext(nackResponse);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             log.error("Encountered error in nackFn", e);
             com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
