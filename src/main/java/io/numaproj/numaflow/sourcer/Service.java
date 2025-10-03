@@ -198,7 +198,7 @@ class Service extends SourceGrpc.SourceImplBase {
                         offset.getOffset().toByteArray(),
                         offset.getPartitionId()));
             }
-            NackRequestImpl nackRequestImpl = new NackRequestImpl(offsets);
+            NackRequest nackRequestImpl = new NackRequestImpl(offsets);
             this.sourcer.nack(nackRequestImpl);
             SourceOuterClass.NackResponse nackResponse =  SourceOuterClass.NackResponse
                     .newBuilder()

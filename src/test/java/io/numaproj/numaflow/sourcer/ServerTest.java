@@ -200,9 +200,17 @@ public class ServerTest {
             }
         });
 
-        stub.nackFn(SourceOuterClass.NackRequest.newBuilder().setRequest(SourceOuterClass.NackRequest.Request.newBuilder().addAllOffsets(offsets).build()).build(), new StreamObserver<>() {
+        // Nack the last 5 messages (indices 5-9)
+        List<SourceOuterClass.Offset> nackedOffsets = offsets.subList(5, 10);
+        stub.nackFn(SourceOuterClass.NackRequest.newBuilder()
+                .setRequest(SourceOuterClass.NackRequest.Request.newBuilder()
+                        .addAllOffsets(nackedOffsets)
+                        .build())
+                .build(), new StreamObserver<>() {
             @Override
             public void onNext(SourceOuterClass.NackResponse nackResponse) {
+                // Verify nack was successful
+                assertTrue(nackResponse.hasResult());
             }
 
             @Override
@@ -213,6 +221,51 @@ public class ServerTest {
             public void onCompleted() {
             }
         });
+
+        // After nacking, read again to verify we get the nacked messages back
+        List<Integer> rereadOffsets = new ArrayList<>();
+        StreamObserver<SourceOuterClass.ReadRequest> rereadRequestObserver = stub.readFn(new StreamObserver<>() {
+            int count = 0;
+            boolean handshake = false;
+
+            @Override
+            public void onNext(SourceOuterClass.ReadResponse readResponse) {
+                // Handle handshake response
+                if (readResponse.hasHandshake() && readResponse.getHandshake().getSot()) {
+                    handshake = true;
+                    return;
+                }
+                if (readResponse.getStatus().getEot()) {
+                    return;
+                }
+                count++;
+                // Decode the offset to verify it's one of the nacked messages
+                SourceOuterClass.Offset offset = readResponse.getResult().getOffset();
+                Integer decodedOffset = ByteBuffer.wrap(offset.getOffset().toByteArray()).getInt();
+                rereadOffsets.add(decodedOffset);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+            }
+
+            @Override
+            public void onCompleted() {
+                // We should have read 5 nacked messages
+                assertEquals(5, count);
+                assertTrue(handshake);
+                // Verify the offsets are the ones we nacked (5-9)
+                for (int i = 0; i < 5; i++) {
+                    assertEquals(Integer.valueOf(5 + i), rereadOffsets.get(i));
+                }
+            }
+        });
+
+        // Send handshake for the re-read
+        rereadRequestObserver.onNext(handshakeRequest);
+        // Request to read the nacked messages
+        rereadRequestObserver.onNext(request);
+        rereadRequestObserver.onCompleted();
 
         readRequestObserver.onCompleted();
         ackRequestObserver.onCompleted();

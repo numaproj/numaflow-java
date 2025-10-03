@@ -71,7 +71,6 @@ public class SimpleSource extends Sourcer {
             observer.send(constructMessage(index));
             // keep track of the messages read and not acknowledged
             yetToBeAcked.put(index, true);
-            readIndex.incrementAndGet();
         }
     }
 
