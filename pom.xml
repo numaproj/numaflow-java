@@ -310,6 +310,7 @@
                                 <exclude>io/numaproj/numaflow/source/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/serving/v1/*</exclude>
                                 <exclude>io/numaproj/numaflow/accumulator/v1/*</exclude>
+                                <exclude>common/*</exclude>
                                 <exclude>**/*TestKit*</exclude>
                             </excludes>
                         </configuration>
