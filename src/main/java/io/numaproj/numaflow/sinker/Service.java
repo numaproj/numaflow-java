@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.rpc.Code;
 import com.google.rpc.DebugInfo;
@@ -131,13 +132,38 @@ class Service extends SinkGrpc.SinkImplBase {
     }
 
     private SinkOuterClass.SinkResponse.Result buildResult(Response response) {
-        SinkOuterClass.Status status = response.getFallback() ? SinkOuterClass.Status.FALLBACK
-                : response.getSuccess() ? SinkOuterClass.Status.SUCCESS : SinkOuterClass.Status.FAILURE;
-        return SinkOuterClass.SinkResponse.Result.newBuilder()
-                .setId(response.getId() == null ? "" : response.getId())
-                .setErrMsg(response.getErr() == null ? "" : response.getErr())
-                .setStatus(status)
-                .build();
+        if (response.getFallback()) {
+            return SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setStatus(SinkOuterClass.Status.FALLBACK)
+                    .build();
+        } else if (response.getSuccess()) {
+            return SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setStatus(SinkOuterClass.Status.SUCCESS)
+                    .build();
+        } else if (response.getServe()) {
+            // FIXME: Return error when serve response is not set?
+            return SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setStatus(SinkOuterClass.Status.SERVE)
+                    .setServeResponse(response.getServeResponse() == null ? null : ByteString.copyFrom(
+                            response.getServeResponse()))
+                    .build();
+        } else if (response.getOnSuccess()) {
+            return SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setStatus(SinkOuterClass.Status.ON_SUCCESS)
+                    .setOnSuccessMsg(response.getOnSuccessMessage() == null ? null : response.getOnSuccessMessage())
+                    .build();
+        } else {
+            // FIXME: Return error when error message is not set?
+            return SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setStatus(SinkOuterClass.Status.FAILURE)
+                    .setErrMsg(response.getErr() == null ? "" : response.getErr())
+                    .build();
+        }
     }
 
     /**
