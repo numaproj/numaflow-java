@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ByteString;
@@ -51,6 +52,18 @@ public class ServerTest {
   @After
   public void tearDown() throws Exception {
     server.stop();
+  }
+
+  @Test
+  public void testServer() {
+      Sinker sinker = new TestSinkFn();
+      Server server = new Server(sinker);
+      try {
+          server.start();
+          server.stop();
+      } catch (Exception e) {
+          assertFalse(e instanceof RuntimeException);
+      }
   }
 
   @Test

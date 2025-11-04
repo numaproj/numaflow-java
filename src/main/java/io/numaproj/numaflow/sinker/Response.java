@@ -7,6 +7,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -99,31 +101,44 @@ public class Response {
       if (onSuccessMessage == null) {
           return new Response(id, false, null, false, false, null, true, null);
       } else {
-          Map<String, MetadataOuterClass.KeyValueGroup> pbUserMetadata = onSuccessMessage.getUserMetadata()
-                  .entrySet()
-                  .stream()
-                  .collect(Collectors.toMap(
-                          Map.Entry::getKey,
-                          e -> MetadataOuterClass.KeyValueGroup.newBuilder()
-                                  .putAllKeyValue(e.getValue()
-                                          .getKeyValue()
-                                          .entrySet()
-                                          .stream()
-                                          .collect(Collectors.toMap(
-                                                  Map.Entry::getKey,
-                                                  kv -> ByteString.copyFrom(kv.getValue())
-                                          ))
-                                  )
-                                  .build()
-          ));
+
+          Map<String, MetadataOuterClass.KeyValueGroup> pbUserMetadata = MetadataOuterClass.Metadata
+                  .getDefaultInstance()
+                  .getUserMetadataMap();
+
+          if (onSuccessMessage.getUserMetadata() != null) {
+              pbUserMetadata =
+                      onSuccessMessage.getUserMetadata()
+                              .entrySet()
+                              .stream()
+                              .filter(e -> e.getKey() != null && e.getValue() != null)
+                              .collect(Collectors.toMap(
+                                      Map.Entry::getKey,
+                                      e -> MetadataOuterClass.KeyValueGroup.newBuilder()
+                                              .putAllKeyValue(e.getValue().getKeyValue() == null
+                                                      ? Collections.emptyMap()
+                                                      : e.getValue()
+                                                      .getKeyValue()
+                                                      .entrySet()
+                                                      .stream()
+                                                      .filter(kv -> kv.getKey() != null
+                                                              && kv.getValue() != null)
+                                                      .collect(Collectors.toMap(
+                                                              Map.Entry::getKey,
+                                                              kv -> ByteString.copyFrom(kv.getValue())
+                                                      ))
+                                              )
+                                              .build()
+                              ));
+          }
 
           MetadataOuterClass.Metadata pbMetadata = MetadataOuterClass.Metadata.newBuilder()
                   .putAllUserMetadata(pbUserMetadata)
                   .build();
 
           Message pbOnSuccessMessage = Message.newBuilder()
-                  .addKeys(onSuccessMessage.getKey())
-                  .setValue(ByteString.copyFrom(onSuccessMessage.getValue()))
+                  .addKeys(onSuccessMessage.getKey() == null ? "" : onSuccessMessage.getKey())
+                  .setValue(onSuccessMessage.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(onSuccessMessage.getValue()))
                   .setMetadata(pbMetadata)
                   .build();
 
