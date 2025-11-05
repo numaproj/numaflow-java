@@ -3,6 +3,7 @@ package io.numaproj.numaflow.examples.sink.onsuccess;
 import io.numaproj.numaflow.examples.sink.simple.SimpleSink;
 import io.numaproj.numaflow.sinker.Datum;
 import io.numaproj.numaflow.sinker.DatumIterator;
+import io.numaproj.numaflow.sinker.OnSuccessMessage;
 import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.Server;
@@ -42,7 +43,7 @@ public class OnSuccess extends Sinker {
                 String msg = new String(datum.getValue());
                 log.info("Received message: {}, headers - {}", msg, datum.getHeaders());
                 if (writeToPrimarySink()) {
-                    responseListBuilder.addResponse(Response.responseOnSuccess(datum.getId(), null));
+                    responseListBuilder.addResponse(Response.responseOnSuccess(datum.getId(), (OnSuccessMessage) null));
                 } else {
                     responseListBuilder.addResponse(Response.responseFallback(datum.getId()));
                 }
