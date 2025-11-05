@@ -55,6 +55,11 @@ public class OnSuccess extends Sinker {
         return responseListBuilder.build();
     }
 
+    /**
+     * Example method to simulate write failures/success to primary sink.
+     * Based on whether this returns true/false, we write to fallback sink / onSuccess sink
+     * @return
+     */
     public boolean writeToPrimarySink() {
         Random random = new Random();
         return random.nextBoolean();
