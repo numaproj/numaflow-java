@@ -153,6 +153,7 @@ class Service extends SinkGrpc.SinkImplBase {
         } else if (response.getOnSuccess()) {
             // FIXME: Cannot set null for onSuccessMsg, so setting default instance
             // Problematic because numaflow-core implementation regards null to be the original message
+            // TODO: Change numaflow-core implementation to also accept empty `value` field
             return SinkOuterClass.SinkResponse.Result.newBuilder()
                     .setId(response.getId() == null ? "" : response.getId())
                     .setStatus(SinkOuterClass.Status.ON_SUCCESS)
