@@ -3,7 +3,7 @@ package io.numaproj.numaflow.examples.sink.onsuccess;
 import io.numaproj.numaflow.examples.sink.simple.SimpleSink;
 import io.numaproj.numaflow.sinker.Datum;
 import io.numaproj.numaflow.sinker.DatumIterator;
-import io.numaproj.numaflow.sinker.OnSuccessMessage;
+import io.numaproj.numaflow.sinker.Message;
 import io.numaproj.numaflow.sinker.Response;
 import io.numaproj.numaflow.sinker.ResponseList;
 import io.numaproj.numaflow.sinker.Server;
@@ -45,7 +45,7 @@ public class OnSuccess extends Sinker {
                 if (writeToPrimarySink()) {
                     log.info("Writing to onSuccess sink: {}", datum.getId());
                     responseListBuilder.addResponse(Response.responseOnSuccess(datum.getId(),
-                            OnSuccessMessage.builder()
+                            Message.builder()
                                     .value(String.format("Successfully wrote message with ID: %s",
                                             datum.getId()).getBytes())
                                     .build()));
