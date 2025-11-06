@@ -186,7 +186,7 @@ public class ServerTest {
                     Response.responseFallback(datum.getId() + processedIdSuffix));
         } else if (Arrays.equals(datum.getKeys(), new String[] {"onsuccess-key"})) {
             builder.addResponse(
-                    Response.responseOnSuccess(datum.getId() + processedIdSuffix, (OnSuccessMessage) null));
+                    Response.responseOnSuccess(datum.getId() + processedIdSuffix, (Message) null));
         } else if (Arrays.equals(datum.getKeys(), new String[] {"serve-key"})) {
             builder.addResponse(
                     Response.responseServe(datum.getId() + processedIdSuffix, "serve message".getBytes()));

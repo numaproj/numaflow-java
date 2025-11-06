@@ -2,13 +2,12 @@ package io.numaproj.numaflow.sinker;
 
 import com.google.protobuf.ByteString;
 import common.MetadataOuterClass;
-import io.numaproj.numaflow.sink.v1.SinkOuterClass.SinkResponse.Result.Message;
+import io.numaproj.numaflow.sink.v1.SinkOuterClass.SinkResponse;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -27,11 +26,11 @@ public class Response {
   private final Boolean serve;
   private final byte[] serveResponse;
   private final Boolean onSuccess;
-  // FIXME: Should this be OnSuccessMessage object from package? That would allow parity with other SDKs (specially Go)
+  // FIXME: Should this be Message object from this package? That would allow parity with other SDKs (specially Go)
   // Currently done this way to prevent conversion in buildResult method.
-  private final Message onSuccessMessage;
+  private final SinkResponse.Result.Message onSuccessMessage;
 
-  /**
+    /**
    * Static method to create response for successful message processing.
    *
    * @param id id of the message
@@ -84,7 +83,7 @@ public class Response {
    * @param onSuccessMessage OnSuccessMessage object to be sent to the onSuccess sink
    * @return Response object with onSuccess status and onSuccess message
    */
-  public static Response responseOnSuccess(String id, Message onSuccessMessage) {
+  public static Response responseOnSuccess(String id, SinkResponse.Result.Message onSuccessMessage) {
     return new Response(id, false, null, false, false, null, true, onSuccessMessage);
   }
 
@@ -97,7 +96,7 @@ public class Response {
    * if original message needs to be written to onSuccess sink
    * @return Response object with onSuccess status and onSuccess message
    */
-  public static Response responseOnSuccess(String id, OnSuccessMessage onSuccessMessage) {
+  public static Response responseOnSuccess(String id, Message onSuccessMessage) {
       if (onSuccessMessage == null) {
           return new Response(id, false, null, false, false, null, true, null);
       } else {
@@ -136,7 +135,7 @@ public class Response {
                   .putAllUserMetadata(pbUserMetadata)
                   .build();
 
-          Message pbOnSuccessMessage = Message.newBuilder()
+          SinkResponse.Result.Message pbOnSuccessMessage = SinkResponse.Result.Message.newBuilder()
                   .addKeys(onSuccessMessage.getKey() == null ? "" : onSuccessMessage.getKey())
                   .setValue(onSuccessMessage.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(onSuccessMessage.getValue()))
                   .setMetadata(pbMetadata)
