@@ -5,6 +5,10 @@ import lombok.Getter;
 
 import java.util.HashMap;
 
+/**
+ * KeyValueGroup is a map of key-value pairs for a given group.
+ * Used as part of {@link io.numaproj.numaflow.sinker.Message}.
+ */
 @Getter
 @Builder
 public class KeyValueGroup {
