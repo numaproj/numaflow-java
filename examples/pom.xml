@@ -381,6 +381,28 @@
                             </to>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>on-success-sink</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.sink.onsuccess.OnSuccess
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>
+                                    numaflow-java-examples/on-success-sink:${docker.tag}
+                                </image>
+                            </to>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

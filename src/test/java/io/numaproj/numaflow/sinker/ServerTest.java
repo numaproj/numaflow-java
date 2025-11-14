@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ByteString;
@@ -54,6 +55,20 @@ public class ServerTest {
   }
 
   @Test
+  public void testServer() {
+      // Test for coverage for different constructors for Server
+      Sinker sinker = new TestSinkFn();
+      Server server = new Server(sinker);
+      try {
+          server.start();
+          server.stop();
+      } catch (Exception e) {
+          // Interrupted exceptions are let go
+          assertFalse(e instanceof RuntimeException);
+      }
+  }
+
+  @Test
   public void sinkerSuccess() {
     int batchSize = 6;
     int numBatches = 8;
@@ -75,10 +90,16 @@ public class ServerTest {
 
     for (int i = 1; i <= batchSize * numBatches; i++) {
       String[] keys;
-      if (i < batchSize * numBatches) {
+      if (i % 2 == 0) {
         keys = new String[] {"valid-key"};
+      } else if (i % 3 == 0) {
+        keys = new String[] {"fallback-key"};
+      } else if (i % 5 == 0) {
+          keys = new String[] {"onsuccess-key"};
+      } else if (i % 7 == 0) {
+          keys = new String[] {"serve-key"};
       } else {
-        keys = new String[] {"invalid-key"};
+          keys = new String[] {"invalid-key"};
       }
 
       SinkOuterClass.SinkRequest.Request request =
@@ -122,10 +143,19 @@ public class ServerTest {
               result -> {
                 if (result.getStatus() == SinkOuterClass.Status.FAILURE) {
                   assertEquals("error message", result.getErrMsg());
-                  return;
+                } else if (result.getStatus() == SinkOuterClass.Status.FALLBACK) {
+                    assertEquals(result.getId(), expectedId);
+                    assertEquals(SinkOuterClass.Status.FALLBACK, result.getStatus());
+                } else if (result.getStatus() == SinkOuterClass.Status.ON_SUCCESS) {
+                    assertEquals(result.getId(), expectedId);
+                    assertEquals(SinkOuterClass.Status.ON_SUCCESS, result.getStatus());
+                } else if (result.getStatus() == SinkOuterClass.Status.SERVE) {
+                    assertEquals(result.getId(), expectedId);
+                    assertEquals(SinkOuterClass.Status.SERVE, result.getStatus());
+                } else {
+                    assertEquals(result.getId(), expectedId);
+                    assertEquals(SinkOuterClass.Status.SUCCESS, result.getStatus());
                 }
-                assertEquals(result.getId(), expectedId);
-                assertEquals(SinkOuterClass.Status.SUCCESS, result.getStatus());
               });
     }
   }
@@ -147,12 +177,22 @@ public class ServerTest {
         if (datum == null) {
           break;
         }
+
         if (Arrays.equals(datum.getKeys(), new String[] {"invalid-key"})) {
-          builder.addResponse(
-              Response.responseFailure(datum.getId() + processedIdSuffix, "error message"));
-          continue;
+            builder.addResponse(
+                    Response.responseFailure(datum.getId() + processedIdSuffix, "error message"));
+        } else if (Arrays.equals(datum.getKeys(), new String[] {"fallback-key"})) {
+            builder.addResponse(
+                    Response.responseFallback(datum.getId() + processedIdSuffix));
+        } else if (Arrays.equals(datum.getKeys(), new String[] {"onsuccess-key"})) {
+            builder.addResponse(
+                    Response.responseOnSuccess(datum.getId() + processedIdSuffix, (Message) null));
+        } else if (Arrays.equals(datum.getKeys(), new String[] {"serve-key"})) {
+            builder.addResponse(
+                    Response.responseServe(datum.getId() + processedIdSuffix, "serve message".getBytes()));
+        } else {
+              builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
         }
-        builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
       }
 
       return builder.build();

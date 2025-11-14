@@ -36,6 +36,9 @@ public class GRPCConfig implements GrpcConfigRetriever {
         if (Constants.UD_CONTAINER_FALLBACK_SINK.equals(containerType)) {
             socketPath = Constants.DEFAULT_FB_SINK_SOCKET_PATH;
             infoFilePath = Constants.DEFAULT_FB_SERVER_INFO_FILE_PATH;
+        } else if (Constants.UD_CONTAINER_ON_SUCCESS_SINK.equals(containerType)) {
+            socketPath = Constants.DEFAULT_ON_SUCCESS_SINK_SOCKET_PATH;
+            infoFilePath = Constants.DEFAULT_ON_SUCCESS_SERVER_INFO_FILE_PATH;
         }
         return GRPCConfig.newBuilder()
                 .infoFilePath(infoFilePath)
