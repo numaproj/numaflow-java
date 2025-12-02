@@ -6,7 +6,7 @@
 
     <groupId>io.numaproj.numaflow</groupId>
     <artifactId>numaflow-java</artifactId>
-    <version>0.10.1</version>
+    <version>0.11.0</version>
     <packaging>jar</packaging>
 
     <name>numaflow-java</name>
