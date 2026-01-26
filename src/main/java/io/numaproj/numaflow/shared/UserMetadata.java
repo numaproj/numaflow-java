@@ -72,11 +72,11 @@ public class UserMetadata {
         this.data = metadata.getUserMetadataMap()
                 .entrySet()
                 .stream()
+                // No null checks here as protobuf contract ensures that the data has no null values
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         e -> e.getValue()
                                 .getKeyValueMap().entrySet().stream()
-                                .filter(e1 -> e1.getValue() != null)
                                 .collect(Collectors.toMap(
                                         Map.Entry::getKey,
                                         e1 -> e1.getValue().toByteArray()
@@ -127,15 +127,9 @@ public class UserMetadata {
         Map<String, MetadataOuterClass.KeyValueGroup> result = new HashMap<>();
         this.data.forEach((group, kvMap) -> {
             MetadataOuterClass.KeyValueGroup.Builder builder = MetadataOuterClass.KeyValueGroup.newBuilder();
-            if (kvMap != null) {
-                kvMap.forEach((key, value) -> {
-                    if (value == null) {
-                        builder.putKeyValue(key, ByteString.EMPTY);
-                    } else {
-                        builder.putKeyValue(key, ByteString.copyFrom(value));
-                    }
-                });
-            }
+            // No null checks required as the constructor and add methods ensures that the data is valid
+            kvMap.forEach((key, value) -> builder.putKeyValue(key, ByteString.copyFrom(value)));
+
             result.put(group, builder.build());
         });
 

@@ -61,8 +61,10 @@ public class SystemMetadata {
             this.data = new HashMap<>();
             return;
         }
-        this.data = metadata.getSysMetadataMap().entrySet().stream()
-            .collect(Collectors.toMap(
+        this.data = metadata.getSysMetadataMap()
+                .entrySet().stream()
+                // No null checks here as protobuf contract ensures that the data has no null values
+                .collect(Collectors.toMap(
                     Map.Entry::getKey,
                     e -> new HashMap<>(e.getValue()
                             .getKeyValueMap()
