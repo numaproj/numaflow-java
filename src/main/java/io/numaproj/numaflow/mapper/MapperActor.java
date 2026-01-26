@@ -4,12 +4,15 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.ByteString;
+import common.MetadataOuterClass;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
-import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * Mapper actor that processes the map request. It invokes the mapper to process the request and
@@ -48,7 +51,9 @@ class MapperActor extends AbstractActor {
                 Instant.ofEpochSecond(
                         mapRequest.getRequest().getEventTime().getSeconds(),
                         mapRequest.getRequest().getEventTime().getNanos()),
-                mapRequest.getRequest().getHeadersMap()
+                mapRequest.getRequest().getHeadersMap(),
+                new UserMetadata(mapRequest.getRequest().getMetadata()),
+                new SystemMetadata(mapRequest.getRequest().getMetadata())
         );
         String[] keys = mapRequest.getRequest().getKeysList().toArray(new String[0]);
         try {
@@ -89,6 +94,8 @@ class MapperActor extends AbstractActor {
                             == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                     .addAllTags(message.getTags()
                             == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
+                    .setMetadata(message.getUserMetadata()
+                            == null ? MetadataOuterClass.Metadata.getDefaultInstance() : message.getUserMetadata().toProto())
                     .build());
         });
         return responseBuilder.setId(ID).build();

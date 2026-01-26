@@ -1,9 +1,8 @@
 package io.numaproj.numaflow.sinker;
 
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.HashMap;
 
 /**
  * Message contains information that needs to be sent to the OnSuccess sink.
@@ -14,7 +13,7 @@ import java.util.HashMap;
 public class Message {
     private final byte[] value;
     private final String key;
-    private final HashMap<String, KeyValueGroup> userMetadata;
+    private final UserMetadata userMetadata;
 }
 
 

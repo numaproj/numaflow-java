@@ -5,6 +5,9 @@ import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
+import common.MetadataOuterClass;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 
 import java.time.Instant;
@@ -67,7 +70,9 @@ class TransformerActor extends AbstractActor {
                 Instant.ofEpochSecond(
                         request.getEventTime().getSeconds(),
                         request.getEventTime().getNanos()),
-                request.getHeadersMap()
+                request.getHeadersMap(),
+                new UserMetadata(request.getMetadata()),
+                new SystemMetadata(request.getMetadata())
         );
         String[] keys = request.getKeysList().toArray(new String[0]);
         try {
@@ -117,6 +122,9 @@ class TransformerActor extends AbstractActor {
                             == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                     .addAllTags(message.getTags()
                             == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
+                    .setMetadata(message.getUserMetadata()
+                            == null ? MetadataOuterClass.Metadata.getDefaultInstance()
+                            : message.getUserMetadata().toProto())
                     .build());
         });
         return responseBuilder.setId(ID).build();

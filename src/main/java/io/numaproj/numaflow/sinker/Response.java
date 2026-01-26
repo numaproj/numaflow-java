@@ -7,10 +7,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 /**
  * Response is used to send response from the user defined sinker. It contains the id of the
  * message, success status, an optional error message and a fallback status. Various static factory
@@ -100,45 +96,14 @@ public class Response {
       if (onSuccessMessage == null) {
           return new Response(id, false, null, false, false, null, true, null);
       } else {
-
-          Map<String, MetadataOuterClass.KeyValueGroup> pbUserMetadata = MetadataOuterClass.Metadata
-                  .getDefaultInstance()
-                  .getUserMetadataMap();
-
-          if (onSuccessMessage.getUserMetadata() != null) {
-              pbUserMetadata =
-                      onSuccessMessage.getUserMetadata()
-                              .entrySet()
-                              .stream()
-                              .filter(e -> e.getKey() != null && e.getValue() != null)
-                              .collect(Collectors.toMap(
-                                      Map.Entry::getKey,
-                                      e -> MetadataOuterClass.KeyValueGroup.newBuilder()
-                                              .putAllKeyValue(e.getValue().getKeyValue() == null
-                                                      ? Collections.emptyMap()
-                                                      : e.getValue()
-                                                      .getKeyValue()
-                                                      .entrySet()
-                                                      .stream()
-                                                      .filter(kv -> kv.getKey() != null
-                                                              && kv.getValue() != null)
-                                                      .collect(Collectors.toMap(
-                                                              Map.Entry::getKey,
-                                                              kv -> ByteString.copyFrom(kv.getValue())
-                                                      ))
-                                              )
-                                              .build()
-                              ));
-          }
-
-          MetadataOuterClass.Metadata pbMetadata = MetadataOuterClass.Metadata.newBuilder()
-                  .putAllUserMetadata(pbUserMetadata)
-                  .build();
-
           SinkResponse.Result.Message pbOnSuccessMessage = SinkResponse.Result.Message.newBuilder()
-                  .addKeys(onSuccessMessage.getKey() == null ? "" : onSuccessMessage.getKey())
-                  .setValue(onSuccessMessage.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(onSuccessMessage.getValue()))
-                  .setMetadata(pbMetadata)
+                  .addKeys(onSuccessMessage.getKey()
+                          == null ? "" : onSuccessMessage.getKey())
+                  .setValue(onSuccessMessage.getValue()
+                          == null ? ByteString.EMPTY : ByteString.copyFrom(onSuccessMessage.getValue()))
+                  .setMetadata(onSuccessMessage.getUserMetadata()
+                          == null ? MetadataOuterClass.Metadata.getDefaultInstance()
+                          : onSuccessMessage.getUserMetadata().toProto())
                   .build();
 
           return new Response(id, false, null, false, false, null, true, pbOnSuccessMessage);

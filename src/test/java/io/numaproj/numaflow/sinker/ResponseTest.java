@@ -2,6 +2,7 @@ package io.numaproj.numaflow.sinker;
 
 import com.google.protobuf.ByteString;
 import common.MetadataOuterClass;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import org.junit.Test;
 
@@ -25,16 +26,16 @@ public class ResponseTest {
         Response response4 = Response.responseFailure(defaultId, "failure");
         assertEquals(defaultId, response4.getId());
 
-        HashMap<String, KeyValueGroup> userMetadata = new HashMap<>();
-        userMetadata.put("group1", KeyValueGroup.builder().build());
+        Map<String, Map<String, byte[]>> userMetadata = new HashMap<>();
+        userMetadata.put("group1", new HashMap<>());
         HashMap<String, byte[]> kvg1 = new HashMap<>(Map.ofEntries(
                 entry("key1", "val1".getBytes())
         ));
         kvg1.put("key2", null);
 
-        userMetadata.put("group2", KeyValueGroup.builder().keyValue(kvg1).build());
+        userMetadata.put("group2", kvg1);
         userMetadata.put("group3", null);
-        Message onSuccessMessage1 = new Message("onSuccessValue".getBytes(), null, userMetadata);
+        Message onSuccessMessage1 = new Message("onSuccessValue".getBytes(), null, new UserMetadata(userMetadata));
 
         Response response5 = Response.responseOnSuccess(defaultId, onSuccessMessage1);
         assertEquals(defaultId, response5.getId());
