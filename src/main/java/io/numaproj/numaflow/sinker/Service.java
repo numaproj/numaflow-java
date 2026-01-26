@@ -9,6 +9,8 @@ import io.grpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import java.time.Instant;
@@ -193,7 +195,10 @@ class Service extends SinkGrpc.SinkImplBase {
                         d.getRequest().getEventTime().getSeconds(),
                         d.getRequest().getEventTime().getNanos()),
                 d.getRequest().getId(),
-                d.getRequest().getHeadersMap());
+                d.getRequest().getHeadersMap(),
+                new UserMetadata(d.getRequest().getMetadata()),
+                new SystemMetadata(d.getRequest().getMetadata())
+        );
     }
 
     // shuts down the executor service

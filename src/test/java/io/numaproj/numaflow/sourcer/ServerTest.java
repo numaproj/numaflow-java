@@ -1,11 +1,13 @@
 package io.numaproj.numaflow.sourcer;
 
 import com.google.protobuf.Empty;
+import common.MetadataOuterClass;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import org.junit.After;
@@ -16,6 +18,7 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,6 +88,7 @@ public class ServerTest {
             int count = 0;
             boolean handshake = false;
             boolean eot = false;
+            ArrayList<Map<String, MetadataOuterClass.KeyValueGroup>> userMetadataList = new ArrayList<>();
 
             @Override
             public void onNext(SourceOuterClass.ReadResponse readResponse) {
@@ -98,6 +102,7 @@ public class ServerTest {
                     return;
                 }
                 count++;
+                userMetadataList.add(readResponse.getResult().getMetadata().getUserMetadataMap());
                 SourceOuterClass.Offset offset = readResponse.getResult().getOffset();
                 offsets.add(offset);
                 SourceOuterClass.AckRequest.Request ackRequest = SourceOuterClass.AckRequest
@@ -123,6 +128,14 @@ public class ServerTest {
                 assertEquals(10, count);
                 assertTrue(handshake);
                 assertTrue(eot);
+                // we should get 10 userMetadata with metadata intact
+                assertEquals(10, userMetadataList.size());
+                assertEquals(
+                        "src-value",
+                        userMetadataList.get(0)
+                                .get("src-group").getKeyValueMap()
+                                .get("src-key").toStringUtf8()
+                );
             }
         });
 
@@ -279,11 +292,18 @@ public class ServerTest {
 
         public TestSourcer() {
             Instant eventTime = Instant.ofEpochMilli(1000L);
+
+            // create user metadata
+            Map<String, Map<String, byte[]>> userMetadataMap = new HashMap<>();
+            userMetadataMap.put("src-group", Map.of("src-key", "src-value".getBytes()));
+            UserMetadata userMetadata = new UserMetadata(userMetadataMap);
+
             for (int i = 0; i < 10; i++) {
                 messages.add(new Message(
                         ByteBuffer.allocate(4).putInt(i).array(),
                         new Offset(ByteBuffer.allocate(4).putInt(i).array(), 0),
-                        eventTime
+                        eventTime,
+                        userMetadata
                 ));
                 eventTime = eventTime.plusMillis(1000L);
             }

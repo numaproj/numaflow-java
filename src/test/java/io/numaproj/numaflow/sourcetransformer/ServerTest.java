@@ -1,10 +1,12 @@
 package io.numaproj.numaflow.sourcetransformer;
 
 import com.google.protobuf.ByteString;
+import common.MetadataOuterClass;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import org.junit.After;
@@ -14,7 +16,9 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -69,11 +73,25 @@ public class ServerTest {
                         .build())
                 .build();
 
+        // Build user metadata and use it to initialize metadata to be added to the message passed to mapper
+        Map<String, MetadataOuterClass.KeyValueGroup> prevVertexUserMetadata = new HashMap<>();
+        prevVertexUserMetadata.put("prev-group",
+                MetadataOuterClass.KeyValueGroup
+                        .newBuilder()
+                        .putKeyValue("prev-key", ByteString.copyFromUtf8("prev-value"))
+                        .build()
+        );
+        MetadataOuterClass.Metadata metadata = MetadataOuterClass.Metadata
+                .newBuilder()
+                .putAllUserMetadata(prevVertexUserMetadata)
+                .build();
+
         ByteString inValue = ByteString.copyFromUtf8("invalue");
         Sourcetransformer.SourceTransformRequest.Request inDatum = Sourcetransformer.SourceTransformRequest.Request
                 .newBuilder()
                 .setValue(inValue)
                 .addAllKeys(List.of("test-st-key"))
+                .setMetadata(metadata)
                 .build();
 
         Sourcetransformer.SourceTransformRequest request = Sourcetransformer.SourceTransformRequest
@@ -112,6 +130,27 @@ public class ServerTest {
             assertEquals(expectedValue, response.getResults(0).getValue());
             assertEquals(Arrays.asList(expectedKeys), response.getResults(0).getKeysList());
             assertEquals(1, response.getResultsCount());
+            // User metadata should be added to the response.
+            // It should have both the previous metadata and the metadata added by the mapper.
+            assertEquals(2, response.getResults(0).getMetadata().getUserMetadataMap().size());
+            assertEquals("prev-value",
+                    response.getResults(0)
+                            .getMetadata()
+                            .getUserMetadataMap()
+                            .get("prev-group")
+                            .getKeyValueMap()
+                            .get("prev-key")
+                            .toStringUtf8()
+            );
+            assertEquals("st-value",
+                    response.getResults(0)
+                            .getMetadata()
+                            .getUserMetadataMap()
+                            .get("st-group")
+                            .getKeyValueMap()
+                            .get("st-key")
+                            .toStringUtf8()
+            );
         }
 
         requestStreamObserver.onCompleted();
@@ -157,6 +196,10 @@ public class ServerTest {
                     .stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
+
+            UserMetadata userMetadata = new UserMetadata(datum.getUserMetadata());
+            userMetadata.addKV("st-group", "st-key", "st-value".getBytes());
+
             return MessageList
                     .newBuilder()
                     .addMessage(new Message(
@@ -164,7 +207,8 @@ public class ServerTest {
                                     + PROCESSED_VALUE_SUFFIX).getBytes(),
                             TEST_EVENT_TIME,
                             updatedKeys,
-                            new String[]{"test-tag"}))
+                            new String[]{"test-tag"},
+                            userMetadata))
                     .build();
         }
     }

@@ -1,5 +1,8 @@
 package io.numaproj.numaflow.sinker;
 
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
+
 import java.time.Instant;
 import java.util.Map;
 
@@ -48,4 +51,18 @@ public interface Datum {
      * @return returns the headers in the form of key value pair
      */
     Map<String, String> getHeaders();
+
+    /**
+     * method to get user defined metadata information of the payload
+     *
+     * @return user metadata
+     */
+    UserMetadata getUserMetadata();
+
+    /**
+     * method to get system metadata information of the payload
+     *
+     * @return system metadata
+     */
+    SystemMetadata getSystemMetadata();
 }

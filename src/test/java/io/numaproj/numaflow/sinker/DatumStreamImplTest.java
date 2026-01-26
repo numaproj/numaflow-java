@@ -1,5 +1,7 @@
 package io.numaproj.numaflow.sinker;
 
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.AllArgsConstructor;
 import org.junit.Test;
 
@@ -61,6 +63,16 @@ public class DatumStreamImplTest {
 
         @Override
         public Map<String, String> getHeaders() {
+            return null;
+        }
+
+        @Override
+        public UserMetadata getUserMetadata() {
+            return null;
+        }
+
+        @Override
+        public SystemMetadata getSystemMetadata() {
             return null;
         }
     }

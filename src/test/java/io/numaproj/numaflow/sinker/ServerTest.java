@@ -1,19 +1,27 @@
 package io.numaproj.numaflow.sinker;
 
+import static java.util.Map.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ByteString;
+import common.MetadataOuterClass;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
+
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
@@ -26,6 +34,9 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ServerTest {
   private static final String processedIdSuffix = "-id-processed";
+    private static final String umdGroup = "group";
+    private static final String umdKey = "key";
+    private static final String umdValue = "value";
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
   private Server server;
   private ManagedChannel inProcessChannel;
@@ -79,7 +90,7 @@ public class ServerTest {
         SinkGrpc.newStub(inProcessChannel).sinkFn(outputStreamObserver);
 
     String actualId = "sink_test_id";
-    String expectedId = actualId + processedIdSuffix;
+    String expectedId = actualId + umdValue + processedIdSuffix;
 
     // Send a handshake request
     SinkOuterClass.SinkRequest handshakeRequest =
@@ -102,11 +113,21 @@ public class ServerTest {
           keys = new String[] {"invalid-key"};
       }
 
+      // create user metadata to simulate it being passed from upstream
+      Map<String, Map<String, byte[]>> userMetadataMap = Map.ofEntries(
+        entry(umdGroup, Map.ofEntries(
+          entry(umdKey, umdValue.getBytes())
+        ))
+      );
+      UserMetadata userMetadataObj = new UserMetadata(userMetadataMap);
+      MetadataOuterClass.Metadata metadata = userMetadataObj.toProto();
+
       SinkOuterClass.SinkRequest.Request request =
           SinkOuterClass.SinkRequest.Request.newBuilder()
               .setValue(ByteString.copyFromUtf8(String.valueOf(i)))
               .setId(actualId)
               .addAllKeys(List.of(keys))
+              .setMetadata(metadata)
               .build();
 
       SinkOuterClass.SinkRequest sinkRequest =
@@ -178,20 +199,22 @@ public class ServerTest {
           break;
         }
 
+        String mdValue = new String(datum.getUserMetadata().getValue(umdGroup, umdKey), StandardCharsets.UTF_8);
+
         if (Arrays.equals(datum.getKeys(), new String[] {"invalid-key"})) {
             builder.addResponse(
-                    Response.responseFailure(datum.getId() + processedIdSuffix, "error message"));
+                    Response.responseFailure(datum.getId() + mdValue + processedIdSuffix, "error message"));
         } else if (Arrays.equals(datum.getKeys(), new String[] {"fallback-key"})) {
             builder.addResponse(
-                    Response.responseFallback(datum.getId() + processedIdSuffix));
+                    Response.responseFallback(datum.getId() + mdValue + processedIdSuffix));
         } else if (Arrays.equals(datum.getKeys(), new String[] {"onsuccess-key"})) {
             builder.addResponse(
-                    Response.responseOnSuccess(datum.getId() + processedIdSuffix, (Message) null));
+                    Response.responseOnSuccess(datum.getId() + mdValue + processedIdSuffix, (Message) null));
         } else if (Arrays.equals(datum.getKeys(), new String[] {"serve-key"})) {
             builder.addResponse(
-                    Response.responseServe(datum.getId() + processedIdSuffix, "serve message".getBytes()));
+                    Response.responseServe(datum.getId() + mdValue + processedIdSuffix, "serve message".getBytes()));
         } else {
-              builder.addResponse(Response.responseOK(datum.getId() + processedIdSuffix));
+              builder.addResponse(Response.responseOK(datum.getId() + mdValue + processedIdSuffix));
         }
       }
 

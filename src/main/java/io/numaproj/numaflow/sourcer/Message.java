@@ -53,6 +53,18 @@ public class Message {
   }
 
   /**
+   * used to create Message with value, offset, eventTime and userMetadata.
+   *
+   * @param value message value
+   * @param offset message offset
+   * @param eventTime message eventTime
+   * @param userMetadata message userMetadata
+   */
+  public Message(byte[] value, Offset offset, Instant eventTime, UserMetadata userMetadata) {
+    this(value, offset, eventTime, null, null, userMetadata);
+  }
+
+  /**
    * used to create Message with value, offset, eventTime, keys and userMetadata.
    *
    * @param value message value
@@ -62,7 +74,7 @@ public class Message {
    * @param userMetadata message userMetadata
    */
   public Message(byte[] value, Offset offset, Instant eventTime, String[] keys, UserMetadata userMetadata) {
-      this(value, offset, eventTime, keys, null, userMetadata);
+    this(value, offset, eventTime, keys, null, userMetadata);
   }
 
   /**
