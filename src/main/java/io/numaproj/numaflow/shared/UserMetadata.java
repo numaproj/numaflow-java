@@ -1,7 +1,6 @@
 package io.numaproj.numaflow.shared;
 
 import common.MetadataOuterClass;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import com.google.protobuf.ByteString;
 
@@ -15,23 +14,52 @@ import java.util.stream.Collectors;
  * UserMetadata is mapping of group name to key-value pairs
  * UserMetadata wraps user generated metadata groups per message.
  * It can be appended to and passed on to the downstream.
- * {@link lombok.AllArgsConstructor} allows creation of UserMetadata from a `Map<String, Map<String, byte[]>>`
- * Copy constructor allows creation of UserMetadata from another UserMetadata
+ * Note: All the null checks have been added within the constructors to ensure
+ * that the data and its entries are always valid.
  */
-@Getter
-@AllArgsConstructor
 public class UserMetadata {
     private final Map<String, Map<String, byte[]>> data;
 
     /**
-     * Default constructor
+     * Default constructor for UserMetadata.
+     * Initializes an empty HashMap data.
      */
     public UserMetadata() {
         this.data = new HashMap<>();
     }
 
+
     /**
-     * Constructor from MetadataOuterClass.Metadata
+     * An all args constructor that filters out null values and copies the values to prevent mutation.
+     * If the data is null or empty, it initializes an empty HashMap data.
+     * For each entry in {@code data}, it creates a new HashMap and copies the key-value pairs
+     * from the entry to the new HashMap. It also filters out any null values.
+     * Empty hashmap values are allowed as entries in the data map.
+     *
+     * @param data is a map of group name to key-value pairs
+     */
+    public UserMetadata(Map<String, Map<String, byte[]>> data) {
+        if (data == null || data.isEmpty()) {
+            this.data = new HashMap<>();
+            return;
+        }
+        this.data = data.entrySet().stream()
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().entrySet().stream()
+                                .filter(e1 -> e1.getValue() != null)
+                                .collect(Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        e1-> e1.getValue().clone()
+                                ))
+                ));
+    }
+
+    /**
+     * Constructor from MetadataOuterClass.Metadata.
+     * Initializes an empty HashMap data if the metadata passed is null or empty.
+     * For each entry in {@code metadata.getUserMetadataMap()}, it creates a new HashMap and copies the key-value pairs
+     * from the entry to the new HashMap. It also filters out any null values.
      *
      * @param metadata is an instance of MetadataOuterClass.Metadata which contains user metadata
      */
@@ -46,17 +74,23 @@ public class UserMetadata {
                 .stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        e -> new HashMap<>(e.getValue().getKeyValueMap().entrySet().stream()
+                        e -> e.getValue()
+                                .getKeyValueMap().entrySet().stream()
+                                .filter(e1 -> e1.getValue() != null)
                                 .collect(Collectors.toMap(
                                         Map.Entry::getKey,
                                         e1 -> e1.getValue().toByteArray()
                                 ))
                         )
-                ));
+                );
     }
 
     /**
-     * Copy constructor
+     * Copy constructor for UserMetadata.
+     * Returns a UserMetadata with empty HashMap data if the userMetadata passed is null or
+     * {@code userMetadata.data} is null.
+     * For each entry in {@code userMetadata.data}, it creates a new HashMap and copies the key-value pairs
+     * from the entry to the new HashMap. It also filters out any null values.
      *
      * @param userMetadata the user metadata to copy
      */
@@ -83,14 +117,13 @@ public class UserMetadata {
 
     /**
      * Convert the user metadata to a map that can be used to create MetadataOuterClass.Metadata
+     * For each entry in {@code data}, it creates a new MetadataOuterClass.KeyValueGroup and copies the key-value pairs
+     * from the entry to the new MetadataOuterClass.KeyValueGroup.
+     * It also filters out any null values.
      *
      * @return MetadataOuterClass.Metadata
      */
     public MetadataOuterClass.Metadata toProto() {
-        if (this.data == null) {
-            return MetadataOuterClass.Metadata.getDefaultInstance();
-        }
-
         Map<String, MetadataOuterClass.KeyValueGroup> result = new HashMap<>();
         this.data.forEach((group, kvMap) -> {
             MetadataOuterClass.KeyValueGroup.Builder builder = MetadataOuterClass.KeyValueGroup.newBuilder();
@@ -113,14 +146,29 @@ public class UserMetadata {
     }
 
     /**
+     * Get the data as a map.
+     * Returns a deep copy of the data to prevent mutation.
+     *
+     * @return a deep copy of the data
+     */
+    public Map<String, Map<String, byte[]>> getData() {
+        // Deep copy the data to prevent mutation
+        return this.data.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().entrySet().stream()
+                                .collect(Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        e1-> e1.getValue().clone()
+                                ))
+                ));
+    }
+
+    /**
      * Get the list of all groups present in the user metadata
      *
      * @return list of group names
      */
     public List<String> getGroups() {
-        if (this.data == null) {
-            return new ArrayList<>();
-        }
         return new ArrayList<>(this.data.keySet());
     }
 
@@ -130,9 +178,6 @@ public class UserMetadata {
      * @param group is the name of the group to delete
      */
     public void deleteGroup(String group) {
-        if (this.data == null) {
-            return;
-        }
         this.data.remove(group);
     }
 
@@ -143,7 +188,7 @@ public class UserMetadata {
      * @return a list of key names within the group
      */
     public List<String> getKeys(String group) {
-        if (this.data == null || !this.data.containsKey(group)) {
+        if (!this.data.containsKey(group)) {
             return new ArrayList<>();
         }
         return new ArrayList<>(this.data.get(group).keySet());
@@ -156,7 +201,7 @@ public class UserMetadata {
      * @param key Name of the key to delete
      */
     public void deleteKey(String group, String key) {
-        if (this.data == null || !this.data.containsKey(group)) {
+        if (!this.data.containsKey(group)) {
             return;
         }
         this.data.get(group).remove(key);
@@ -164,31 +209,40 @@ public class UserMetadata {
 
     /**
      * Add a key value pair to a group
+     * Note: If the value is null, the key/value pair will not be added to the group
      *
      * @param group Name of the group to which key value pairs are to be added
      * @param key Name of the key in group to which the value is to be added
      * @param value Value to be added to the key
      */
     public void addKV(String group, String key, byte[] value) {
-        if (this.data == null) {
-            return;
+        // null values are not added
+        if (group != null && key != null && value != null) {
+            this.data
+                    .computeIfAbsent(group, k -> new HashMap<>())
+                    .put(key, value.clone());
         }
-        this.data.computeIfAbsent(group, k -> new HashMap<>()).put(key, value.clone());
     }
 
     /**
      * Add multiple key value pairs to a group
+     * Note: If the value is null, the key/value pair will not be added to the group
      *
      * @param group Name of the group to which key value pairs are to be added
      * @param kv Map of key value pairs to be added to the group
      */
     public void addKVs(String group, Map<String, byte[]> kv) {
-        if (this.data == null) {
+        if (group == null || kv == null) {
             return;
         }
         Map<String, byte[]> groupMap = this.data.computeIfAbsent(group, k -> new HashMap<>());
-        // Copy the values to prevent mutation
-        kv.forEach((key, value) -> groupMap.put(key, value.clone()));
+        kv.forEach((key, value) -> {
+            // null values are not added
+            if (value != null) {
+                // clone the value to prevent mutation
+                groupMap.put(key, value.clone());
+            }
+        });
     }
 
     /**
@@ -199,14 +253,12 @@ public class UserMetadata {
      * @return Value of the key in the group or null if the group/key is not present
      */
     public byte[] getValue(String group, String key) {
-        if (this.data == null) {
-            return null;
-        }
         Map<String, byte[]> groupData = this.data.get(group);
         if (groupData == null) {
             return null;
         }
         byte[] value = groupData.get(key);
+        // null value should not be present but check added for safety
         return value == null ? null : value.clone();
     }
 
@@ -214,9 +266,6 @@ public class UserMetadata {
      * Clear all the user metadata
      */
     public void clear() {
-        if (this.data == null) {
-            return;
-        }
         this.data.clear();
     }
 }

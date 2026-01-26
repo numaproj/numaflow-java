@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import common.MetadataOuterClass;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -16,7 +15,6 @@ import lombok.Getter;
  * It is read-only to UDFs
  */
 @Getter
-@AllArgsConstructor
 public class SystemMetadata {
     private final Map<String, Map<String, byte[]>> data;
 
@@ -25,6 +23,32 @@ public class SystemMetadata {
      */
     public SystemMetadata() {
         this.data = new HashMap<>();
+    }
+
+    /**
+     * An all args constructor that filters out null values and copies the values to prevent mutation.
+     * If the data is null or empty, it initializes an empty HashMap data.
+     * For each entry in {@code data}, it creates a new HashMap and copies the key-value pairs
+     * from the entry to the new HashMap. It also filters out any null values.
+     * Empty hashmap values are allowed as entries in the data map.
+     *
+     * @param data is a map of group name to key-value pairs
+     */
+    public SystemMetadata(Map<String, Map<String, byte[]>> data) {
+        if (data == null || data.isEmpty()) {
+            this.data = new HashMap<>();
+            return;
+        }
+        this.data = data.entrySet().stream()
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().entrySet().stream()
+                                .filter(e1 -> e1.getValue() != null)
+                                .collect(Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        e1-> e1.getValue().clone()
+                                ))
+                ));
     }
 
     /**
@@ -53,14 +77,30 @@ public class SystemMetadata {
     }
 
     /**
+     * Get the data as a map.
+     * Returns a deep copy of the data to prevent mutation.
+     *
+     * @return a deep copy of the data
+     */
+    public Map<String, Map<String, byte[]>> getData() {
+        // Deep copy the data to prevent mutation
+        return this.data.entrySet().stream()
+                // No null checks required as the constructor ensures that the data is valid
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().entrySet().stream()
+                                .collect(Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        e1-> e1.getValue().clone()
+                                ))
+                ));
+    }
+
+    /**
      * Get the list of all groups present in the user metadata
      *
      * @return list of group names
      */
     public List<String> getGroups() {
-        if (this.data == null) {
-            return new ArrayList<>();
-        }
         return new ArrayList<>(this.data.keySet());
     }
 
@@ -71,7 +111,7 @@ public class SystemMetadata {
      * @return a list of key names within the group
      */
     public List<String> getKeys(String group) {
-        if (this.data == null || !this.data.containsKey(group)) {
+        if (!this.data.containsKey(group)) {
             return new ArrayList<>();
         }
         return new ArrayList<>(this.data.get(group).keySet());
@@ -85,9 +125,6 @@ public class SystemMetadata {
      * @return Value of the key in the group or null if the group/key is not present
      */
     public byte[] getValue(String group, String key) {
-        if (this.data == null) {
-            return null;
-        }
         Map<String, byte[]> groupData = this.data.get(group);
         if (groupData == null) {
             return null;
