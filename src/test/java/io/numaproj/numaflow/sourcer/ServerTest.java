@@ -294,9 +294,8 @@ public class ServerTest {
             Instant eventTime = Instant.ofEpochMilli(1000L);
 
             // create user metadata
-            Map<String, Map<String, byte[]>> userMetadataMap = new HashMap<>();
-            userMetadataMap.put("src-group", Map.of("src-key", "src-value".getBytes()));
-            UserMetadata userMetadata = new UserMetadata(userMetadataMap);
+            UserMetadata userMetadata = new UserMetadata();
+            userMetadata.addKVs("src-group", Map.of("src-key", "src-value".getBytes()));
 
             for (int i = 0; i < 10; i++) {
                 messages.add(new Message(

@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.shared;
 
 import common.MetadataOuterClass;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import com.google.protobuf.ByteString;
 
@@ -26,33 +27,6 @@ public class UserMetadata {
      */
     public UserMetadata() {
         this.data = new HashMap<>();
-    }
-
-
-    /**
-     * An all args constructor that filters out null values and copies the values to prevent mutation.
-     * If the data is null or empty, it initializes an empty HashMap data.
-     * For each entry in {@code data}, it creates a new HashMap and copies the key-value pairs
-     * from the entry to the new HashMap. It also filters out any null values.
-     * Empty hashmap values are allowed as entries in the data map.
-     *
-     * @param data is a map of group name to key-value pairs
-     */
-    public UserMetadata(Map<String, Map<String, byte[]>> data) {
-        if (data == null || data.isEmpty()) {
-            this.data = new HashMap<>();
-            return;
-        }
-        this.data = data.entrySet().stream()
-                .filter(e -> e.getValue() != null)
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> entry.getValue().entrySet().stream()
-                                .filter(e1 -> e1.getValue() != null)
-                                .collect(Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        e1-> e1.getValue().clone()
-                                ))
-                ));
     }
 
     /**
@@ -140,24 +114,6 @@ public class UserMetadata {
     }
 
     /**
-     * Get the data as a map.
-     * Returns a deep copy of the data to prevent mutation.
-     *
-     * @return a deep copy of the data
-     */
-    public Map<String, Map<String, byte[]>> getData() {
-        // Deep copy the data to prevent mutation
-        return this.data.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> entry.getValue().entrySet().stream()
-                                .collect(Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        e1-> e1.getValue().clone()
-                                ))
-                ));
-    }
-
-    /**
      * Get the list of all groups present in the user metadata
      *
      * @return list of group names
@@ -229,14 +185,18 @@ public class UserMetadata {
         if (group == null || kv == null) {
             return;
         }
-        Map<String, byte[]> groupMap = this.data.computeIfAbsent(group, k -> new HashMap<>());
-        kv.forEach((key, value) -> {
-            // null values are not added
-            if (value != null) {
-                // clone the value to prevent mutation
-                groupMap.put(key, value.clone());
-            }
-        });
+
+        this.data.computeIfAbsent(
+                group,
+                k -> kv.entrySet().stream()
+                        .filter(e -> e.getKey() != null && e.getValue() != null)
+                        .collect(
+                                Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        e -> e.getValue().clone()
+                                )
+                        )
+        );
     }
 
     /**

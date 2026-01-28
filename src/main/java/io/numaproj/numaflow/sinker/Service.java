@@ -159,9 +159,7 @@ class Service extends SinkGrpc.SinkImplBase {
             return SinkOuterClass.SinkResponse.Result.newBuilder()
                     .setId(response.getId() == null ? "" : response.getId())
                     .setStatus(SinkOuterClass.Status.ON_SUCCESS)
-                    .setOnSuccessMsg(response.getOnSuccessMessage() == null
-                            ? SinkOuterClass.SinkResponse.Result.Message.getDefaultInstance()
-                            : response.getOnSuccessMessage())
+                    .setOnSuccessMsg(Message.toProto(response.getOnSuccessMessage()))
                     .build();
         } else {
             // FIXME: Return error when error message is not set?

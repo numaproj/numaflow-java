@@ -114,12 +114,10 @@ public class ServerTest {
       }
 
       // create user metadata to simulate it being passed from upstream
-      Map<String, Map<String, byte[]>> userMetadataMap = Map.ofEntries(
-        entry(umdGroup, Map.ofEntries(
+      UserMetadata userMetadataObj = new UserMetadata();
+      userMetadataObj.addKVs(umdGroup, Map.ofEntries(
           entry(umdKey, umdValue.getBytes())
-        ))
-      );
-      UserMetadata userMetadataObj = new UserMetadata(userMetadataMap);
+        ));
       MetadataOuterClass.Metadata metadata = userMetadataObj.toProto();
 
       SinkOuterClass.SinkRequest.Request request =

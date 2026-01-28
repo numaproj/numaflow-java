@@ -14,7 +14,6 @@ import lombok.Getter;
  * SystemMetadata wraps system-generated metadata groups per message.
  * It is read-only to UDFs
  */
-@Getter
 public class SystemMetadata {
     private final Map<String, Map<String, byte[]>> data;
 
@@ -23,32 +22,6 @@ public class SystemMetadata {
      */
     public SystemMetadata() {
         this.data = new HashMap<>();
-    }
-
-    /**
-     * An all args constructor that filters out null values and copies the values to prevent mutation.
-     * If the data is null or empty, it initializes an empty HashMap data.
-     * For each entry in {@code data}, it creates a new HashMap and copies the key-value pairs
-     * from the entry to the new HashMap. It also filters out any null values.
-     * Empty hashmap values are allowed as entries in the data map.
-     *
-     * @param data is a map of group name to key-value pairs
-     */
-    public SystemMetadata(Map<String, Map<String, byte[]>> data) {
-        if (data == null || data.isEmpty()) {
-            this.data = new HashMap<>();
-            return;
-        }
-        this.data = data.entrySet().stream()
-                .filter(e -> e.getValue() != null)
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> entry.getValue().entrySet().stream()
-                                .filter(e1 -> e1.getValue() != null)
-                                .collect(Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        e1-> e1.getValue().clone()
-                                ))
-                ));
     }
 
     /**
@@ -76,25 +49,6 @@ public class SystemMetadata {
                             ))
                     )
             ));
-    }
-
-    /**
-     * Get the data as a map.
-     * Returns a deep copy of the data to prevent mutation.
-     *
-     * @return a deep copy of the data
-     */
-    public Map<String, Map<String, byte[]>> getData() {
-        // Deep copy the data to prevent mutation
-        return this.data.entrySet().stream()
-                // No null checks required as the constructor ensures that the data is valid
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> entry.getValue().entrySet().stream()
-                                .collect(Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        e1-> e1.getValue().clone()
-                                ))
-                ));
     }
 
     /**

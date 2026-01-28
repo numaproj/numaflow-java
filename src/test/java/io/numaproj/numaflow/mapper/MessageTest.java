@@ -24,6 +24,6 @@ public class MessageTest {
         assertArrayEquals("asdf".getBytes(), message5.getValue());
         assertArrayEquals(new String[]{"key1"}, message5.getKeys());
         assertArrayEquals(new String[]{"tag1"}, message5.getTags());
-        assertTrue(message5.getUserMetadata().getData().isEmpty());
+        assertTrue(message5.getUserMetadata().getGroups().isEmpty());
     }
 }

@@ -7,6 +7,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 /**
  * Response is used to send response from the user defined sinker. It contains the id of the
  * message, success status, an optional error message and a fallback status. Various static factory
@@ -22,9 +26,7 @@ public class Response {
   private final Boolean serve;
   private final byte[] serveResponse;
   private final Boolean onSuccess;
-  // FIXME: Should this be Message object from this package? That would allow parity with other SDKs (specially Go)
-  // Currently done this way to prevent conversion in buildResult method.
-  private final SinkResponse.Result.Message onSuccessMessage;
+  private final Message onSuccessMessage;
 
     /**
    * Static method to create response for successful message processing.
@@ -72,15 +74,17 @@ public class Response {
   }
 
   /**
-   * Static method to create response for onSuccess message. Allows creation of onSuccess message
-   * from protobuf Message object.
+   * Static method to create response for onSuccess message using the Datum object.
    *
-   * @param id id of the message
-   * @param onSuccessMessage OnSuccessMessage object to be sent to the onSuccess sink
+   * @param datum Datum object using which onSuccess message is created. Can be the original datum
    * @return Response object with onSuccess status and onSuccess message
    */
-  public static Response responseOnSuccess(String id, SinkResponse.Result.Message onSuccessMessage) {
-    return new Response(id, false, null, false, false, null, true, onSuccessMessage);
+  public static Response responseOnSuccess(Datum datum) {
+      if (datum == null) {
+          // NOTE: response id is null if datum is null
+          return new Response(null, false, null, false, false, null, true, null);
+      }
+      return responseOnSuccess(datum.getId(), Message.fromDatum(datum));
   }
 
   /**
@@ -93,20 +97,6 @@ public class Response {
    * @return Response object with onSuccess status and onSuccess message
    */
   public static Response responseOnSuccess(String id, Message onSuccessMessage) {
-      if (onSuccessMessage == null) {
-          return new Response(id, false, null, false, false, null, true, null);
-      } else {
-          SinkResponse.Result.Message pbOnSuccessMessage = SinkResponse.Result.Message.newBuilder()
-                  .addKeys(onSuccessMessage.getKey()
-                          == null ? "" : onSuccessMessage.getKey())
-                  .setValue(onSuccessMessage.getValue()
-                          == null ? ByteString.EMPTY : ByteString.copyFrom(onSuccessMessage.getValue()))
-                  .setMetadata(onSuccessMessage.getUserMetadata()
-                          == null ? MetadataOuterClass.Metadata.getDefaultInstance()
-                          : onSuccessMessage.getUserMetadata().toProto())
-                  .build();
-
-          return new Response(id, false, null, false, false, null, true, pbOnSuccessMessage);
-      }
+      return new Response(id, false, null, false, false, null, true, onSuccessMessage);
   }
 }
