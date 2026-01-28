@@ -37,9 +37,9 @@ public class Message {
             return Message.builder().build();
         }
         return Message.builder()
-                .value(datum.getValue())
-                .keys(datum.getKeys())
-                .userMetadata(datum.getUserMetadata())
+                .value(datum.getValue().clone())
+                .keys(datum.getKeys().clone())
+                .userMetadata(new UserMetadata(datum.getUserMetadata()))
                 .build();
     }
 

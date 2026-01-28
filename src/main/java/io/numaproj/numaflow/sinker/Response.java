@@ -1,15 +1,8 @@
 package io.numaproj.numaflow.sinker;
 
-import com.google.protobuf.ByteString;
-import common.MetadataOuterClass;
-import io.numaproj.numaflow.sink.v1.SinkOuterClass.SinkResponse;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 
 /**
  * Response is used to send response from the user defined sinker. It contains the id of the
@@ -75,13 +68,13 @@ public class Response {
 
   /**
    * Static method to create response for onSuccess message using the Datum object.
+   * NOTE: response id is null if datum is null
    *
    * @param datum Datum object using which onSuccess message is created. Can be the original datum
    * @return Response object with onSuccess status and onSuccess message
    */
   public static Response responseOnSuccess(Datum datum) {
       if (datum == null) {
-          // NOTE: response id is null if datum is null
           return new Response(null, false, null, false, false, null, true, null);
       }
       return responseOnSuccess(datum.getId(), Message.fromDatum(datum));

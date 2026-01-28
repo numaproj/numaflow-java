@@ -1,8 +1,6 @@
 package io.numaproj.numaflow.shared;
 
 import common.MetadataOuterClass;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import com.google.protobuf.ByteString;
 
 import java.util.ArrayList;
@@ -185,18 +183,12 @@ public class UserMetadata {
         if (group == null || kv == null) {
             return;
         }
-
-        this.data.computeIfAbsent(
-                group,
-                k -> kv.entrySet().stream()
-                        .filter(e -> e.getKey() != null && e.getValue() != null)
-                        .collect(
-                                Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        e -> e.getValue().clone()
-                                )
-                        )
-        );
+        Map<String, byte[]> groupMap = this.data.computeIfAbsent(group, k -> new HashMap<>());
+        kv.forEach((key, value) -> {
+            if (key != null && value != null) {
+                groupMap.put(key, value.clone());
+            }
+        });
     }
 
     /**

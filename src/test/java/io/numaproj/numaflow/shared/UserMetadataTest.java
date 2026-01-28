@@ -166,6 +166,38 @@ public class UserMetadataTest {
     }
 
     @Test
+    public void testAddKVs_toExistingGroup() {
+        UserMetadata metadata = new UserMetadata();
+
+        // First, add some initial key-value pairs to a group
+        Map<String, byte[]> initialKv = new HashMap<>();
+        initialKv.put("k1", "v1".getBytes());
+        metadata.addKVs("g", initialKv);
+
+        // Verify initial state
+        assertEquals(1, metadata.getKeys("g").size());
+        assertArrayEquals("v1".getBytes(), metadata.getValue("g", "k1"));
+
+        // Now add more key-value pairs to the same existing group
+        Map<String, byte[]> additionalKv = new HashMap<>();
+        additionalKv.put("k2", "v2".getBytes());
+        additionalKv.put("k3", "v3".getBytes());
+        metadata.addKVs("g", additionalKv);
+
+        // Verify all keys are present in the group
+        List<String> keys = metadata.getKeys("g");
+        assertEquals(3, keys.size());
+        assertTrue(keys.contains("k1"));
+        assertTrue(keys.contains("k2"));
+        assertTrue(keys.contains("k3"));
+
+        // Verify all values
+        assertArrayEquals("v1".getBytes(), metadata.getValue("g", "k1"));
+        assertArrayEquals("v2".getBytes(), metadata.getValue("g", "k2"));
+        assertArrayEquals("v3".getBytes(), metadata.getValue("g", "k3"));
+    }
+
+    @Test
     public void testDeleteKeyAndDeleteGroupAndClear() {
         UserMetadata metadata = new UserMetadata();
         metadata.addKV("g1", "k1", "v1".getBytes());
