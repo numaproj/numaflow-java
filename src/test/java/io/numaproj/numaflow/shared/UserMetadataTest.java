@@ -25,22 +25,18 @@ public class UserMetadataTest {
     }
 
     @Test
-    public void testProtoConstructor_withNullMetadata() {
-        UserMetadata metadata = new UserMetadata((MetadataOuterClass.Metadata) null);
-        assertNotNull(metadata.getGroups());
-        assertTrue(metadata.getGroups().isEmpty());
-    }
+    public void testProtoConstructor() {
+        UserMetadata metadata1 = new UserMetadata((MetadataOuterClass.Metadata) null);
+        assertNotNull(metadata1.getGroups());
+        assertTrue(metadata1.getGroups().isEmpty());
 
-    @Test
-    public void testProtoConstructor_withEmptyMetadata() {
-        MetadataOuterClass.Metadata protoMetadata = MetadataOuterClass.Metadata.newBuilder().build();
-        UserMetadata metadata = new UserMetadata(protoMetadata);
-        assertNotNull(metadata.getGroups());
-        assertTrue(metadata.getGroups().isEmpty());
-    }
+        // test with empty metadata
+        MetadataOuterClass.Metadata protoMetadata1 = MetadataOuterClass.Metadata.newBuilder().build();
+        UserMetadata metadata2 = new UserMetadata(protoMetadata1);
+        assertNotNull(metadata2.getGroups());
+        assertTrue(metadata2.getGroups().isEmpty());
 
-    @Test
-    public void testProtoConstructor_withValidMetadata() {
+        // test with valid metadata
         MetadataOuterClass.KeyValueGroup kvGroup1 = MetadataOuterClass.KeyValueGroup.newBuilder()
                 .putKeyValue("key1", ByteString.copyFromUtf8("value1"))
                 .build();
@@ -49,39 +45,38 @@ public class UserMetadataTest {
                 .putKeyValue("keyA", ByteString.copyFromUtf8("valueA"))
                 .build();
 
-        MetadataOuterClass.Metadata protoMetadata = MetadataOuterClass.Metadata.newBuilder()
+        MetadataOuterClass.Metadata protoMetadata2 = MetadataOuterClass.Metadata.newBuilder()
                 .putUserMetadata("group1", kvGroup1)
                 .putUserMetadata("group2", kvGroup2)
                 .build();
 
-        UserMetadata metadata = new UserMetadata(protoMetadata);
+        UserMetadata metadata3 = new UserMetadata(protoMetadata2);
 
-        assertEquals(2, metadata.getGroups().size());
-        assertArrayEquals("value1".getBytes(), metadata.getValue("group1", "key1"));
-        assertArrayEquals("valueA".getBytes(), metadata.getValue("group2", "keyA"));
+        assertEquals(2, metadata3.getGroups().size());
+        assertArrayEquals("value1".getBytes(), metadata3.getValue("group1", "key1"));
+        assertArrayEquals("valueA".getBytes(), metadata3.getValue("group2", "keyA"));
     }
 
     @Test
-    public void testCopyConstructor_deepCopy() {
+    public void testCopyConstructor() {
+        // Deep copy test
         UserMetadata original = new UserMetadata();
         original.addKV("g", "k", "value".getBytes());
 
-        UserMetadata copy = new UserMetadata(original);
+        UserMetadata copy1 = new UserMetadata(original);
 
-        assertArrayEquals("value".getBytes(), copy.getValue("g", "k"));
+        assertArrayEquals("value".getBytes(), copy1.getValue("g", "k"));
 
-        byte[] fromCopy = copy.getValue("g", "k");
+        byte[] fromCopy = copy1.getValue("g", "k");
         fromCopy[0] = 'X';
 
         assertArrayEquals("value".getBytes(), original.getValue("g", "k"));
-        assertArrayEquals("value".getBytes(), copy.getValue("g", "k"));
-    }
+        assertArrayEquals("value".getBytes(), copy1.getValue("g", "k"));
 
-    @Test
-    public void testCopyConstructor_withNullInput() {
-        UserMetadata copy = new UserMetadata((UserMetadata) null);
-        assertNotNull(copy.getGroups());
-        assertTrue(copy.getGroups().isEmpty());
+        // test with null input
+        UserMetadata copy2 = new UserMetadata((UserMetadata) null);
+        assertNotNull(copy2.getGroups());
+        assertTrue(copy2.getGroups().isEmpty());
     }
 
     @Test
@@ -101,30 +96,29 @@ public class UserMetadataTest {
     }
 
     @Test
-    public void testAddKV_ignoresNulls() {
-        UserMetadata metadata = new UserMetadata();
+    public void testAddKV() {
+        // test with nulls
+        UserMetadata metadata1 = new UserMetadata();
 
-        metadata.addKV(null, "k", "v".getBytes());
-        metadata.addKV("g", null, "v".getBytes());
-        metadata.addKV("g", "k", null);
+        metadata1.addKV(null, "k", "v".getBytes());
+        metadata1.addKV("g", null, "v".getBytes());
+        metadata1.addKV("g", "k", null);
 
-        assertTrue(metadata.getGroups().isEmpty());
-    }
+        assertTrue(metadata1.getGroups().isEmpty());
 
-    @Test
-    public void testAddKV_defensiveCopy() {
-        UserMetadata metadata = new UserMetadata();
+        // test defensive copy
+        UserMetadata metadata2 = new UserMetadata();
 
         byte[] value = "value".getBytes();
-        metadata.addKV("g", "k", value);
+        metadata2.addKV("g", "k", value);
 
         value[0] = 'X';
 
-        assertArrayEquals("value".getBytes(), metadata.getValue("g", "k"));
+        assertArrayEquals("value".getBytes(), metadata2.getValue("g", "k"));
     }
 
     @Test
-    public void testGetValue_returnsClone() {
+    public void testGetValue() {
         UserMetadata metadata = new UserMetadata();
         metadata.addKV("g", "k", "value".getBytes());
 
@@ -137,64 +131,61 @@ public class UserMetadataTest {
     }
 
     @Test
-    public void testAddKVs_ignoresNullGroupOrMap() {
-        UserMetadata metadata = new UserMetadata();
-        Map<String, byte[]> kv = new HashMap<>();
-        kv.put("k", "v".getBytes());
+    public void testAddKVs() {
+        // test with nulls
+        UserMetadata metadata1 = new UserMetadata();
+        Map<String, byte[]> kv1 = new HashMap<>();
+        kv1.put("k", "v".getBytes());
 
-        metadata.addKVs(null, kv);
-        metadata.addKVs("g", null);
+        metadata1.addKVs(null, kv1);
+        metadata1.addKVs("g", null);
 
-        assertTrue(metadata.getGroups().isEmpty());
-    }
+        assertTrue(metadata1.getGroups().isEmpty());
 
-    @Test
-    public void testAddKVs_filtersNullValues() {
-        UserMetadata metadata = new UserMetadata();
+        // test filters null values
+        UserMetadata metadata2 = new UserMetadata();
 
-        Map<String, byte[]> kv = new HashMap<>();
-        kv.put("k1", "v1".getBytes());
-        kv.put("k2", null);
+        Map<String, byte[]> kv2 = new HashMap<>();
+        kv2.put("k1", "v1".getBytes());
+        kv2.put("k2", null);
 
-        metadata.addKVs("g", kv);
+        metadata2.addKVs("g", kv2);
 
-        List<String> keys = metadata.getKeys("g");
-        assertEquals(1, keys.size());
-        assertTrue(keys.contains("k1"));
-        assertArrayEquals("v1".getBytes(), metadata.getValue("g", "k1"));
-        assertNull(metadata.getValue("g", "k2"));
-    }
+        List<String> keys1 = metadata2.getKeys("g");
+        assertEquals(1, keys1.size());
+        assertTrue(keys1.contains("k1"));
+        assertArrayEquals("v1".getBytes(), metadata2.getValue("g", "k1"));
+        assertNull(metadata2.getValue("g", "k2"));
 
-    @Test
-    public void testAddKVs_toExistingGroup() {
-        UserMetadata metadata = new UserMetadata();
+        // test add to existing group
+        UserMetadata metadata3 = new UserMetadata();
 
         // First, add some initial key-value pairs to a group
         Map<String, byte[]> initialKv = new HashMap<>();
         initialKv.put("k1", "v1".getBytes());
-        metadata.addKVs("g", initialKv);
+        metadata3.addKVs("g", initialKv);
 
         // Verify initial state
-        assertEquals(1, metadata.getKeys("g").size());
-        assertArrayEquals("v1".getBytes(), metadata.getValue("g", "k1"));
+        assertEquals(1, metadata3.getKeys("g").size());
+        assertArrayEquals("v1".getBytes(), metadata3.getValue("g", "k1"));
 
         // Now add more key-value pairs to the same existing group
         Map<String, byte[]> additionalKv = new HashMap<>();
         additionalKv.put("k2", "v2".getBytes());
         additionalKv.put("k3", "v3".getBytes());
-        metadata.addKVs("g", additionalKv);
+        metadata3.addKVs("g", additionalKv);
 
         // Verify all keys are present in the group
-        List<String> keys = metadata.getKeys("g");
-        assertEquals(3, keys.size());
-        assertTrue(keys.contains("k1"));
-        assertTrue(keys.contains("k2"));
-        assertTrue(keys.contains("k3"));
+        List<String> keys2 = metadata3.getKeys("g");
+        assertEquals(3, keys2.size());
+        assertTrue(keys2.contains("k1"));
+        assertTrue(keys2.contains("k2"));
+        assertTrue(keys2.contains("k3"));
 
         // Verify all values
-        assertArrayEquals("v1".getBytes(), metadata.getValue("g", "k1"));
-        assertArrayEquals("v2".getBytes(), metadata.getValue("g", "k2"));
-        assertArrayEquals("v3".getBytes(), metadata.getValue("g", "k3"));
+        assertArrayEquals("v1".getBytes(), metadata3.getValue("g", "k1"));
+        assertArrayEquals("v2".getBytes(), metadata3.getValue("g", "k2"));
+        assertArrayEquals("v3".getBytes(), metadata3.getValue("g", "k3"));
     }
 
     @Test

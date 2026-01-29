@@ -6,6 +6,7 @@ import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,15 +16,32 @@ import java.util.Arrays;
  * The message can be different from the original message that was sent to primary sink.
  */
 @Getter
-@Builder
 public class Message {
-    private final byte[] value;
+    private final byte [] value;
     private final String[] keys;
     /**
      * userMetadata is the user defined metadata that is added to the onSuccess message
      * This is using the common {@link UserMetadata} class to allow reusing the user metadata stored in Datum
      */
     private final UserMetadata userMetadata;
+
+    public Message(byte[] value) {
+        this.value = value;
+        this.keys = null;
+        this.userMetadata = null;
+    }
+
+    public Message(byte [] value, String[] keys) {
+        this.value = value;
+        this.keys = keys;
+        this.userMetadata = null;
+    }
+
+    public Message(byte [] value, String[] keys, UserMetadata userMetadata) {
+        this.value = value;
+        this.keys = keys;
+        this.userMetadata = userMetadata;
+    }
 
     /**
      * Static method to create an onSuccess message from a sinker Datum object.
@@ -34,13 +52,10 @@ public class Message {
      */
     public static Message fromDatum(Datum datum) {
         if (datum == null) {
-            return Message.builder().build();
+            return new Message(null);
         }
-        return Message.builder()
-                .value(datum.getValue().clone())
-                .keys(datum.getKeys().clone())
-                .userMetadata(new UserMetadata(datum.getUserMetadata()))
-                .build();
+
+        return new Message(datum.getValue().clone(), datum.getKeys().clone(), new UserMetadata(datum.getUserMetadata()));
     }
 
     /**
@@ -50,7 +65,7 @@ public class Message {
      * @param message The message object to convert into the relevant proto object
      * @return The converted proto object
      */
-    public static SinkOuterClass.SinkResponse.Result.Message toProto(Message message) {
+    protected static SinkOuterClass.SinkResponse.Result.Message toProto(Message message) {
         if (message == null) {
             return SinkOuterClass.SinkResponse.Result.Message.getDefaultInstance();
         }

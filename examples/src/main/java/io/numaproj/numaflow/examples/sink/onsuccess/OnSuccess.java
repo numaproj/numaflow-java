@@ -46,14 +46,11 @@ public class OnSuccess extends Sinker {
                     log.info("Writing to onSuccess sink: {}", datum.getId());
                     // Build the onSuccess message using builder for changing values, keys or userMetadata
                     responseListBuilder.addResponse(Response.responseOnSuccess(datum.getId(),
-                            Message.builder()
-                                    .value(String.format("Successfully wrote message with ID: %s",
-                                            datum.getId()).getBytes())
-                                    .userMetadata(datum.getUserMetadata())
-                                    .keys(datum.getKeys())
-                                    .build()));
-                    // Or send the same values as datum using:
-                    // responseListBuilder.addResponse(Response.responseOnSuccess(datum));
+                            Message.fromDatum(datum)));
+                    // Or use on-success Message constructor:
+                    //  responseListBuilder.addResponse(Response.responseOnSuccess(datum.getId(),
+                    //          new Message(String.format("Successfully wrote message with ID: %s",
+                    //                 datum.getId()).getBytes(), datum.getKeys(), datum.getUserMetadata()))));
                 } else {
                     log.info("Writing to fallback sink: {}", datum.getId());
                     responseListBuilder.addResponse(Response.responseFallback(datum.getId()));

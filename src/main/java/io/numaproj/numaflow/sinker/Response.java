@@ -67,20 +67,6 @@ public class Response {
   }
 
   /**
-   * Static method to create response for onSuccess message using the Datum object.
-   * NOTE: response id is null if datum is null
-   *
-   * @param datum Datum object using which onSuccess message is created. Can be the original datum
-   * @return Response object with onSuccess status and onSuccess message
-   */
-  public static Response responseOnSuccess(Datum datum) {
-      if (datum == null) {
-          return new Response(null, false, null, false, false, null, true, null);
-      }
-      return responseOnSuccess(datum.getId(), Message.fromDatum(datum));
-  }
-
-  /**
    * Overloaded static method to create response for onSuccess message. Allows creation of onSuccess message
    * from OnSuccessMessage object.
    *
