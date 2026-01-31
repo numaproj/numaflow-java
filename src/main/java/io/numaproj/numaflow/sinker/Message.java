@@ -25,18 +25,36 @@ public class Message {
      */
     private final UserMetadata userMetadata;
 
+    /**
+     * Constructor to create a Message object with only value.
+     *
+     * @param value The value of the message
+     */
     public Message(byte[] value) {
         this.value = value;
         this.keys = null;
         this.userMetadata = null;
     }
 
+    /**
+     * Constructor to create a Message object with value and keys.
+     *
+     * @param value The value of the message
+     * @param keys The keys of the message
+     */
     public Message(byte [] value, String[] keys) {
         this.value = value;
         this.keys = keys;
         this.userMetadata = null;
     }
 
+    /**
+     * Constructor to create a Message object with value, keys and userMetadata.
+     *
+     * @param value The value of the message
+     * @param keys The keysof the message
+     * @param userMetadata The user metadata of the message
+     */
     public Message(byte [] value, String[] keys, UserMetadata userMetadata) {
         this.value = value;
         this.keys = keys;
