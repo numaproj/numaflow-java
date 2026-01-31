@@ -5,6 +5,8 @@ import com.google.protobuf.Timestamp;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.Builder;
@@ -233,5 +235,7 @@ public class SourceTransformerTestKit {
         private final Instant eventTime;
         private final Instant watermark;
         private final Map<String, String> headers;
+        private final UserMetadata userMetadata;
+        private final SystemMetadata systemMetadata;
     }
 }

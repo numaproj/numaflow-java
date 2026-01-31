@@ -2,6 +2,7 @@ package io.numaproj.numaflow.sourcer;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
+import common.MetadataOuterClass;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import lombok.AllArgsConstructor;
@@ -46,6 +47,7 @@ class OutputObserverImpl implements OutputObserver {
                                 .setPartitionId(message.getOffset().getPartitionId()))
                         .putAllHeaders(message.getHeaders()
                                 != null ? message.getHeaders() : new HashMap<>())
+                        .setMetadata(message.getUserMetadata() == null ? MetadataOuterClass.Metadata.getDefaultInstance() : message.getUserMetadata().toProto())
                         .build());
 
         return builder.build();

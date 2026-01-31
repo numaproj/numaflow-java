@@ -7,6 +7,8 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -233,5 +235,7 @@ public class MapperTestKit {
         private final Instant eventTime;
         private final Instant watermark;
         private final Map<String, String> headers;
+        private final UserMetadata userMetadata;
+        private final SystemMetadata systemMetadata;
     }
 }

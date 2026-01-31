@@ -1,15 +1,8 @@
 package io.numaproj.numaflow.sinker;
 
-import com.google.protobuf.ByteString;
-import common.MetadataOuterClass;
-import io.numaproj.numaflow.sink.v1.SinkOuterClass.SinkResponse;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Response is used to send response from the user defined sinker. It contains the id of the
@@ -26,9 +19,7 @@ public class Response {
   private final Boolean serve;
   private final byte[] serveResponse;
   private final Boolean onSuccess;
-  // FIXME: Should this be Message object from this package? That would allow parity with other SDKs (specially Go)
-  // Currently done this way to prevent conversion in buildResult method.
-  private final SinkResponse.Result.Message onSuccessMessage;
+  private final Message onSuccessMessage;
 
     /**
    * Static method to create response for successful message processing.
@@ -76,18 +67,6 @@ public class Response {
   }
 
   /**
-   * Static method to create response for onSuccess message. Allows creation of onSuccess message
-   * from protobuf Message object.
-   *
-   * @param id id of the message
-   * @param onSuccessMessage OnSuccessMessage object to be sent to the onSuccess sink
-   * @return Response object with onSuccess status and onSuccess message
-   */
-  public static Response responseOnSuccess(String id, SinkResponse.Result.Message onSuccessMessage) {
-    return new Response(id, false, null, false, false, null, true, onSuccessMessage);
-  }
-
-  /**
    * Overloaded static method to create response for onSuccess message. Allows creation of onSuccess message
    * from OnSuccessMessage object.
    *
@@ -97,51 +76,6 @@ public class Response {
    * @return Response object with onSuccess status and onSuccess message
    */
   public static Response responseOnSuccess(String id, Message onSuccessMessage) {
-      if (onSuccessMessage == null) {
-          return new Response(id, false, null, false, false, null, true, null);
-      } else {
-
-          Map<String, MetadataOuterClass.KeyValueGroup> pbUserMetadata = MetadataOuterClass.Metadata
-                  .getDefaultInstance()
-                  .getUserMetadataMap();
-
-          if (onSuccessMessage.getUserMetadata() != null) {
-              pbUserMetadata =
-                      onSuccessMessage.getUserMetadata()
-                              .entrySet()
-                              .stream()
-                              .filter(e -> e.getKey() != null && e.getValue() != null)
-                              .collect(Collectors.toMap(
-                                      Map.Entry::getKey,
-                                      e -> MetadataOuterClass.KeyValueGroup.newBuilder()
-                                              .putAllKeyValue(e.getValue().getKeyValue() == null
-                                                      ? Collections.emptyMap()
-                                                      : e.getValue()
-                                                      .getKeyValue()
-                                                      .entrySet()
-                                                      .stream()
-                                                      .filter(kv -> kv.getKey() != null
-                                                              && kv.getValue() != null)
-                                                      .collect(Collectors.toMap(
-                                                              Map.Entry::getKey,
-                                                              kv -> ByteString.copyFrom(kv.getValue())
-                                                      ))
-                                              )
-                                              .build()
-                              ));
-          }
-
-          MetadataOuterClass.Metadata pbMetadata = MetadataOuterClass.Metadata.newBuilder()
-                  .putAllUserMetadata(pbUserMetadata)
-                  .build();
-
-          SinkResponse.Result.Message pbOnSuccessMessage = SinkResponse.Result.Message.newBuilder()
-                  .addKeys(onSuccessMessage.getKey() == null ? "" : onSuccessMessage.getKey())
-                  .setValue(onSuccessMessage.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(onSuccessMessage.getValue()))
-                  .setMetadata(pbMetadata)
-                  .build();
-
-          return new Response(id, false, null, false, false, null, true, pbOnSuccessMessage);
-      }
+      return new Response(id, false, null, false, false, null, true, onSuccessMessage);
   }
 }

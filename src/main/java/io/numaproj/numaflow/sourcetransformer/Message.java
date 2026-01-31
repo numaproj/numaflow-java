@@ -1,6 +1,8 @@
 package io.numaproj.numaflow.sourcetransformer;
 
 import java.time.Instant;
+
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.Getter;
 
 /** Message is used to wrap the data return by SourceTransformer functions. */
@@ -11,22 +13,37 @@ public class Message {
   private final byte[] value;
   private final Instant eventTime;
   private final String[] tags;
+  private final UserMetadata userMetadata;
 
   /**
-   * used to create Message with value, eventTime, keys and tags(used for conditional forwarding)
+   * used to create Message with value, eventTime, keys, tags(used for conditional forwarding) and userMetadata
    *
    * @param value message value
    * @param eventTime message eventTime
    * @param keys message keys
    * @param tags message tags which will be used for conditional forwarding
+   * @param userMetadata user metadata
    */
-  public Message(byte[] value, Instant eventTime, String[] keys, String[] tags) {
+  public Message(byte[] value, Instant eventTime, String[] keys, String[] tags, UserMetadata userMetadata) {
     // defensive copy - once the Message is created, the caller should not be able to modify it.
     this.keys = keys == null ? null : keys.clone();
     this.value = value == null ? null : value.clone();
     this.tags = tags == null ? null : tags.clone();
     // The Instant class in Java is already immutable.
     this.eventTime = eventTime;
+    this.userMetadata = userMetadata == null ? null : new UserMetadata(userMetadata);
+  }
+
+    /**
+     * used to create Message with value, eventTime, keys, tags(used for conditional forwarding)
+     *
+     * @param value message value
+     * @param eventTime message eventTime
+     * @param keys message keys
+     * @param tags message tags which will be used for conditional forwarding
+     */
+  public Message(byte[] value, Instant eventTime, String[] keys, String[] tags) {
+    this(value, eventTime, keys, tags, null);
   }
 
   /**
@@ -36,7 +53,7 @@ public class Message {
    * @param eventTime message eventTime
    */
   public Message(byte[] value, Instant eventTime) {
-    this(value, eventTime, null, null);
+    this(value, eventTime, null, null, null);
   }
 
   /**
@@ -47,7 +64,7 @@ public class Message {
    * @param keys message keys
    */
   public Message(byte[] value, Instant eventTime, String[] keys) {
-    this(value, eventTime, keys, null);
+    this(value, eventTime, keys, null, null);
   }
 
   /**
@@ -59,6 +76,6 @@ public class Message {
    * @return returns the Message which will be dropped
    */
   public static Message toDrop(Instant eventTime) {
-    return new Message(new byte[0], eventTime, null, DROP_TAGS);
+    return new Message(new byte[0], eventTime, null, DROP_TAGS, null);
   }
 }

@@ -9,6 +9,8 @@ import io.grpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import io.numaproj.numaflow.sink.v1.SinkGrpc;
 import io.numaproj.numaflow.sink.v1.SinkOuterClass;
 import java.time.Instant;
@@ -157,9 +159,7 @@ class Service extends SinkGrpc.SinkImplBase {
             return SinkOuterClass.SinkResponse.Result.newBuilder()
                     .setId(response.getId() == null ? "" : response.getId())
                     .setStatus(SinkOuterClass.Status.ON_SUCCESS)
-                    .setOnSuccessMsg(response.getOnSuccessMessage() == null
-                            ? SinkOuterClass.SinkResponse.Result.Message.getDefaultInstance()
-                            : response.getOnSuccessMessage())
+                    .setOnSuccessMsg(Message.toProto(response.getOnSuccessMessage()))
                     .build();
         } else {
             // FIXME: Return error when error message is not set?
@@ -193,7 +193,10 @@ class Service extends SinkGrpc.SinkImplBase {
                         d.getRequest().getEventTime().getSeconds(),
                         d.getRequest().getEventTime().getNanos()),
                 d.getRequest().getId(),
-                d.getRequest().getHeadersMap());
+                d.getRequest().getHeadersMap(),
+                new UserMetadata(d.getRequest().getMetadata()),
+                new SystemMetadata(d.getRequest().getMetadata())
+        );
     }
 
     // shuts down the executor service
