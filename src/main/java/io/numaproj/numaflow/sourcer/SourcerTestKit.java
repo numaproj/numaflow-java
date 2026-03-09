@@ -245,6 +245,18 @@ public class SourcerTestKit {
          * @throws Exception if the request fails
          */
         public List<Integer> sendGetPartitionsRequest() throws Exception {
+            return sendGetPartitionsRequestWithTotal().getPartitions();
+        }
+
+        /**
+         * sendGetPartitionsRequestWithTotal sends a getPartitions request to the server
+         * and returns both the partitions list and total partitions count.
+         *
+         * @return the partitions response containing partitions list and optional total partitions
+         *
+         * @throws Exception if the request fails
+         */
+        public PartitionsResult sendGetPartitionsRequestWithTotal() throws Exception {
             CompletableFuture<SourceOuterClass.PartitionsResponse> future = new CompletableFuture<>();
             StreamObserver<SourceOuterClass.PartitionsResponse> observer = new StreamObserver<>() {
 
@@ -267,7 +279,23 @@ public class SourcerTestKit {
                 }
             };
             sourceStub.partitionsFn(Empty.newBuilder().build(), observer);
-            return future.get().getResult().getPartitionsList();
+            SourceOuterClass.PartitionsResponse.Result result = future.get().getResult();
+            Integer totalPartitions = result.hasTotalPartitions() ? result.getTotalPartitions() : null;
+            return new PartitionsResult(result.getPartitionsList(), totalPartitions);
+        }
+    }
+
+    /**
+     * PartitionsResult holds the result of a partitions request.
+     */
+    @Getter
+    public static class PartitionsResult {
+        private final List<Integer> partitions;
+        private final Integer totalPartitions;
+
+        public PartitionsResult(List<Integer> partitions, Integer totalPartitions) {
+            this.partitions = partitions;
+            this.totalPartitions = totalPartitions;
         }
     }
 

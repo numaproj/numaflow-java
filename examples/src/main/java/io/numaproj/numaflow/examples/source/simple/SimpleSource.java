@@ -1,4 +1,4 @@
-package io.numaproj.numaflow.examples.source.simple;
+package main.java.io.numaproj.numaflow.examples.source.simple;
 
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
@@ -101,7 +101,7 @@ public class SimpleSource extends Sourcer {
     }
 
     @Override
-    public List<Integer> getPartitions() {
+    public List<Integer> getActivePartitions() {
         return Sourcer.defaultPartitions();
     }
 
