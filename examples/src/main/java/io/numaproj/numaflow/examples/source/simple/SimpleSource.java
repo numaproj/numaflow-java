@@ -1,4 +1,4 @@
-package main.java.io.numaproj.numaflow.examples.source.simple;
+package io.numaproj.numaflow.examples.source.simple;
 
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
