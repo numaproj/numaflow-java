@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.examples.source.simple;
 
+import io.numaproj.numaflow.shared.TracingUtils;
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
 import io.numaproj.numaflow.sourcer.NackRequest;
@@ -8,6 +9,10 @@ import io.numaproj.numaflow.sourcer.OutputObserver;
 import io.numaproj.numaflow.sourcer.ReadRequest;
 import io.numaproj.numaflow.sourcer.Server;
 import io.numaproj.numaflow.sourcer.Sourcer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.ByteBuffer;
@@ -20,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * SimpleSource is a simple implementation of Sourcer.
+ * SimpleSource is a simple implementation of Sourcer with OpenTelemetry tracing.
  * It generates messages with increasing offsets.
  * Keeps track of the offsets of the messages read and
  * acknowledges them when ack is called.
@@ -33,20 +38,31 @@ public class SimpleSource extends Sourcer {
     private final AtomicInteger readIndex = new AtomicInteger(0);
 
     public static void main(String[] args) throws Exception {
+        TracingUtils.init();
+
         Server server = new Server(new SimpleSource());
-
-        // Start the server
         server.start();
-
-        // wait for the server to shut down
         server.awaitTermination();
     }
 
     @Override
     public void read(ReadRequest request, OutputObserver observer) {
+        Span span = TracingUtils.startSpan("udf.source.read", SpanKind.PRODUCER);
+        try (Scope scope = span.makeCurrent()) {
+            span.setAttribute("source.request.count", request.getCount());
+            doRead(request, observer);
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
+        }
+    }
+
+    private void doRead(ReadRequest request, OutputObserver observer) {
         long startTime = System.currentTimeMillis();
 
-        // if there are messages which got nacked, we should read them first.
         if (!nacked.isEmpty()) {
             for (int i = 0; i < nacked.size(); i++) {
                 Integer index = readIndex.incrementAndGet();
@@ -57,7 +73,6 @@ public class SimpleSource extends Sourcer {
         }
 
         if (!yetToBeAcked.isEmpty()) {
-            // if there are messages not acknowledged, return
             return;
         }
 
@@ -67,9 +82,7 @@ public class SimpleSource extends Sourcer {
             }
 
             Integer index = readIndex.incrementAndGet();
-            // send the message to the observer
             observer.send(constructMessage(index));
-            // keep track of the messages read and not acknowledged
             yetToBeAcked.put(index, true);
         }
     }
@@ -78,14 +91,12 @@ public class SimpleSource extends Sourcer {
     public void ack(AckRequest request) {
         for (Offset offset : request.getOffsets()) {
             Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
-            // remove the acknowledged messages from the map
             yetToBeAcked.remove(decoded_offset);
         }
     }
 
     @Override
     public void nack(NackRequest request) {
-        // put them to nacked offsets so that they will be retried immediately.
         for (Offset offset : request.getOffsets()) {
             Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
             yetToBeAcked.remove(decoded_offset);
@@ -96,7 +107,6 @@ public class SimpleSource extends Sourcer {
 
     @Override
     public long getPending() {
-        // number of messages not acknowledged yet
         return yetToBeAcked.size();
     }
 
@@ -109,7 +119,6 @@ public class SimpleSource extends Sourcer {
         Map<String, String> headers = new HashMap<>();
         headers.put("x-txn-id", UUID.randomUUID().toString());
 
-        // create a message with increasing offset
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
         buffer.putInt(readIndex);
         Offset offset = new Offset(buffer.array());

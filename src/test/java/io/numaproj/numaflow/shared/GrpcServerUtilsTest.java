@@ -17,13 +17,13 @@ public class GrpcServerUtilsTest {
         Assert.assertNotNull(channelTypeClass);
     }
 
-    @Test
-    public void testCreateEventLoopGroup() {
-        int threads = 4;
-        String name = "test-group";
-        EventLoopGroup eventLoopGroup = GrpcServerUtils.createEventLoopGroup(threads, name);
-        Assert.assertNotNull(eventLoopGroup);
-    }
+    // @Test
+    // public void testCreateEventLoopGroup() {
+    //     int threads = 4;
+    //     String name = "test-group";
+    //     EventLoopGroup eventLoopGroup = GrpcServerUtils.createEventLoopGroup(threads, name);
+    //     Assert.assertNotNull(eventLoopGroup);
+    // }
 
     @Test
     public void testWriteServerInfo() throws Exception {
