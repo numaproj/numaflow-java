@@ -46,12 +46,25 @@ public class SimpleSink extends Sinker {
                 break;
             }
 
+            log.info("Received message: {}, headers - {}", new String(datum.getValue()), datum.getHeaders());
+            log.info("  systemMetadata groups: {}", datum.getSystemMetadata() != null
+                    ? datum.getSystemMetadata().getGroups() : "null");
+            if (datum.getSystemMetadata() != null) {
+                for (String group : datum.getSystemMetadata().getGroups()) {
+                    log.info("  sys_metadata[{}] keys: {}", group, datum.getSystemMetadata().getKeys(group));
+                    for (String key : datum.getSystemMetadata().getKeys(group)) {
+                        byte[] val = datum.getSystemMetadata().getValue(group, key);
+                        log.info("    {}={}", key, val != null ? new String(val) : "null");
+                    }
+                }
+            }
+            log.info("  userMetadata groups: {}", datum.getUserMetadata() != null
+                    ? datum.getUserMetadata().getGroups() : "null");
+
             Span span = TracingUtils.startSpan(
                     "udf.sink.write", datum.getSystemMetadata(), SpanKind.SERVER);
             try (Scope scope = span.makeCurrent()) {
-                String msg = new String(datum.getValue());
                 span.setAttribute("sink.message.id", datum.getId());
-                log.info("Received message: {}, headers - {}", msg, datum.getHeaders());
                 responseListBuilder.addResponse(Response.responseOK(datum.getId()));
             } catch (Exception e) {
                 span.setStatus(StatusCode.ERROR, e.getMessage());

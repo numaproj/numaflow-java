@@ -55,8 +55,8 @@ public class SimpleSourceTest {
     @Test
     public void testPending() {
         SimpleSource simpleSource = new SimpleSource();
-        // since we haven't read any messages, the pending should be 0
-        Assertions.assertEquals(0, simpleSource.getPending());
+        // all 100 messages are pending before any reads
+        Assertions.assertEquals(100, simpleSource.getPending());
     }
 }
 
