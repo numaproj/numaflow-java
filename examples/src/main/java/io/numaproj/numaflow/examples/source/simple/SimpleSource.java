@@ -101,7 +101,7 @@ public class SimpleSource extends Sourcer {
     }
 
     @Override
-    public List<Integer> getPartitions() {
+    public List<Integer> getActivePartitions() {
         return Sourcer.defaultPartitions();
     }
 

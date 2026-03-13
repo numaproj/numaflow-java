@@ -269,11 +269,19 @@ class Service extends SourceGrpc.SourceImplBase {
             return;
         }
 
-        List<Integer> partitions = this.sourcer.getPartitions();
+        List<Integer> partitions = this.sourcer.getActivePartitions();
+        Integer totalPartitions = this.sourcer.getTotalPartitions();
+
+        SourceOuterClass.PartitionsResponse.Result.Builder resultBuilder =
+                SourceOuterClass.PartitionsResponse.Result.newBuilder()
+                        .addAllPartitions(partitions);
+
+        if (totalPartitions != null) {
+            resultBuilder.setTotalPartitions(totalPartitions);
+        }
+
         responseObserver.onNext(SourceOuterClass.PartitionsResponse.newBuilder()
-                .setResult(
-                        SourceOuterClass.PartitionsResponse.Result.newBuilder()
-                                .addAllPartitions(partitions))
+                .setResult(resultBuilder)
                 .build());
         responseObserver.onCompleted();
     }

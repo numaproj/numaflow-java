@@ -62,6 +62,39 @@ public abstract class Sourcer {
      * is in a case like Kafka, where a reader can read from multiple Kafka partitions.
      *
      * @return list of partitions
+     * @deprecated Use {@link #getActivePartitions()} instead. This method will be removed in a future release.
      */
-    public abstract List<Integer> getPartitions();
+    @Deprecated
+    public List<Integer> getPartitions() {
+        return null;
+    }
+
+    /**
+     * method returns the active partitions associated with the source, will be used by the platform to determine
+     * the partitions to which the watermark should be published. If the source doesn't have partitions,
+     * `defaultPartitions()` can be used to return the default partitions.
+     * In most cases, the defaultPartitions() should be enough; the cases where we need to implement custom getActivePartitions()
+     * is in a case like Kafka, where a reader can read from multiple Kafka partitions.
+     * <p>
+     * Note: For backward compatibility, if this method is not overridden, it will fall back to {@link #getPartitions()}.
+     * New implementations should override this method instead of getPartitions().
+     *
+     * @return list of active partitions
+     */
+    public List<Integer> getActivePartitions() {
+        // Fall back to deprecated getPartitions() for backward compatibility
+        return getPartitions();
+    }
+
+    /**
+     * method returns the total number of partitions in the source.
+     * This is optional and can be used by the platform for informational purposes.
+     * By default, this returns null indicating that the total partitions information is not available.
+     * Override this method if your source knows the total number of partitions.
+     *
+     * @return total number of partitions, or null if not available
+     */
+    public Integer getTotalPartitions() {
+        return null;
+    }
 }
