@@ -5,8 +5,8 @@ This document explains the release process for the Java SDK. You can find the mo
 ### Before Release
 
 1. Before releasing a new SDK version, make sure to update all references from the old version to the new one.
-For example, the version in the `README.md`, as well as the `pom.xml` in the root and example directories should be updated (for [reference
-](https://github.com/numaproj/numaflow-java/pull/89/files#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8)). The specified version should follow the [semantic versioning](https://semver.org/) specification
+For example, the version in the `README.md`, as well as the `pom.xml` in the root, example, and `numaflow-kotlin` directories should be updated (for [reference
+](https://github.com/numaproj/numaflow-java/pull/89/files#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8)). For `numaflow-kotlin/pom.xml`, update both its own `<version>` and the `numaflow-java` dependency version. The specified version should follow the [semantic versioning](https://semver.org/) specification
 2. If version to be released has backwards incompatible changes, i.e. it does not support older versions of the Numaflow platform,
 you must update the `MINIMUM_NUMAFLOW_VERSION` constant in the `src/main/java/io/numaproj/numaflow/info/ServerInfo.java` file to the minimum Numaflow version 
 that is supported by your new SDK version
