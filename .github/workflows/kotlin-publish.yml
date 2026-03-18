@@ -1,13 +1,13 @@
-# This workflow will build a package using Maven and then publish it to Maven Central and GitHub packages when a release is created
-# Triggered by tags matching v* (e.g. v0.11.0). Kotlin SDK uses a separate workflow.
+# Publishes the Kotlin SDK to Maven Central and GitHub Packages.
+# Triggered by GitHub releases with tags matching kotlin-v* (e.g. kotlin-v0.1.0).
 
-name: Publish Java SDK to Maven Central and Github Packages
+name: Publish Kotlin SDK to Maven Central and Github Packages
 on:
   release:
     types: [ created ]
 jobs:
   publish:
-    if: startsWith(github.event.release.tag_name, 'v') && !startsWith(github.event.release.tag_name, 'v-kotlin')
+    if: startsWith(github.event.release.tag_name, 'kotlin-v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,7 +22,8 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Set up Java for publishing to Maven Central Repository
+      # Build the Java SDK first so it's available as a local dependency
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
           java-version: '11'
@@ -32,8 +33,11 @@ jobs:
           server-password: MAVEN_PASSWORD
           settings-path: ${{ github.workspace }}
 
-      - name: Publish to the Maven Central Repository
-        run: mvn -DcentralRelease=true -P central deploy -s $GITHUB_WORKSPACE/settings.xml
+      - name: Install Java SDK to local repository
+        run: mvn clean install -DskipTests -q
+
+      - name: Publish Kotlin SDK to Maven Central
+        run: cd numaflow-kotlin && mvn -DcentralRelease=true -P central deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
           MAVEN_USERNAME: ${{ secrets.MVN_CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MVN_CENTRAL_PASSWORD }}
@@ -46,7 +50,7 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      - name: Publish to GitHub Packages
-        run: mvn -DgithubRelease=true -P github deploy -s $GITHUB_WORKSPACE/settings.xml
+      - name: Publish Kotlin SDK to GitHub Packages
+        run: cd numaflow-kotlin && mvn -DgithubRelease=true -P github deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
           GITHUB_TOKEN: ${{ github.token }}
