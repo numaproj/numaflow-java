@@ -9,17 +9,16 @@ import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
 import io.grpc.Status;
-import com.google.protobuf.Any;
-import com.google.rpc.Code;
-import com.google.rpc.DebugInfo;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.InputStreamError;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * MapSupervisorActor actor is responsible for distributing the messages to actors and handling failure.
@@ -52,6 +51,8 @@ class MapSupervisorActor extends AbstractActor {
     private final Mapper mapper;
     private final StreamObserver<MapOuterClass.MapResponse> responseObserver;
     private final CompletableFuture<Void> shutdownSignal;
+    private final AtomicBoolean streamClosed = new AtomicBoolean(false);
+    private boolean inputCompleted;
     private int activeMapperCount;
     private Exception userException;
 
@@ -62,6 +63,7 @@ class MapSupervisorActor extends AbstractActor {
         this.mapper = mapper;
         this.responseObserver = responseObserver;
         this.shutdownSignal = failureFuture;
+        this.inputCompleted = false;
         this.userException = null;
         this.activeMapperCount = 0;
     }
@@ -79,8 +81,7 @@ class MapSupervisorActor extends AbstractActor {
                 .getSystem()
                 .log()
                 .warning("supervisor pre restart was executed due to: {}", reason.getMessage());
-        shutdownSignal.completeExceptionally(reason);
-        responseObserver.onError(Status.INTERNAL
+        sendError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
@@ -99,9 +100,10 @@ class MapSupervisorActor extends AbstractActor {
                 .create()
                 .match(MapOuterClass.MapRequest.class, this::processRequest)
                 .match(MapOuterClass.MapResponse.class, this::sendResponse)
+                .match(InputStreamError.class, this::handleInputStreamError)
                 .match(Exception.class, this::handleFailure)
                 .match(AllDeadLetters.class, this::handleDeadLetters)
-                .match(String.class, eof -> responseObserver.onCompleted())
+                .match(String.class, eof -> handleInputCompleted())
                 .build();
     }
 
@@ -113,25 +115,28 @@ class MapSupervisorActor extends AbstractActor {
             // one exception should trigger a container restart
             // Build gRPC Status
             com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
-            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
+            sendError(StatusProto.toStatusRuntimeException(status));
         }
         activeMapperCount--;
+        finishIfDrained();
     }
 
     private void sendResponse(MapOuterClass.MapResponse mapResponse) {
-        responseObserver.onNext(mapResponse);
-        activeMapperCount--;
+        try {
+            if (!streamClosed.get()) {
+                responseObserver.onNext(mapResponse);
+            }
+        } catch (RuntimeException e) {
+            handleResponseObserverFailure(e);
+        } finally {
+            activeMapperCount--;
+            finishIfDrained();
+        }
     }
 
     private void processRequest(MapOuterClass.MapRequest mapRequest) {
         if (userException != null) {
             log.info("a previous mapper actor failed, not processing any more requests");
-            if (activeMapperCount == 0) {
-                log.info("there is no more active mapper AKKA actors - stopping the system");
-                getContext().getSystem().stop(getSelf());
-                log.info("AKKA system stopped");
-                shutdownSignal.completeExceptionally(userException);
-            }
             return;
         }
 
@@ -145,13 +150,70 @@ class MapSupervisorActor extends AbstractActor {
         activeMapperCount++;
     }
 
+    private void handleInputStreamError(InputStreamError error) {
+        log.error("inbound request stream error, stopping mapper supervisor", error.getCause());
+        streamClosed.set(true);
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(error.getCause());
+    }
+
     // if we see dead letters, we need to stop the execution and exit
     // to make sure no messages are lost
     private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.error("got a dead letter, stopping the execution");
-        responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
+        sendError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
         shutdownSignal.completeExceptionally(new Throwable("dead letters"));
+    }
+
+    private void handleInputCompleted() {
+        inputCompleted = true;
+        finishIfDrained();
+    }
+
+    // EOF and failures can arrive while child actors are still processing.
+    // Only finish the stream once all started child actors have replied or failed.
+    private void finishIfDrained() {
+        if (activeMapperCount != 0) {
+            return;
+        }
+        if (userException != null) {
+            getContext().getSystem().stop(getSelf());
+            shutdownSignal.completeExceptionally(userException);
+            return;
+        }
+        if (inputCompleted) {
+            completeResponse();
+        }
+    }
+
+    private void completeResponse() {
+        if (streamClosed.compareAndSet(false, true)) {
+            try {
+                responseObserver.onCompleted();
+            } catch (RuntimeException e) {
+                handleResponseObserverFailure(e);
+            } finally {
+                getContext().getSystem().stop(getSelf());
+            }
+        }
+    }
+
+    private void sendError(Throwable throwable) {
+        if (streamClosed.compareAndSet(false, true)) {
+            try {
+                responseObserver.onError(throwable);
+            } catch (RuntimeException e) {
+                handleResponseObserverFailure(e);
+            }
+        }
+    }
+
+    private void handleResponseObserverFailure(RuntimeException e) {
+        log.warn("response stream is already closed; stopping mapper supervisor", e);
+        streamClosed.set(true);
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(e);
     }
 
     @Override
@@ -160,11 +222,11 @@ class MapSupervisorActor extends AbstractActor {
         return new AllForOneStrategy(
                 DeciderBuilder
                         .match(Exception.class, e -> {
-                            shutdownSignal.completeExceptionally(e);
-                            responseObserver.onError(Status.INTERNAL
+                            sendError(Status.INTERNAL
                                     .withDescription(e.getMessage())
                                     .withCause(e)
                                     .asException());
+                            shutdownSignal.completeExceptionally(e);
                             return SupervisorStrategy.stop();
                         })
                         .build()

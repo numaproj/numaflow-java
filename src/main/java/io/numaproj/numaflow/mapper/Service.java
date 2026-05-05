@@ -7,6 +7,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.InputStreamError;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,7 +63,7 @@ class Service extends MapGrpc.MapImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                mapSupervisorActor.tell(new Exception(throwable), ActorRef.noSender());
+                mapSupervisorActor.tell(new InputStreamError(throwable), ActorRef.noSender());
             }
 
             @Override

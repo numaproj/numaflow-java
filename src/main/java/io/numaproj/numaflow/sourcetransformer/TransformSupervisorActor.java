@@ -8,18 +8,17 @@ import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.japi.pf.DeciderBuilder;
 import akka.japi.pf.ReceiveBuilder;
-import io.grpc.stub.StreamObserver;
 import io.grpc.Status;
-import com.google.protobuf.Any;
-import com.google.rpc.Code;
-import com.google.rpc.DebugInfo;
 import io.grpc.protobuf.StatusProto;
+import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.InputStreamError;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * TransformSupervisorActor actor is responsible for distributing the messages to actors and handling failure.
@@ -52,6 +51,8 @@ class TransformSupervisorActor extends AbstractActor {
     private final SourceTransformer transformer;
     private final StreamObserver<Sourcetransformer.SourceTransformResponse> responseObserver;
     private final CompletableFuture<Void> shutdownSignal;
+    private final AtomicBoolean streamClosed = new AtomicBoolean(false);
+    private boolean inputCompleted;
     private int activeTransformersCount;
     private Exception userException;
 
@@ -69,6 +70,7 @@ class TransformSupervisorActor extends AbstractActor {
         this.transformer = transformer;
         this.responseObserver = responseObserver;
         this.shutdownSignal = shutdownSignal;
+        this.inputCompleted = false;
         this.userException = null;
         this.activeTransformersCount = 0;
     }
@@ -105,7 +107,7 @@ class TransformSupervisorActor extends AbstractActor {
                 .getSystem()
                 .log()
                 .warning("supervisor pre restart was executed due to: {}", reason.getMessage());
-        responseObserver.onError(Status.INTERNAL
+        sendError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
@@ -132,9 +134,10 @@ class TransformSupervisorActor extends AbstractActor {
                 .create()
                 .match(Sourcetransformer.SourceTransformRequest.class, this::processRequest)
                 .match(Sourcetransformer.SourceTransformResponse.class, this::sendResponse)
+                .match(InputStreamError.class, this::handleInputStreamError)
                 .match(Exception.class, this::handleFailure)
                 .match(AllDeadLetters.class, this::handleDeadLetters)
-                .match(String.class, eof -> responseObserver.onCompleted())
+                .match(String.class, eof -> handleInputCompleted())
                 .build();
     }
 
@@ -149,12 +152,12 @@ class TransformSupervisorActor extends AbstractActor {
             userException = e;
             // only send the very first exception to the client
             // one exception should trigger a container restart
-
             // Build gRPC Status
             com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
-            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
+            sendError(StatusProto.toStatusRuntimeException(status));
         }
         activeTransformersCount--;
+        finishIfDrained();
     }
 
     /**
@@ -163,8 +166,16 @@ class TransformSupervisorActor extends AbstractActor {
      * @param transformResponse The SourceTransformResponse to be sent.
      */
     private void sendResponse(Sourcetransformer.SourceTransformResponse transformResponse) {
-        responseObserver.onNext(transformResponse);
-        activeTransformersCount--;
+        try {
+            if (!streamClosed.get()) {
+                responseObserver.onNext(transformResponse);
+            }
+        } catch (RuntimeException e) {
+            handleResponseObserverFailure(e);
+        } finally {
+            activeTransformersCount--;
+            finishIfDrained();
+        }
     }
 
     /**
@@ -175,12 +186,6 @@ class TransformSupervisorActor extends AbstractActor {
     private void processRequest(Sourcetransformer.SourceTransformRequest transformRequest) {
         if (userException != null) {
             log.info("a previous transformer actor failed, not processing any more requests");
-            if (activeTransformersCount == 0) {
-                log.info("there is no more active transformer AKKA actors - stopping the system");
-                getContext().getSystem().stop(getSelf());
-                log.info("AKKA system stopped");
-                shutdownSignal.completeExceptionally(userException);
-            }
             return;
         }
         // Create a TransformerActor for each incoming request.
@@ -193,6 +198,13 @@ class TransformSupervisorActor extends AbstractActor {
         activeTransformersCount++;
     }
 
+    private void handleInputStreamError(InputStreamError error) {
+        log.error("inbound request stream error, stopping source-transform supervisor", error.getCause());
+        streamClosed.set(true);
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(error.getCause());
+    }
+
     /**
      * Handles any dead letters that occur during the processing of the SourceTransformRequest.
      *
@@ -200,9 +212,59 @@ class TransformSupervisorActor extends AbstractActor {
      */
     private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.debug("got a dead letter, stopping the execution");
-        responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
+        sendError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
         shutdownSignal.completeExceptionally(new Throwable("dead letters"));
+    }
+
+    private void handleInputCompleted() {
+        inputCompleted = true;
+        finishIfDrained();
+    }
+
+    // EOF and failures can arrive while child actors are still processing.
+    // Only finish the stream once all started child actors have replied or failed.
+    private void finishIfDrained() {
+        if (activeTransformersCount != 0) {
+            return;
+        }
+        if (userException != null) {
+            getContext().getSystem().stop(getSelf());
+            shutdownSignal.completeExceptionally(userException);
+            return;
+        }
+        if (inputCompleted) {
+            completeResponse();
+        }
+    }
+
+    private void completeResponse() {
+        if (streamClosed.compareAndSet(false, true)) {
+            try {
+                responseObserver.onCompleted();
+            } catch (RuntimeException e) {
+                handleResponseObserverFailure(e);
+            } finally {
+                getContext().getSystem().stop(getSelf());
+            }
+        }
+    }
+
+    private void sendError(Throwable throwable) {
+        if (streamClosed.compareAndSet(false, true)) {
+            try {
+                responseObserver.onError(throwable);
+            } catch (RuntimeException e) {
+                handleResponseObserverFailure(e);
+            }
+        }
+    }
+
+    private void handleResponseObserverFailure(RuntimeException e) {
+        log.warn("response stream is already closed; stopping source-transform supervisor", e);
+        streamClosed.set(true);
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(e);
     }
 
     /**
@@ -216,10 +278,11 @@ class TransformSupervisorActor extends AbstractActor {
         return new AllForOneStrategy(
                 DeciderBuilder
                         .match(Exception.class, e -> {
-                            responseObserver.onError(Status.INTERNAL
+                            sendError(Status.INTERNAL
                                     .withDescription(e.getMessage())
                                     .withCause(e)
                                     .asException());
+                            shutdownSignal.completeExceptionally(e);
                             return SupervisorStrategy.stop();
                         })
                         .build());

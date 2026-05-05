@@ -8,6 +8,7 @@ class Constants {
   public static final String DEFAULT_HOST = "localhost";
   public static final String MAP_MODE_KEY = "MAP_MODE";
   public static final String MAP_MODE = "stream-map";
+  public static final String EOF = "EOF";
 
   // Private constructor to prevent instantiation
   private Constants() {
