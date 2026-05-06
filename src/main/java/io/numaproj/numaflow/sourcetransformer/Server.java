@@ -22,6 +22,7 @@ public class Server {
     private final CompletableFuture<Void> shutdownSignal;
     private final ServerInfoAccessor serverInfoAccessor = new ServerInfoAccessorImpl(new ObjectMapper());
     private final GrpcServerWrapper server;
+    private final boolean exitOnFailure;
 
     /**
      * constructor to create gRPC server.
@@ -42,6 +43,7 @@ public class Server {
         this.shutdownSignal = new CompletableFuture<>();
         this.grpcConfig = grpcConfig;
         this.server = new GrpcServerWrapper(this.grpcConfig, new Service(sourceTransformer, this.shutdownSignal));
+        this.exitOnFailure = true;
     }
 
     @VisibleForTesting
@@ -52,6 +54,7 @@ public class Server {
                 interceptor,
                 serverName,
                 new Service(service, this.shutdownSignal));
+        this.exitOnFailure = false;
     }
 
     /**
@@ -98,7 +101,9 @@ public class Server {
                     this.stop();
                     // FIXME - this is a workaround to immediately terminate the JVM process
                     // The correct way to do this is to stop all the actors and wait for them to terminate
-                    System.exit(0);
+                    if (exitOnFailure) {
+                        System.exit(0);
+                    }
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
                     ex.printStackTrace(System.err);
