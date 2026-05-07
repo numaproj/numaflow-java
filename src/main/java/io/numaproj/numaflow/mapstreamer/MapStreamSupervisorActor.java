@@ -145,6 +145,9 @@ class MapStreamSupervisorActor extends AbstractActor {
         } catch (RuntimeException e) {
             handleResponseObserverFailure(e);
         } finally {
+            if (!mapResponse.hasStatus() || !mapResponse.getStatus().getEot()) {
+                return;
+            }
             activeMapStreamersCount--;
             finishIfDrained();
         }
