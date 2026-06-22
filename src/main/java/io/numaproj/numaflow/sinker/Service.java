@@ -161,6 +161,14 @@ class Service extends SinkGrpc.SinkImplBase {
                     .setStatus(SinkOuterClass.Status.ON_SUCCESS)
                     .setOnSuccessMsg(Message.toProto(response.getOnSuccessMessage()))
                     .build();
+        } else if (response.getNack() != null && response.getNack()) {
+            SinkOuterClass.SinkResponse.Result.Builder b = SinkOuterClass.SinkResponse.Result.newBuilder()
+                    .setId(response.getId() == null ? "" : response.getId())
+                    .setStatus(SinkOuterClass.Status.NACK);
+            if (response.getNackOptions() != null) {
+                b.setNackOptions(response.getNackOptions().toProto());
+            }
+            return b.build();
         } else {
             // FIXME: Return error when error message is not set?
             return SinkOuterClass.SinkResponse.Result.newBuilder()
