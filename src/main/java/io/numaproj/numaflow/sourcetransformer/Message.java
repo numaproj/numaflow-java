@@ -2,6 +2,7 @@ package io.numaproj.numaflow.sourcetransformer;
 
 import java.time.Instant;
 
+import io.numaproj.numaflow.shared.NackOptions;
 import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.Getter;
 
@@ -9,11 +10,13 @@ import lombok.Getter;
 @Getter
 public class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
+  private static final String[] NACK_TAGS = {"U+005C__NACK__"};
   private final String[] keys;
   private final byte[] value;
   private final Instant eventTime;
   private final String[] tags;
   private final UserMetadata userMetadata;
+  private final NackOptions nackOptions;
 
   /**
    * used to create Message with value, eventTime, keys, tags(used for conditional forwarding) and userMetadata
@@ -25,6 +28,10 @@ public class Message {
    * @param userMetadata user metadata
    */
   public Message(byte[] value, Instant eventTime, String[] keys, String[] tags, UserMetadata userMetadata) {
+    this(value, eventTime, keys, tags, userMetadata, null);
+  }
+
+  private Message(byte[] value, Instant eventTime, String[] keys, String[] tags, UserMetadata userMetadata, NackOptions nackOptions) {
     // defensive copy - once the Message is created, the caller should not be able to modify it.
     this.keys = keys == null ? null : keys.clone();
     this.value = value == null ? null : value.clone();
@@ -32,6 +39,7 @@ public class Message {
     // The Instant class in Java is already immutable.
     this.eventTime = eventTime;
     this.userMetadata = userMetadata == null ? null : new UserMetadata(userMetadata);
+    this.nackOptions = nackOptions;
   }
 
     /**
@@ -77,5 +85,18 @@ public class Message {
    */
   public static Message toDrop(Instant eventTime) {
     return new Message(new byte[0], eventTime, null, DROP_TAGS, null);
+  }
+
+  /**
+   * creates a Message that negatively acknowledges the input message, requesting redelivery.
+   * eventTime is required: even though the message is nacked, it is considered processed for
+   * watermark purposes.
+   *
+   * @param eventTime message eventTime
+   * @param nackOptions optional redelivery options (may be null)
+   * @return the Message which will be nacked
+   */
+  public static Message toNack(Instant eventTime, NackOptions nackOptions) {
+    return new Message(new byte[0], eventTime, null, NACK_TAGS, null, nackOptions);
   }
 }
