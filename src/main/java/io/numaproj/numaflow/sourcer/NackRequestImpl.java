@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sourcer;
 
-import io.numaproj.numaflow.shared.NackOptions;
 import lombok.AllArgsConstructor;
 
 import java.util.List;
@@ -10,16 +9,10 @@ import java.util.List;
  */
 @AllArgsConstructor
 class NackRequestImpl implements NackRequest {
-    private final List<Offset> offsets;
-    private final NackOptions nackOptions;
+    private final List<NackOffset> offsets;
 
     @Override
-    public List<Offset> getOffsets() {
+    public List<NackOffset> getOffsets() {
         return this.offsets;
-    }
-
-    @Override
-    public NackOptions getNackOptions() {
-        return this.nackOptions;
     }
 }

@@ -51,7 +51,7 @@ public class ServerNackOptionsTest {
     public void nackFnForwardsOptions() throws Exception {
         CountDownLatch done = new CountDownLatch(1);
         SourceOuterClass.NackRequest req = SourceOuterClass.NackRequest.newBuilder()
-                .setRequest(SourceOuterClass.NackRequest.Request.newBuilder()
+                .addRequest(SourceOuterClass.NackRequest.Request.newBuilder()
                         .addOffsets(SourceOuterClass.Offset.newBuilder()
                                 .setOffset(com.google.protobuf.ByteString.copyFromUtf8("o1"))
                                 .setPartitionId(0).build())
@@ -68,7 +68,7 @@ public class ServerNackOptionsTest {
 
         NackRequest got = captured.get();
         assertNotNull(got);
-        NackOptions opts = got.getNackOptions();
+        NackOptions opts = got.getOffsets().get(0).getNackOptions();
         assertNotNull(opts);
         assertEquals(Long.valueOf(500L), opts.getDelay());
         assertEquals(Integer.valueOf(3), opts.getMaxDeliveries());

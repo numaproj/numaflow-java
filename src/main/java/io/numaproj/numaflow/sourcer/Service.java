@@ -193,16 +193,19 @@ class Service extends SourceGrpc.SourceImplBase {
         }
 
         try {
-            List<Offset> offsets = new ArrayList<>(nackRequest.getRequest().getOffsetsCount());
-            for (SourceOuterClass.Offset offset : nackRequest.getRequest().getOffsetsList()) {
-                offsets.add(new Offset(
-                        offset.getOffset().toByteArray(),
-                        offset.getPartitionId()));
+            List<NackOffset> offsets = new ArrayList<>(nackRequest.getRequestCount());
+            for (SourceOuterClass.NackRequest.Request request: nackRequest.getRequestList()) {
+                NackOptions nackOptions = request.hasNackOptions()
+                        ? NackOptions.fromProto(request.getNackOptions())
+                        : null;
+                for (SourceOuterClass.Offset offset : request.getOffsetsList()) {
+                    Offset o = new Offset(
+                            offset.getOffset().toByteArray(),
+                            offset.getPartitionId());
+                    offsets.add(new NackOffset(o, nackOptions));
+                }
             }
-            NackOptions nackOptions = nackRequest.getRequest().hasNackOptions()
-                    ? NackOptions.fromProto(nackRequest.getRequest().getNackOptions())
-                    : null;
-            NackRequest nackRequestImpl = new NackRequestImpl(offsets, nackOptions);
+            NackRequest nackRequestImpl = new NackRequestImpl(offsets);
             this.sourcer.nack(nackRequestImpl);
             SourceOuterClass.NackResponse nackResponse =  SourceOuterClass.NackResponse
                     .newBuilder()
