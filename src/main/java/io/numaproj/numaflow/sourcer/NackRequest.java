@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.sourcer;
 
-
 import java.util.List;
 
 /**
@@ -10,5 +9,5 @@ public interface NackRequest {
     /**
      * @return the list of offsets to be negatively acknowledged.
      */
-    List<Offset> getOffsets();
+    List<NackOffset> getOffsets();
 }
