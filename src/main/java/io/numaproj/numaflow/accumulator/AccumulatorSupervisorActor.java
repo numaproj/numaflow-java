@@ -106,7 +106,8 @@ public class AccumulatorSupervisorActor extends AbstractActor {
                 break;
             }
             case CLOSE: {
-                actorsMap.get(uniqueId).tell(Constants.EOF, getSelf());
+                // Send the CLOSE window to the child actor so it can echo it in the EOF response
+                actorsMap.get(uniqueId).tell(request.getOperation().getKeyedWindow(), getSelf());
                 actorsMap.remove(uniqueId);
                 break;
             }
