@@ -3,6 +3,8 @@ package io.numaproj.numaflow.shared;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Map;
+
 /**
  * NackOptions carries per-message redelivery options for a negative acknowledgement (nack).
  * All fields are optional; a null value means unset.
@@ -16,6 +18,8 @@ public class NackOptions {
     private final Integer maxDeliveries;
     /** human-readable reason for the nack. */
     private final String reason;
+    /** generic values passed as nack options */
+    private final Map<String, String> nackMap;
 
     /** Converts to the outgoing proto type, setting only the fields that are present. */
     public common.NackOptionsOuterClass.NackOptions toProto() {
@@ -29,6 +33,9 @@ public class NackOptions {
         }
         if (reason != null) {
             b.setReason(reason);
+        }
+        if (nackMap != null) {
+            b.putAllNackMap(nackMap);
         }
         return b.build();
     }
@@ -47,6 +54,9 @@ public class NackOptions {
         }
         if (p.hasReason()) {
             b.reason(p.getReason());
+        }
+        if (!p.getNackMapMap().isEmpty()) {
+            b.nackMap(p.getNackMapMap());
         }
         return b.build();
     }

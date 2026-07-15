@@ -6,4 +6,5 @@ message NackOptions {
   optional string reason = 1;
   optional uint32 max_deliveries = 2;
   optional uint64 delay = 3;
+  map<string, string> nack_map = 4;
 }
