@@ -12,10 +12,12 @@ import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.InputStreamError;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * MapStreamSupervisorActor is responsible for managing MapStreamerActor instances and handling failures.
@@ -51,6 +53,8 @@ class MapStreamSupervisorActor extends AbstractActor {
     private final MapStreamer mapStreamer;
     private final StreamObserver<MapOuterClass.MapResponse> responseObserver;
     private final CompletableFuture<Void> shutdownSignal;
+    private final AtomicBoolean streamClosed = new AtomicBoolean(false);
+    private boolean inputCompleted;
     private int activeMapStreamersCount;
     private Exception userException;
 
@@ -61,6 +65,7 @@ class MapStreamSupervisorActor extends AbstractActor {
         this.mapStreamer = mapStreamer;
         this.responseObserver = responseObserver;
         this.shutdownSignal = failureFuture;
+        this.inputCompleted = false;
         this.userException = null;
         this.activeMapStreamersCount = 0;
     }
@@ -80,18 +85,26 @@ class MapStreamSupervisorActor extends AbstractActor {
                 .getSystem()
                 .log()
                 .warning("supervisor pre restart due to: {}", reason.getMessage());
-        shutdownSignal.completeExceptionally(reason);
-        responseObserver.onError(Status.INTERNAL
+        sendError(Status.INTERNAL
                 .withDescription(reason.getMessage())
                 .withCause(reason)
                 .asException());
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(reason);
+    }
+
+    private void handleInputStreamError(InputStreamError error) {
+        log.error("inbound request stream error, stopping map-stream supervisor", error.getCause());
+        streamClosed.set(true);
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(error.getCause());
     }
 
     // if we see dead letters, we need to stop the execution and exit
     // to make sure no messages are lost
     private void handleDeadLetters(AllDeadLetters deadLetter) {
         log.error("got a dead letter, stopping the execution");
-        responseObserver.onError(Status.INTERNAL.withDescription("dead letters").asException());
+        sendError(Status.INTERNAL.withDescription("dead letters").asException());
         getContext().getSystem().stop(getSelf());
         shutdownSignal.completeExceptionally(new Throwable("dead letters"));
     }
@@ -106,8 +119,10 @@ class MapStreamSupervisorActor extends AbstractActor {
         return receiveBuilder()
                 .match(MapOuterClass.MapRequest.class, this::processRequest)
                 .match(MapOuterClass.MapResponse.class, this::sendResponse)
+                .match(InputStreamError.class, this::handleInputStreamError)
                 .match(Exception.class, this::handleFailure)
                 .match(AllDeadLetters.class, this::handleDeadLetters)
+                .match(String.class, eof -> handleInputCompleted())
                 .build();
     }
 
@@ -116,27 +131,31 @@ class MapStreamSupervisorActor extends AbstractActor {
         if (userException == null) {
             userException = e;
             com.google.rpc.Status status = ExceptionUtils.buildStatusFromUserException(e);
-            responseObserver.onError(StatusProto.toStatusRuntimeException(status));
+            sendError(StatusProto.toStatusRuntimeException(status));
         }
         activeMapStreamersCount--;
+        finishIfDrained();
     }
 
     private void sendResponse(MapOuterClass.MapResponse mapResponse) {
-        responseObserver.onNext(mapResponse);
-        activeMapStreamersCount--;
+        try {
+            if (!streamClosed.get()) {
+                responseObserver.onNext(mapResponse);
+            }
+        } catch (RuntimeException e) {
+            handleResponseObserverFailure(e);
+        } finally {
+            if (!mapResponse.hasStatus() || !mapResponse.getStatus().getEot()) {
+                return;
+            }
+            activeMapStreamersCount--;
+            finishIfDrained();
+        }
     }
 
     private void processRequest(MapOuterClass.MapRequest mapRequest) {
         if (userException != null) {
-            getContext()
-                    .getSystem()
-                    .log()
-                    .info("Previous mapStreamer actor failed, not processing further requests");
-            if (activeMapStreamersCount == 0) {
-                getContext().getSystem().log().info("No active mapStreamer actors, shutting down");
-                getContext().getSystem().terminate();
-                shutdownSignal.completeExceptionally(userException);
-            }
+            getContext().getSystem().log().info("Previous mapStreamer actor failed, not processing further requests");
             return;
         }
 
@@ -150,14 +169,64 @@ class MapStreamSupervisorActor extends AbstractActor {
     public SupervisorStrategy supervisorStrategy() {
         return new AllForOneStrategy(
                 DeciderBuilder.match(Exception.class, e -> {
-                    shutdownSignal.completeExceptionally(e);
-                    responseObserver.onError(Status.INTERNAL
+                    sendError(Status.INTERNAL
                             .withDescription(e.getMessage())
                             .withCause(e)
                             .asException());
+                    shutdownSignal.completeExceptionally(e);
                     return SupervisorStrategy.stop();
                 }).build()
         );
+    }
+
+    private void handleInputCompleted() {
+        inputCompleted = true;
+        finishIfDrained();
+    }
+
+    // EOF and failures can arrive while child actors are still processing.
+    // Only finish the stream once all started child actors have replied or failed.
+    private void finishIfDrained() {
+        if (activeMapStreamersCount != 0) {
+            return;
+        }
+        if (userException != null) {
+            getContext().getSystem().stop(getSelf());
+            shutdownSignal.completeExceptionally(userException);
+            return;
+        }
+        if (inputCompleted) {
+            completeResponse();
+        }
+    }
+
+    private void completeResponse() {
+        if (streamClosed.compareAndSet(false, true)) {
+            try {
+                responseObserver.onCompleted();
+            } catch (RuntimeException e) {
+                handleResponseObserverFailure(e);
+            } finally {
+                getContext().getSystem().stop(getSelf());
+            }
+        }
+    }
+
+    private void sendError(Throwable throwable) {
+        if (streamClosed.compareAndSet(false, true)) {
+            try {
+                responseObserver.onError(throwable);
+            } catch (RuntimeException e) {
+                handleResponseObserverFailure(e);
+            }
+        }
+    }
+
+    private void handleResponseObserverFailure(RuntimeException e) {
+        log.warn("response stream is already closed; stopping map-stream supervisor", e);
+        streamClosed.set(true);
+        getContext().getSystem().stop(getSelf());
+        shutdownSignal.completeExceptionally(e);
     }
 }
 

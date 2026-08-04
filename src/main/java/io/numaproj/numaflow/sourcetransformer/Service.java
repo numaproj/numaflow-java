@@ -5,6 +5,7 @@ import akka.actor.ActorSystem;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import io.numaproj.numaflow.shared.InputStreamError;
 import io.numaproj.numaflow.sourcetransformer.v1.SourceTransformGrpc;
 import io.numaproj.numaflow.sourcetransformer.v1.Sourcetransformer;
 import lombok.AllArgsConstructor;
@@ -64,7 +65,7 @@ class Service extends SourceTransformGrpc.SourceTransformImplBase {
 
             @Override
             public void onError(Throwable throwable) {
-                transformSupervisorActor.tell(new Exception(throwable), ActorRef.noSender());
+                transformSupervisorActor.tell(new InputStreamError(throwable), ActorRef.noSender());
             }
 
             @Override
