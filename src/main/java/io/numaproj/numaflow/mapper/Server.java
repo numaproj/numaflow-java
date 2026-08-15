@@ -12,12 +12,19 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Server is the gRPC server for executing map operation.
  */
 @Slf4j
 public class Server {
+
+    // Upper bound on how long a graceful shutdown waits for the actor system to
+    // terminate before giving up, so a stuck actor cannot hang shutdown forever.
+    private static final long ACTOR_SYSTEM_TERMINATION_TIMEOUT_SECONDS = 30;
 
     private final GRPCConfig grpcConfig;
     private final CompletableFuture<Void> shutdownSignal;
@@ -76,10 +83,13 @@ public class Server {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
                 System.err.println("*** shutting down gRPC server since JVM is shutting down");
                 try {
+                    // NOTE: never call System.exit from a shutdown hook - the JVM is already
+                    // shutting down and Shutdown.exit blocks forever on the lock held by the
+                    // thread running the hooks, deadlocking the process.
                     this.stop();
-                    // FIXME - this is a workaround to immediately terminate the JVM process
-                    // The correct way to do this is to stop all the actors and wait for them to terminate
-                    System.exit(0);
+                    // Stop all actors and wait for them to terminate so shutdown is graceful.
+                    // The JVM exits on its own once the hook returns.
+                    shutdownActorSystem();
                 } catch (InterruptedException e) {
                     Thread.interrupted();
                     e.printStackTrace(System.err);
@@ -132,5 +142,27 @@ public class Server {
      */
     public void stop() throws InterruptedException {
         this.server.gracefullyShutdown();
+    }
+
+    /**
+     * Terminates the mapper actor system and waits, bounded by
+     * {@link #ACTOR_SYSTEM_TERMINATION_TIMEOUT_SECONDS}, for all actors to finish. This makes
+     * shutdown graceful instead of relying on an abrupt process kill. Failures are only logged
+     * (to stderr, since the logger may already be torn down during JVM shutdown) so that shutdown
+     * always proceeds.
+     */
+    private void shutdownActorSystem() {
+        try {
+            Service.mapperActorSystem.terminate();
+            Service.mapperActorSystem
+                    .getWhenTerminated()
+                    .toCompletableFuture()
+                    .get(ACTOR_SYSTEM_TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("*** interrupted while waiting for mapper actor system to terminate");
+        } catch (ExecutionException | TimeoutException e) {
+            System.err.println("*** mapper actor system did not terminate cleanly - " + e.getMessage());
+        }
     }
 }
