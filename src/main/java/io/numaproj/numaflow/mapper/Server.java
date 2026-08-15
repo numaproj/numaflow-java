@@ -110,8 +110,10 @@ public class Server {
                 System.err.println("*** shutting down mapper gRPC server because of an exception - " + e.getMessage());
                 try {
                     this.stop();
-                    // FIXME - this is a workaround to immediately terminate the JVM process
-                    // The correct way to do this is to stop all the actors and wait for them to terminate
+                    // Force the process to exit so the platform restarts the container - one
+                    // unrecoverable user error should trigger a restart. System.exit is safe here
+                    // (this is not a shutdown hook) and it runs the shutdown hook, which
+                    // gracefully terminates the actor system before the JVM dies.
                     System.exit(0);
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
