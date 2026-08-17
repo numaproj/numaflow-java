@@ -46,7 +46,7 @@
         <dependency>
             <groupId>io.numaproj.numaflow</groupId>
             <artifactId>numaflow-java</artifactId>
-            <version>0.12.0</version>
+            <version>0.13.0</version>
         </dependency>
 
         <dependency>

@@ -5,6 +5,7 @@ option java_package = "io.numaproj.numaflow.sourcetransformer.v1";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "common/metadata.proto";
+import "common/nack_options.proto";
 
 package sourcetransformer.v1;
 
@@ -54,6 +55,7 @@ message SourceTransformResponse {
     google.protobuf.Timestamp event_time = 3;
     repeated string tags = 4;
     common.Metadata metadata = 5;
+    optional common.NackOptions nack_options = 6;
   }
   repeated Result results = 1;
   // This ID is used to refer the responses to the request it corresponds to.
