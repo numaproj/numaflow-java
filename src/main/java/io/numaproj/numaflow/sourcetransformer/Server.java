@@ -11,12 +11,19 @@ import io.numaproj.numaflow.shared.GrpcServerWrapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Server is the gRPC server for executing source transformer operation.
  */
 @Slf4j
 public class Server {
+
+    // Upper bound on how long a graceful shutdown waits for the actor system to
+    // terminate before giving up, so a stuck actor cannot hang shutdown forever.
+    private static final long ACTOR_SYSTEM_TERMINATION_TIMEOUT_SECONDS = 30;
 
     private final GRPCConfig grpcConfig;
     private final CompletableFuture<Void> shutdownSignal;
@@ -72,10 +79,13 @@ public class Server {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
                 System.err.println("*** shutting down gRPC server since JVM is shutting down");
                 try {
+                    // NOTE: never call System.exit from a shutdown hook - the JVM is already
+                    // shutting down and Shutdown.exit blocks forever on the lock held by the
+                    // thread running the hooks, deadlocking the process.
                     this.stop();
-                    // FIXME - this is a workaround to immediately terminate the JVM process
-                    // The correct way to do this is to stop all the actors and wait for them to terminate
-                    System.exit(0);
+                    // Stop all actors and wait for them to terminate so shutdown is graceful.
+                    // The JVM exits on its own once the hook returns.
+                    shutdownActorSystem();
                 } catch (InterruptedException e) {
                     Thread.interrupted();
                     e.printStackTrace(System.err);
@@ -96,8 +106,10 @@ public class Server {
                 System.err.println("*** shutting down transformer gRPC server because of an exception - " + e.getMessage());
                 try {
                     this.stop();
-                    // FIXME - this is a workaround to immediately terminate the JVM process
-                    // The correct way to do this is to stop all the actors and wait for them to terminate
+                    // Force the process to exit so the platform restarts the container - one
+                    // unrecoverable user error should trigger a restart. System.exit is safe here
+                    // (this is not a shutdown hook) and it runs the shutdown hook, which
+                    // gracefully terminates the actor system before the JVM dies.
                     System.exit(0);
                 } catch (InterruptedException ex) {
                     Thread.interrupted();
@@ -128,5 +140,27 @@ public class Server {
      */
     public void stop() throws InterruptedException {
         this.server.gracefullyShutdown();
+    }
+
+    /**
+     * Terminates the transformer actor system and waits, bounded by
+     * {@link #ACTOR_SYSTEM_TERMINATION_TIMEOUT_SECONDS}, for all actors to finish. This makes
+     * shutdown graceful instead of relying on an abrupt process kill. Failures are only logged
+     * (to stderr, since the logger may already be torn down during JVM shutdown) so that shutdown
+     * always proceeds.
+     */
+    private void shutdownActorSystem() {
+        try {
+            Service.transformerActorSystem.terminate();
+            Service.transformerActorSystem
+                    .getWhenTerminated()
+                    .toCompletableFuture()
+                    .get(ACTOR_SYSTEM_TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("*** interrupted while waiting for transformer actor system to terminate");
+        } catch (ExecutionException | TimeoutException e) {
+            System.err.println("*** transformer actor system did not terminate cleanly - " + e.getMessage());
+        }
     }
 }
