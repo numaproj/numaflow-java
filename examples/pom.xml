@@ -11,7 +11,20 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <docker.tag>stable</docker.tag>
+        <opentelemetry.version>1.49.0</opentelemetry.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -38,6 +51,28 @@
             <artifactId>junit-jupiter</artifactId>
             <version>5.10.2</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.36</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
         </dependency>
     </dependencies>
 
@@ -403,6 +438,46 @@
                             </to>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>map-tracing</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.map.tracing.TracingMapFunction
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/map-tracing:${docker.tag}</image>
+                            </to>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>sink-tracing</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                        <configuration>
+                            <from>
+                                <image>amazoncorretto:11</image>
+                            </from>
+                            <container>
+                                <mainClass>
+                                    io.numaproj.numaflow.examples.sink.tracing.TracingSink
+                                </mainClass>
+                            </container>
+                            <to>
+                                <image>numaflow-java-examples/sink-tracing:${docker.tag}</image>
+                            </to>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
@@ -417,6 +492,13 @@
                     <version>3.10.1</version>
                     <configuration>
                         <release>11</release>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>1.18.36</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
             </plugins>
