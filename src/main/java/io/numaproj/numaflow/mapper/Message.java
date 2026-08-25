@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private static final String[] NACK_TAGS = {"U+005C__NACK__"};
+  private static final String[] FAIL_TAGS = {"U+005C__FAIL__"};
   private final String[] keys;
   private final byte[] value;
   private final String[] tags;
@@ -88,5 +89,14 @@ public class Message {
    */
   public static Message toNack(NackOptions nackOptions) {
     return new Message(new byte[0], null, NACK_TAGS, null, nackOptions);
+  }
+
+  /**
+   * creates a Message that marks the input message as failed, triggering a retry by numaflow-core.
+   *
+   * @return the Message which will be failed
+   */
+  public static Message toFail() {
+    return new Message(new byte[0], null, FAIL_TAGS, null);
   }
 }

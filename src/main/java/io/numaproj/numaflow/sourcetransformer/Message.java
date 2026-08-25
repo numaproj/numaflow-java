@@ -11,6 +11,7 @@ import lombok.Getter;
 public class Message {
   private static final String[] DROP_TAGS = {"U+005C__DROP__"};
   private static final String[] NACK_TAGS = {"U+005C__NACK__"};
+  private static final String[] FAIL_TAGS = {"U+005C__FAIL__"};
   private final String[] keys;
   private final byte[] value;
   private final Instant eventTime;
@@ -98,5 +99,17 @@ public class Message {
    */
   public static Message toNack(Instant eventTime, NackOptions nackOptions) {
     return new Message(new byte[0], eventTime, null, NACK_TAGS, null, nackOptions);
+  }
+
+  /**
+   * creates a Message that marks the input message as failed, triggering a retry by numaflow-core.
+   * eventTime is required: even though the message is failed, it is considered processed for
+   * watermark purposes.
+   *
+   * @param eventTime message eventTime
+   * @return the Message which will be failed
+   */
+  public static Message toFail(Instant eventTime) {
+    return new Message(new byte[0], eventTime, null, FAIL_TAGS, null);
   }
 }
