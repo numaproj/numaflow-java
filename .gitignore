@@ -1,6 +1,8 @@
 # Compiled class file
 *.class
 
+numaflow-kotlin/target/
+
 # Log file
 *.log
 
