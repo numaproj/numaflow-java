@@ -5,6 +5,7 @@ option java_package = "io.numaproj.numaflow.map.v1";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "common/metadata.proto";
+import "common/nack_options.proto";
 
 package map.v1;
 
@@ -59,6 +60,7 @@ message MapResponse {
     bytes value = 2;
     repeated string tags = 3;
     common.Metadata metadata = 4;
+    optional common.NackOptions nack_options = 5;
   }
   repeated Result results = 1;
   // This ID is used to refer the responses to the request it corresponds to.

@@ -29,17 +29,17 @@ public class OutputObserverImpl implements OutputObserver {
         if (message == null) {
             return;
         }
+        MapOuterClass.MapResponse.Result.Builder resultBuilder = MapOuterClass.MapResponse.Result.newBuilder()
+                .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(message.getValue()))
+                .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
+                .addAllTags(message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()));
+        if (message.getNackOptions() != null) {
+            resultBuilder.setNackOptions(message.getNackOptions().toProto());
+        }
         MapOuterClass.MapResponse response = MapOuterClass.MapResponse.newBuilder()
                 .setId(requestID)
-                .addResults(MapOuterClass.MapResponse.Result.newBuilder()
-                        .setValue(
-                                message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                                        message.getValue()))
-                        .addAllKeys(message.getKeys()
-                                == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
-                        .addAllTags(message.getTags()
-                                == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
-                        .build()).build();
+                .addResults(resultBuilder.build())
+                .build();
         supervisorActor.tell(response, ActorRef.noSender());
     }
 

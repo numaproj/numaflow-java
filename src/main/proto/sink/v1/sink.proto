@@ -5,6 +5,7 @@ option java_package = "io.numaproj.numaflow.sink.v1";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "common/metadata.proto";
+import "common/nack_options.proto";
 
 package sink.v1;
 
@@ -69,6 +70,7 @@ enum Status {
   FALLBACK = 2;
   SERVE = 3;
   ON_SUCCESS = 4;
+  NACK = 5;
 }
 
 /**
@@ -90,6 +92,7 @@ message SinkResponse {
     optional bytes serve_response = 4;
     // on_success_msg is the message to be sent to on_success sink.
     optional Message on_success_msg = 5;
+    optional common.NackOptions nack_options = 6;
   }
   repeated Result results = 1;
   optional Handshake handshake = 2;

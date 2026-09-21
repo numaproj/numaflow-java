@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.accumulator;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -122,6 +123,95 @@ public class ServerTest {
             assertEquals(Arrays.asList(expectedKeys), response.getPayload().getKeysList());
             assertEquals(Arrays.asList(expectedTags), response.getTagsList());
         }
+    }
+
+    @Test
+    public void testAccumulatorEOFEchoesCloseWindow() {
+        List<String> keys = List.of("test-accumulator");
+
+        AccumulatorOuterClass.KeyedWindow openWindow = AccumulatorOuterClass.KeyedWindow
+                .newBuilder()
+                .setStart(Timestamp.newBuilder().setSeconds(0).build())
+                .setEnd(Timestamp.newBuilder().setSeconds(60).build())
+                .setSlot("slot-0")
+                .addAllKeys(keys)
+                .build();
+
+        AccumulatorOuterClass.AccumulatorRequest openRequest = AccumulatorOuterClass.AccumulatorRequest
+                .newBuilder()
+                .setPayload(AccumulatorOuterClass.Payload
+                        .newBuilder()
+                        .setValue(ByteString.copyFromUtf8("test-payload"))
+                        .addAllKeys(keys)
+                        .build())
+                .setOperation(AccumulatorOuterClass.AccumulatorRequest.WindowOperation
+                        .newBuilder()
+                        .setEvent(AccumulatorOuterClass.AccumulatorRequest.WindowOperation.Event.OPEN)
+                        .setKeyedWindow(openWindow)
+                        .build())
+                .build();
+
+        AccumulatorOuterClass.AccumulatorRequest appendRequest = AccumulatorOuterClass.AccumulatorRequest
+                .newBuilder()
+                .setPayload(AccumulatorOuterClass.Payload
+                        .newBuilder()
+                        .setValue(ByteString.copyFromUtf8("test-payload"))
+                        .addAllKeys(keys)
+                        .build())
+                .setOperation(AccumulatorOuterClass.AccumulatorRequest.WindowOperation
+                        .newBuilder()
+                        .setEvent(AccumulatorOuterClass.AccumulatorRequest.WindowOperation.Event.APPEND)
+                        .setKeyedWindow(openWindow)
+                        .build())
+                .build();
+
+        // CLOSE carries a distinct window that must be echoed verbatim in the EOF response.
+        AccumulatorOuterClass.KeyedWindow closeWindow = AccumulatorOuterClass.KeyedWindow
+                .newBuilder()
+                .setStart(Timestamp.newBuilder().setSeconds(1000).build())
+                .setEnd(Timestamp.newBuilder().setSeconds(2000).build())
+                .setSlot("slot-7")
+                .addAllKeys(keys)
+                .build();
+        AccumulatorOuterClass.AccumulatorRequest closeRequest = AccumulatorOuterClass.AccumulatorRequest
+                .newBuilder()
+                .setOperation(AccumulatorOuterClass.AccumulatorRequest.WindowOperation
+                        .newBuilder()
+                        .setEvent(AccumulatorOuterClass.AccumulatorRequest.WindowOperation.Event.CLOSE)
+                        .setKeyedWindow(closeWindow)
+                        .build())
+                .build();
+
+        // 2 data responses + 1 EOF response.
+        AccumulatorStreamObserver responseObserver = new AccumulatorStreamObserver(3);
+
+        var stub = AccumulatorGrpc.newStub(inProcessChannel);
+        var requestStreamObserver = stub.accumulateFn(responseObserver);
+
+        requestStreamObserver.onNext(openRequest);
+        requestStreamObserver.onNext(appendRequest);
+        requestStreamObserver.onNext(closeRequest);
+        requestStreamObserver.onCompleted();
+
+        try {
+            responseObserver.done.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Error while waiting for response" + e.getMessage());
+        }
+
+        List<AccumulatorOuterClass.AccumulatorResponse> responses = responseObserver.getResponses();
+        assertEquals(3, responses.size());
+
+        AccumulatorOuterClass.AccumulatorResponse eof = null;
+        for (AccumulatorOuterClass.AccumulatorResponse response : responses) {
+            if (response.getEOF()) {
+                eof = response;
+            }
+        }
+        assertEquals(1000, eof.getWindow().getStart().getSeconds());
+        assertEquals(2000, eof.getWindow().getEnd().getSeconds());
+        assertEquals("slot-7", eof.getWindow().getSlot());
+        assertEquals(keys, eof.getWindow().getKeysList());
     }
 
     private static class TestAccumFn extends Accumulator {

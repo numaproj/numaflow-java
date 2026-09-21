@@ -87,7 +87,7 @@ class MapperActor extends AbstractActor {
                 .newBuilder();
 
         messageList.getMessages().forEach(message -> {
-            responseBuilder.addResults(MapOuterClass.MapResponse.Result.newBuilder()
+            MapOuterClass.MapResponse.Result.Builder resultBuilder = MapOuterClass.MapResponse.Result.newBuilder()
                     .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
                             message.getValue()))
                     .addAllKeys(message.getKeys()
@@ -95,8 +95,11 @@ class MapperActor extends AbstractActor {
                     .addAllTags(message.getTags()
                             == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
                     .setMetadata(message.getUserMetadata()
-                            == null ? MetadataOuterClass.Metadata.getDefaultInstance() : message.getUserMetadata().toProto())
-                    .build());
+                            == null ? MetadataOuterClass.Metadata.getDefaultInstance() : message.getUserMetadata().toProto());
+            if (message.getNackOptions() != null) {
+                resultBuilder.setNackOptions(message.getNackOptions().toProto());
+            }
+            responseBuilder.addResults(resultBuilder.build());
         });
         return responseBuilder.setId(ID).build();
     }

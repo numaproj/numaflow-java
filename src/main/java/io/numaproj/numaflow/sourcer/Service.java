@@ -5,6 +5,7 @@ import io.grpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.NackOptions;
 import io.numaproj.numaflow.source.v1.SourceGrpc;
 import io.numaproj.numaflow.source.v1.SourceOuterClass;
 import lombok.AllArgsConstructor;
@@ -192,11 +193,17 @@ class Service extends SourceGrpc.SourceImplBase {
         }
 
         try {
-            List<Offset> offsets = new ArrayList<>(nackRequest.getRequest().getOffsetsCount());
-            for (SourceOuterClass.Offset offset : nackRequest.getRequest().getOffsetsList()) {
-                offsets.add(new Offset(
-                        offset.getOffset().toByteArray(),
-                        offset.getPartitionId()));
+            List<NackOffset> offsets = new ArrayList<>(nackRequest.getRequestCount());
+            for (SourceOuterClass.NackRequest.Request request: nackRequest.getRequestList()) {
+                NackOptions nackOptions = request.hasNackOptions()
+                        ? NackOptions.fromProto(request.getNackOptions())
+                        : null;
+                for (SourceOuterClass.Offset offset : request.getOffsetsList()) {
+                    Offset o = new Offset(
+                            offset.getOffset().toByteArray(),
+                            offset.getPartitionId());
+                    offsets.add(new NackOffset(o, nackOptions));
+                }
             }
             NackRequest nackRequestImpl = new NackRequestImpl(offsets);
             this.sourcer.nack(nackRequestImpl);

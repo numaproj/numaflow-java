@@ -2,6 +2,7 @@ package io.numaproj.numaflow.examples.source.simple;
 
 import io.numaproj.numaflow.sourcer.AckRequest;
 import io.numaproj.numaflow.sourcer.Message;
+import io.numaproj.numaflow.sourcer.NackOffset;
 import io.numaproj.numaflow.sourcer.NackRequest;
 import io.numaproj.numaflow.sourcer.Offset;
 import io.numaproj.numaflow.sourcer.OutputObserver;
@@ -86,8 +87,8 @@ public class SimpleSource extends Sourcer {
     @Override
     public void nack(NackRequest request) {
         // put them to nacked offsets so that they will be retried immediately.
-        for (Offset offset : request.getOffsets()) {
-            Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
+        for (NackOffset offset : request.getOffsets()) {
+            Integer decoded_offset = ByteBuffer.wrap(offset.getOffset().getValue()).getInt();
             yetToBeAcked.remove(decoded_offset);
             nacked.put(decoded_offset, true);
             readIndex.decrementAndGet();

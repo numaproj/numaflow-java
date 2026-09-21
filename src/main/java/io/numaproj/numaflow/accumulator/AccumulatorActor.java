@@ -34,6 +34,7 @@ public class AccumulatorActor extends AbstractActor {
         return ReceiveBuilder
                 .create()
                 .match(HandlerDatum.class, this::invokeHandler)
+                .match(AccumulatorOuterClass.KeyedWindow.class, this::handleCloseWindow)
                 .match(String.class, this::sendEOF)
                 .build();
     }
@@ -42,17 +43,29 @@ public class AccumulatorActor extends AbstractActor {
         this.accumulator.processMessage(handlerDatum, outputStream);
     }
 
+    // CLOSE: echo the exact close window (including slot)
+    private void handleCloseWindow(AccumulatorOuterClass.KeyedWindow closeWindow) {
+        sendEOFResponse(closeWindow);
+    }
+
+    // Fallback: the input stream completed without a CLOSE (broadcast EOF). Keep prior
+    // behavior — echo the OPEN window (start/end/keys).
     private void sendEOF(String EOF) {
+        sendEOFResponse(AccumulatorOuterClass.KeyedWindow
+                .newBuilder()
+                .setStart(this.keyedWindow.getStart())
+                .setEnd(this.keyedWindow.getEnd())
+                .addAllKeys(this.keyedWindow.getKeysList())
+                .build());
+    }
+
+    private void sendEOFResponse(AccumulatorOuterClass.KeyedWindow eofWindow) {
         // invoke handleEndOfStream to materialize the messages received so far.
         this.accumulator.handleEndOfStream(outputStream);
 
         AccumulatorOuterClass.AccumulatorResponse eofResponse = AccumulatorOuterClass.AccumulatorResponse
                 .newBuilder()
-                .setWindow(AccumulatorOuterClass.KeyedWindow
-                        .newBuilder()
-                        .setStart(this.keyedWindow.getStart())
-                        .setEnd(this.keyedWindow.getEnd())
-                        .addAllKeys(this.keyedWindow.getKeysList()))
+                .setWindow(eofWindow)
                 .setEOF(true)
                 .build();
 

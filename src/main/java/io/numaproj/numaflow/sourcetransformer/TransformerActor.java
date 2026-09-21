@@ -110,22 +110,19 @@ class TransformerActor extends AbstractActor {
                 .newBuilder();
 
         messageList.getMessages().forEach(message -> {
-            responseBuilder.addResults(Sourcetransformer.SourceTransformResponse.Result.newBuilder()
-                    .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(
-                            message.getValue()))
+            Sourcetransformer.SourceTransformResponse.Result.Builder resultBuilder = Sourcetransformer.SourceTransformResponse.Result.newBuilder()
+                    .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(message.getValue()))
                     .setEventTime(Timestamp.newBuilder()
-                            .setSeconds(message
-                                    .getEventTime()
-                                    .getEpochSecond())
+                            .setSeconds(message.getEventTime().getEpochSecond())
                             .setNanos(message.getEventTime().getNano()))
-                    .addAllKeys(message.getKeys()
-                            == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
-                    .addAllTags(message.getTags()
-                            == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
-                    .setMetadata(message.getUserMetadata()
-                            == null ? MetadataOuterClass.Metadata.getDefaultInstance()
-                            : message.getUserMetadata().toProto())
-                    .build());
+                    .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
+                    .addAllTags(message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
+                    .setMetadata(message.getUserMetadata() == null ? MetadataOuterClass.Metadata.getDefaultInstance()
+                            : message.getUserMetadata().toProto());
+            if (message.getNackOptions() != null) {
+                resultBuilder.setNackOptions(message.getNackOptions().toProto());
+            }
+            responseBuilder.addResults(resultBuilder.build());
         });
         return responseBuilder.setId(ID).build();
     }

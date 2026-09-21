@@ -216,7 +216,7 @@ public class ServerTest {
         // Nack the last 5 messages (indices 5-9)
         List<SourceOuterClass.Offset> nackedOffsets = offsets.subList(5, 10);
         stub.nackFn(SourceOuterClass.NackRequest.newBuilder()
-                .setRequest(SourceOuterClass.NackRequest.Request.newBuilder()
+                .addRequest(SourceOuterClass.NackRequest.Request.newBuilder()
                         .addAllOffsets(nackedOffsets)
                         .build())
                 .build(), new StreamObserver<>() {
@@ -347,8 +347,8 @@ public class ServerTest {
 
         @Override
         public void nack(NackRequest request) {
-            for (Offset offset : request.getOffsets()) {
-                Integer decoded_offset = ByteBuffer.wrap(offset.getValue()).getInt();
+            for (NackOffset offset : request.getOffsets()) {
+                Integer decoded_offset = ByteBuffer.wrap(offset.getOffset().getValue()).getInt();
                 yetToBeAcked.remove(decoded_offset);
                 nacked.put(decoded_offset, true);
                 readIndex.decrementAndGet();

@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.sinker;
 
+import io.numaproj.numaflow.shared.NackOptions;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,8 @@ public class Response {
   private final byte[] serveResponse;
   private final Boolean onSuccess;
   private final Message onSuccessMessage;
+  private final Boolean nack;
+  private final NackOptions nackOptions;
 
     /**
    * Static method to create response for successful message processing.
@@ -28,7 +31,7 @@ public class Response {
    * @return Response object with success status
    */
   public static Response responseOK(String id) {
-    return new Response(id, true, null, false, false, null, false, null);
+    return new Response(id, true, null, false, false, null, false, null, false, null);
   }
 
   /**
@@ -39,7 +42,7 @@ public class Response {
    * @return Response object with failure status and error message
    */
   public static Response responseFailure(String id, String errMsg) {
-    return new Response(id, false, errMsg, false, false, null, false, null);
+    return new Response(id, false, errMsg, false, false, null, false, null, false, null);
   }
 
   /**
@@ -50,7 +53,7 @@ public class Response {
    * @return Response object with fallback status
    */
   public static Response responseFallback(String id) {
-    return new Response(id, false, null, true, false, null, false, null);
+    return new Response(id, false, null, true, false, null, false, null, false, null);
   }
 
   /**
@@ -63,7 +66,7 @@ public class Response {
    * @return Response object with serve status and serve response
    */
   public static Response responseServe(String id, byte[] serveResponse) {
-    return new Response(id, false, null, false, true, serveResponse, false, null);
+    return new Response(id, false, null, false, true, serveResponse, false, null, false, null);
   }
 
   /**
@@ -76,6 +79,18 @@ public class Response {
    * @return Response object with onSuccess status and onSuccess message
    */
   public static Response responseOnSuccess(String id, Message onSuccessMessage) {
-      return new Response(id, false, null, false, false, null, true, onSuccessMessage);
+      return new Response(id, false, null, false, false, null, true, onSuccessMessage, false, null);
+  }
+
+  /**
+   * Static method to create a nack response, indicating the message should be negatively
+   * acknowledged and redelivered. nackOptions may be null.
+   *
+   * @param id id of the message
+   * @param nackOptions optional redelivery options
+   * @return Response object with nack status
+   */
+  public static Response responseNack(String id, NackOptions nackOptions) {
+    return new Response(id, false, null, false, false, null, false, null, true, nackOptions);
   }
 }

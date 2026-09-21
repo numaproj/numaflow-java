@@ -137,18 +137,15 @@ class Service extends MapGrpc.MapImplBase {
             responses.getItems().forEach(message -> {
                 List<MapOuterClass.MapResponse.Result> mapResponseResult = new ArrayList<>();
                 message.getItems().forEach(res -> {
-                    mapResponseResult.add(
-                            MapOuterClass.MapResponse.Result
-                                    .newBuilder()
-                                    .setValue(res.getValue()
-                                            == null ? ByteString.EMPTY : ByteString.copyFrom(
-                                            res.getValue()))
-                                    .addAllKeys(res.getKeys()
-                                            == null ? new ArrayList<>() : Arrays.asList(res.getKeys()))
-                                    .addAllTags(res.getTags()
-                                            == null ? new ArrayList<>() : Arrays.asList(res.getTags()))
-                                    .build()
-                    );
+                    MapOuterClass.MapResponse.Result.Builder resultBuilder = MapOuterClass.MapResponse.Result
+                            .newBuilder()
+                            .setValue(res.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(res.getValue()))
+                            .addAllKeys(res.getKeys() == null ? new ArrayList<>() : Arrays.asList(res.getKeys()))
+                            .addAllTags(res.getTags() == null ? new ArrayList<>() : Arrays.asList(res.getTags()));
+                    if (res.getNackOptions() != null) {
+                        resultBuilder.setNackOptions(res.getNackOptions().toProto());
+                    }
+                    mapResponseResult.add(resultBuilder.build());
                 });
                 MapOuterClass.MapResponse singleRequestResponse = MapOuterClass.MapResponse
                         .newBuilder()

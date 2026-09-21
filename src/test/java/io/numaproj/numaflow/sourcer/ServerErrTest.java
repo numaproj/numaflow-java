@@ -155,7 +155,7 @@ public class ServerErrTest {
                 .build();
 
         SourceOuterClass.NackRequest nackRequest = SourceOuterClass.NackRequest.newBuilder()
-                .setRequest(SourceOuterClass.NackRequest.Request.newBuilder()
+                .addRequest(SourceOuterClass.NackRequest.Request.newBuilder()
                         .addOffsets(offset)
                         .build())
                 .build();
