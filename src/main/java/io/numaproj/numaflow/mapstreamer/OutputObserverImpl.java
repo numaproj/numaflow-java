@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.mapstreamer;
 
 import akka.actor.ActorRef;
+import common.MetadataOuterClass;
 import com.google.protobuf.ByteString;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
 import lombok.AllArgsConstructor;
@@ -32,7 +33,10 @@ public class OutputObserverImpl implements OutputObserver {
         MapOuterClass.MapResponse.Result.Builder resultBuilder = MapOuterClass.MapResponse.Result.newBuilder()
                 .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(message.getValue()))
                 .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
-                .addAllTags(message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()));
+                .addAllTags(message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()))
+                .setMetadata(message.getUserMetadata() == null
+                        ? MetadataOuterClass.Metadata.getDefaultInstance()
+                        : message.getUserMetadata().toProto());
         if (message.getNackOptions() != null) {
             resultBuilder.setNackOptions(message.getNackOptions().toProto());
         }

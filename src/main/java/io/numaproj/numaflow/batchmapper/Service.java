@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.batchmapper;
 
+import common.MetadataOuterClass;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -11,6 +12,8 @@ import io.grpc.stub.StreamObserver;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
 import io.numaproj.numaflow.shared.ExceptionUtils;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -141,7 +144,10 @@ class Service extends MapGrpc.MapImplBase {
                             .newBuilder()
                             .setValue(res.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(res.getValue()))
                             .addAllKeys(res.getKeys() == null ? new ArrayList<>() : Arrays.asList(res.getKeys()))
-                            .addAllTags(res.getTags() == null ? new ArrayList<>() : Arrays.asList(res.getTags()));
+                            .addAllTags(res.getTags() == null ? new ArrayList<>() : Arrays.asList(res.getTags()))
+                            .setMetadata(res.getUserMetadata() == null
+                                    ? MetadataOuterClass.Metadata.getDefaultInstance()
+                                    : res.getUserMetadata().toProto());
                     if (res.getNackOptions() != null) {
                         resultBuilder.setNackOptions(res.getNackOptions().toProto());
                     }
@@ -185,7 +191,9 @@ class Service extends MapGrpc.MapImplBase {
                         d.getRequest().getEventTime().getSeconds(),
                         d.getRequest().getEventTime().getNanos()),
                 d.getId(),
-                d.getRequest().getHeadersMap()
+                d.getRequest().getHeadersMap(),
+                new UserMetadata(d.getRequest().getMetadata()),
+                new SystemMetadata(d.getRequest().getMetadata())
         );
     }
 

@@ -1,6 +1,8 @@
 package io.numaproj.numaflow.mapstreamer;
 
 
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
@@ -13,7 +15,16 @@ class HandlerDatum implements Datum {
     private Instant watermark;
     private Instant eventTime;
     private Map<String, String> headers;
+    private UserMetadata userMetadata;
+    private SystemMetadata systemMetadata;
 
+    HandlerDatum(
+            byte[] value,
+            Instant watermark,
+            Instant eventTime,
+            Map<String, String> headers) {
+        this(value, watermark, eventTime, headers, null, null);
+    }
 
     @Override
     public Instant getWatermark() {
@@ -33,6 +44,16 @@ class HandlerDatum implements Datum {
     @Override
     public Map<String, String> getHeaders() {
         return this.headers;
+    }
+
+    @Override
+    public UserMetadata getUserMetadata() {
+        return this.userMetadata;
+    }
+
+    @Override
+    public SystemMetadata getSystemMetadata() {
+        return this.systemMetadata;
     }
 
 }

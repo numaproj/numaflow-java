@@ -1,5 +1,6 @@
 package io.numaproj.numaflow.mapstreamer;
 
+import common.MetadataOuterClass;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -7,6 +8,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import io.numaproj.numaflow.map.v1.MapGrpc;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.UserMetadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -17,8 +19,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
 public class ServiceTest {
     private static final String PROCESSED_KEY_SUFFIX = "-key-processed";
@@ -28,6 +32,7 @@ public class ServiceTest {
     public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
     private Service service;
     private ManagedChannel inProcessChannel;
+    private TestMapStreamer testMapStreamer;
 
     @Before
     public void setUp() throws Exception {
@@ -35,7 +40,8 @@ public class ServiceTest {
 
         CompletableFuture<Void> shutdownSignal = new CompletableFuture<>();
 
-        service = new Service(new TestMapStreamer(), shutdownSignal);
+        testMapStreamer = new TestMapStreamer();
+        service = new Service(testMapStreamer, shutdownSignal);
 
         grpcCleanup.register(InProcessServerBuilder
                 .forName(serverName)
@@ -141,9 +147,53 @@ public class ServiceTest {
         requestStreamObserver.onCompleted();
     }
 
+    @Test
+    public void testMapStreamerMetadata() {
+        MapStreamOutputStreamObserver responseObserver = new MapStreamOutputStreamObserver(3);
+        var requestStreamObserver = MapGrpc.newStub(inProcessChannel).mapFn(responseObserver);
+
+        requestStreamObserver.onNext(MapOuterClass.MapRequest.newBuilder()
+                .setHandshake(MapOuterClass.Handshake.newBuilder().setSot(true))
+                .build());
+
+        MetadataOuterClass.Metadata metadata = MetadataOuterClass.Metadata.newBuilder()
+                .putSysMetadata("tracing_udf", MetadataOuterClass.KeyValueGroup.newBuilder()
+                        .putKeyValue("traceparent", ByteString.copyFromUtf8("00-trace-span-01"))
+                        .build())
+                .putUserMetadata("app", MetadataOuterClass.KeyValueGroup.newBuilder()
+                        .putKeyValue("key", ByteString.copyFromUtf8("value"))
+                        .build())
+                .build();
+        requestStreamObserver.onNext(MapOuterClass.MapRequest.newBuilder()
+                .setRequest(MapOuterClass.MapRequest.Request.newBuilder()
+                        .setValue(ByteString.copyFromUtf8("message"))
+                        .setMetadata(metadata)
+                        .build())
+                .build());
+
+        try {
+            responseObserver.done.get();
+        } catch (InterruptedException | ExecutionException e) {
+            fail("Error while waiting for response" + e.getMessage());
+        }
+
+        MapOuterClass.MapResponse response = responseObserver.getMapResponses().get(1);
+        assertEquals(
+                ByteString.copyFromUtf8("value"),
+                response.getResults(0).getMetadata()
+                        .getUserMetadataOrThrow("app")
+                        .getKeyValueOrThrow("key"));
+        assertTrue(response.getResults(0).getMetadata().getSysMetadataMap().isEmpty());
+        assertArrayEquals("00-trace-span-01".getBytes(), testMapStreamer.traceparent);
+        requestStreamObserver.onCompleted();
+    }
+
     private static class TestMapStreamer extends MapStreamer {
+        private volatile byte[] traceparent;
+
         @Override
         public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {
+            traceparent = datum.getSystemMetadata().getValue("tracing_udf", "traceparent");
             String[] updatedKeys = Arrays.stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
@@ -151,7 +201,8 @@ public class ServiceTest {
             Message message = new Message(
                     (new String(datum.getValue()) + PROCESSED_VALUE_SUFFIX).getBytes(),
                     updatedKeys,
-                    new String[]{"test-tag"}
+                    new String[]{"test-tag"},
+                    new UserMetadata(datum.getUserMetadata())
             );
 
             outputObserver.send(message);

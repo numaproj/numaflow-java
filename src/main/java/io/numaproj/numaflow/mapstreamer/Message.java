@@ -1,6 +1,7 @@
 package io.numaproj.numaflow.mapstreamer;
 
 import io.numaproj.numaflow.shared.NackOptions;
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.Getter;
 
 /** Message is used to wrap the data returned by MapStreamer. */
@@ -12,6 +13,7 @@ public class Message {
   private final String[] keys;
   private final byte[] value;
   private final String[] tags;
+  private final UserMetadata userMetadata;
   private final NackOptions nackOptions;
 
   /**
@@ -26,10 +28,32 @@ public class Message {
   }
 
   private Message(byte[] value, String[] keys, String[] tags, NackOptions nackOptions) {
+    this(value, keys, tags, null, nackOptions);
+  }
+
+  /**
+   * used to create Message with value, keys, tags(used for conditional forwarding) and userMetadata
+   *
+   * @param value message value
+   * @param keys message keys
+   * @param tags message tags which will be used for conditional forwarding
+   * @param userMetadata user metadata, this is used to pass user defined metadata to the next vertex
+   */
+  public Message(byte[] value, String[] keys, String[] tags, UserMetadata userMetadata) {
+    this(value, keys, tags, userMetadata, null);
+  }
+
+  private Message(
+      byte[] value,
+      String[] keys,
+      String[] tags,
+      UserMetadata userMetadata,
+      NackOptions nackOptions) {
     // defensive copy - once the Message is created, the caller should not be able to modify it.
     this.keys = keys == null ? null : keys.clone();
     this.value = value == null ? null : value.clone();
     this.tags = tags == null ? null : tags.clone();
+    this.userMetadata = userMetadata == null ? null : new UserMetadata(userMetadata);
     this.nackOptions = nackOptions;
   }
 
