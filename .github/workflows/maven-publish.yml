@@ -1,11 +1,13 @@
 # This workflow will build a package using Maven and then publish it to Maven Central and GitHub packages when a release is created
+# Triggered by tags matching v* (e.g. v0.11.0). Kotlin SDK uses a separate workflow.
 
-name: Publish to Maven Central and Github Packages
+name: Publish Java SDK to Maven Central and Github Packages
 on:
   release:
     types: [ created ]
 jobs:
   publish:
+    if: startsWith(github.event.release.tag_name, 'v') && !startsWith(github.event.release.tag_name, 'v-kotlin')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,7 +30,7 @@ jobs:
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          settings-path: ${{ github.workspace }} # location for the settings.xml file
+          settings-path: ${{ github.workspace }}
 
       - name: Publish to the Maven Central Repository
         run: mvn -DcentralRelease=true -P central deploy -s $GITHUB_WORKSPACE/settings.xml
@@ -41,8 +43,9 @@ jobs:
         with:
           java-version: '11'
           distribution: 'temurin'
-          server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
-          settings-path: ${{ github.workspace }} #location for the settings.xml file
+          server-id: github
+          settings-path: ${{ github.workspace }}
+
       - name: Publish to GitHub Packages
         run: mvn -DgithubRelease=true -P github deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
