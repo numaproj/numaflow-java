@@ -73,6 +73,15 @@ public class ServiceNackTest {
         requestStreamObserver.onCompleted();
     }
 
+    @Test
+    public void messageCanBeCreatedWithNackOptions() {
+        NackOptions nackOptions = NackOptions.newBuilder().reason("retry").build();
+
+        Message message = new Message(new byte[0], null, null, nackOptions);
+
+        assertEquals(nackOptions, message.getNackOptions());
+    }
+
     private static class NackMapStreamer extends MapStreamer {
         @Override
         public void processMessage(String[] keys, Datum datum, OutputObserver outputObserver) {

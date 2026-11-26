@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -112,6 +113,7 @@ public class ServerTest {
         result = result.subList(1, result.size());
         for (int i = 0; i < 10; i++) {
             assertEquals(result.get(i).getId(), String.valueOf(i + 1));
+            assertFalse(result.get(i).getResults(0).hasMetadata());
         }
     }
 
@@ -183,12 +185,15 @@ public class ServerTest {
                 traceparent = datum.getSystemMetadata().getValue("tracing_udf", "traceparent");
                 String[] strs = msg.split(",");
                 BatchResponse batchResponse = new BatchResponse(datum.getId());
+                UserMetadata userMetadata = datum.getUserMetadata().getGroups().isEmpty()
+                        ? null
+                        : new UserMetadata(datum.getUserMetadata());
                 for (String str : strs) {
                     batchResponse.append(new Message(
                             str.getBytes(),
                             null,
                             null,
-                            new UserMetadata(datum.getUserMetadata())));
+                            userMetadata));
                 }
                 batchResponses.append(batchResponse);
             }

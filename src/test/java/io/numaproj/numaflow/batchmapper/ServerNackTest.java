@@ -77,6 +77,15 @@ public class ServerNackTest {
         assertEquals("retry", r.getNackOptions().getReason());
     }
 
+    @Test
+    public void messageCanBeCreatedWithNackOptions() {
+        NackOptions nackOptions = NackOptions.newBuilder().reason("retry").build();
+
+        Message message = new Message(new byte[0], null, null, nackOptions);
+
+        assertEquals(nackOptions, message.getNackOptions());
+    }
+
     private static class NackBatchMapFn extends BatchMapper {
         @Override
         public BatchResponses processMessage(DatumIterator datumStream) {

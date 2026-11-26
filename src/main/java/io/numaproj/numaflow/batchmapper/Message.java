@@ -24,11 +24,19 @@ public class Message {
    * @param tags message tags which will be used for conditional forwarding
    */
   public Message(byte[] value, String[] keys, String[] tags) {
-    this(value, keys, tags, (NackOptions) null);
+    this(value, keys, tags, (NackOptions) null, null);
   }
 
-  private Message(byte[] value, String[] keys, String[] tags, NackOptions nackOptions) {
-    this(value, keys, tags, null, nackOptions);
+  /**
+   * used to create Message with value, keys, tags and nack options.
+   *
+   * @param value message value
+   * @param keys message keys
+   * @param tags message tags which will be used for conditional forwarding
+   * @param nackOptions redelivery options
+   */
+  public Message(byte[] value, String[] keys, String[] tags, NackOptions nackOptions) {
+    this(value, keys, tags, nackOptions, null);
   }
 
   /**
@@ -40,15 +48,15 @@ public class Message {
    * @param userMetadata user metadata, this is used to pass user defined metadata to the next vertex
    */
   public Message(byte[] value, String[] keys, String[] tags, UserMetadata userMetadata) {
-    this(value, keys, tags, userMetadata, null);
+    this(value, keys, tags, null, userMetadata);
   }
 
   private Message(
       byte[] value,
       String[] keys,
       String[] tags,
-      UserMetadata userMetadata,
-      NackOptions nackOptions) {
+      NackOptions nackOptions,
+      UserMetadata userMetadata) {
     // defensive copy - once the Message is created, the caller should not be able to modify it.
     this.keys = keys == null ? null : keys.clone();
     this.value = value == null ? null : value.clone();

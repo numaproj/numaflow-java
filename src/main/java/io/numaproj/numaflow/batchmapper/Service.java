@@ -1,6 +1,5 @@
 package io.numaproj.numaflow.batchmapper;
 
-import common.MetadataOuterClass;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -144,10 +143,10 @@ class Service extends MapGrpc.MapImplBase {
                             .newBuilder()
                             .setValue(res.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(res.getValue()))
                             .addAllKeys(res.getKeys() == null ? new ArrayList<>() : Arrays.asList(res.getKeys()))
-                            .addAllTags(res.getTags() == null ? new ArrayList<>() : Arrays.asList(res.getTags()))
-                            .setMetadata(res.getUserMetadata() == null
-                                    ? MetadataOuterClass.Metadata.getDefaultInstance()
-                                    : res.getUserMetadata().toProto());
+                            .addAllTags(res.getTags() == null ? new ArrayList<>() : Arrays.asList(res.getTags()));
+                    if (res.getUserMetadata() != null) {
+                        resultBuilder.setMetadata(res.getUserMetadata().toProto());
+                    }
                     if (res.getNackOptions() != null) {
                         resultBuilder.setNackOptions(res.getNackOptions().toProto());
                     }

@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
 
@@ -113,6 +114,7 @@ public class ServiceTest {
             assertEquals(Arrays.asList(expectedKeys), response.getResults(0).getKeysList());
             assertEquals(Arrays.asList(expectedTags), response.getResults(0).getTagsList());
             assertEquals(1, response.getResultsCount());
+            assertFalse(response.getResults(0).hasMetadata());
         }
 
         requestStreamObserver.onCompleted();
@@ -197,12 +199,15 @@ public class ServiceTest {
             String[] updatedKeys = Arrays.stream(keys)
                     .map(c -> c + PROCESSED_KEY_SUFFIX)
                     .toArray(String[]::new);
+            UserMetadata userMetadata = datum.getUserMetadata().getGroups().isEmpty()
+                    ? null
+                    : new UserMetadata(datum.getUserMetadata());
 
             Message message = new Message(
                     (new String(datum.getValue()) + PROCESSED_VALUE_SUFFIX).getBytes(),
                     updatedKeys,
                     new String[]{"test-tag"},
-                    new UserMetadata(datum.getUserMetadata())
+                    userMetadata
             );
 
             outputObserver.send(message);
