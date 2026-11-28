@@ -4,6 +4,8 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import io.numaproj.numaflow.map.v1.MapOuterClass;
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 
 import java.time.Instant;
 
@@ -40,7 +42,9 @@ class MapStreamerActor extends AbstractActor {
                 Instant.ofEpochSecond(
                         mapRequest.getRequest().getEventTime().getSeconds(),
                         mapRequest.getRequest().getEventTime().getNanos()),
-                mapRequest.getRequest().getHeadersMap()
+                mapRequest.getRequest().getHeadersMap(),
+                new UserMetadata(mapRequest.getRequest().getMetadata()),
+                new SystemMetadata(mapRequest.getRequest().getMetadata())
         );
 
         String[] keys = mapRequest.getRequest().getKeysList().toArray(new String[0]);

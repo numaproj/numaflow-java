@@ -1,5 +1,7 @@
 package io.numaproj.numaflow.batchmapper;
 
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -56,6 +58,17 @@ public class HandlerDatumTest {
     }
 
     @Test
+    public void testGetMetadata() {
+        UserMetadata userMetadata = new UserMetadata();
+        SystemMetadata systemMetadata = new SystemMetadata();
+        HandlerDatum datum =
+                new HandlerDatum(null, null, null, null, null, null, userMetadata, systemMetadata);
+
+        assertEquals(userMetadata, datum.getUserMetadata());
+        assertEquals(systemMetadata, datum.getSystemMetadata());
+    }
+
+    @Test
     public void testEOF_DATUM() {
         assertNull(HandlerDatum.EOF_DATUM.getKeys());
         assertNull(HandlerDatum.EOF_DATUM.getValue());
@@ -63,5 +76,7 @@ public class HandlerDatumTest {
         assertNull(HandlerDatum.EOF_DATUM.getEventTime());
         assertNull(HandlerDatum.EOF_DATUM.getId());
         assertNull(HandlerDatum.EOF_DATUM.getHeaders());
+        assertNull(HandlerDatum.EOF_DATUM.getUserMetadata());
+        assertNull(HandlerDatum.EOF_DATUM.getSystemMetadata());
     }
 }

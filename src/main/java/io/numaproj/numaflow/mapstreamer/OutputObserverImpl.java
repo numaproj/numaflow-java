@@ -33,6 +33,9 @@ public class OutputObserverImpl implements OutputObserver {
                 .setValue(message.getValue() == null ? ByteString.EMPTY : ByteString.copyFrom(message.getValue()))
                 .addAllKeys(message.getKeys() == null ? new ArrayList<>() : Arrays.asList(message.getKeys()))
                 .addAllTags(message.getTags() == null ? new ArrayList<>() : Arrays.asList(message.getTags()));
+        if (message.getUserMetadata() != null) {
+            resultBuilder.setMetadata(message.getUserMetadata().toProto());
+        }
         if (message.getNackOptions() != null) {
             resultBuilder.setNackOptions(message.getNackOptions().toProto());
         }

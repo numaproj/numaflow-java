@@ -1,6 +1,8 @@
 package io.numaproj.numaflow.batchmapper;
 
 
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
 import lombok.AllArgsConstructor;
 
 import java.time.Instant;
@@ -9,13 +11,25 @@ import java.util.Map;
 @AllArgsConstructor
 class HandlerDatum implements Datum {
 
-    static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null, null);
+    static final HandlerDatum EOF_DATUM = new HandlerDatum(null, null, null, null, null, null, null, null);
     private String[] keys;
     private byte[] value;
     private Instant watermark;
     private Instant eventTime;
     private String id;
     private Map<String, String> headers;
+    private UserMetadata userMetadata;
+    private SystemMetadata systemMetadata;
+
+    HandlerDatum(
+            String[] keys,
+            byte[] value,
+            Instant watermark,
+            Instant eventTime,
+            String id,
+            Map<String, String> headers) {
+        this(keys, value, watermark, eventTime, id, headers, null, null);
+    }
 
     @Override
     public String[] getKeys() {
@@ -45,6 +59,16 @@ class HandlerDatum implements Datum {
     @Override
     public Map<String, String> getHeaders() {
         return this.headers;
+    }
+
+    @Override
+    public UserMetadata getUserMetadata() {
+        return this.userMetadata;
+    }
+
+    @Override
+    public SystemMetadata getSystemMetadata() {
+        return this.systemMetadata;
     }
 
 }

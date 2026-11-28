@@ -1,5 +1,8 @@
 package io.numaproj.numaflow.batchmapper;
 
+import io.numaproj.numaflow.shared.SystemMetadata;
+import io.numaproj.numaflow.shared.UserMetadata;
+
 import java.time.Instant;
 import java.util.Map;
 
@@ -48,4 +51,19 @@ public interface Datum {
      * @return returns the headers in the form of key value pair
      */
     Map<String, String> getHeaders();
+
+    /**
+     * method to get the metadata information added by the user.
+     * It can be appended to and passed downstream.
+     *
+     * @return returns the UserMetadata object
+     */
+    UserMetadata getUserMetadata();
+
+    /**
+     * method to get the read-only system metadata information
+     *
+     * @return returns the SystemMetadata object
+     */
+    SystemMetadata getSystemMetadata();
 }
